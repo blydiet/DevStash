@@ -28,16 +28,16 @@ A centralized, AI-enhanced knowledge hub for developers — snippets, prompts, d
 
 Developers keep their essentials scattered across too many tools:
 
-| Scattered today | Lives in |
-|---|---|
-| Code snippets | VS Code, Notion |
-| AI prompts | Chat histories |
-| Context files | Buried in random projects |
-| Useful links | Browser bookmarks |
-| Docs | Random folders |
-| Commands | `.txt` files |
-| Project templates | GitHub Gists |
-| Terminal commands | Bash history |
+| Scattered today   | Lives in                  |
+| ----------------- | ------------------------- |
+| Code snippets     | VS Code, Notion           |
+| AI prompts        | Chat histories            |
+| Context files     | Buried in random projects |
+| Useful links      | Browser bookmarks         |
+| Docs              | Random folders            |
+| Commands          | `.txt` files              |
+| Project templates | GitHub Gists              |
+| Terminal commands | Bash history              |
 
 This fragmentation causes **context switching, lost knowledge, and inconsistent workflows.**
 
@@ -47,12 +47,12 @@ This fragmentation causes **context switching, lost knowledge, and inconsistent 
 
 ## 🧑‍💻 Users
 
-| Persona | Needs |
-|---|---|
-| 👩‍💻 Everyday Developer | Quick access to snippets, commands, links |
-| 🤖 AI-First Developer | Store prompts, workflows, contexts |
-| 🎓 Content Creator / Educator | Save course notes, reusable code |
-| 🧱 Full-Stack Builder | Patterns, boilerplates, API references |
+| Persona                       | Needs                                     |
+| ----------------------------- | ----------------------------------------- |
+| 👩‍💻 Everyday Developer         | Quick access to snippets, commands, links |
+| 🤖 AI-First Developer         | Store prompts, workflows, contexts        |
+| 🎓 Content Creator / Educator | Save course notes, reusable code          |
+| 🧱 Full-Stack Builder         | Patterns, boilerplates, API references    |
 
 ---
 
@@ -76,7 +76,7 @@ Every item belongs to a built-in type:
 
 Group items together — mixed item types allowed within a single collection.
 
-Examples: *React Patterns · Context Files · Python Snippets*
+Examples: _React Patterns · Context Files · Python Snippets_
 
 ### C) Search
 
@@ -102,7 +102,7 @@ Full-text search across:
 - 📤 Export (JSON / ZIP)
 - 🌙 Dark mode (default)
 
-### F) AI Superpowers *(Pro)*
+### F) AI Superpowers _(Pro)_
 
 - 🏷️ Auto-tagging
 - 📋 AI summaries
@@ -217,6 +217,7 @@ model ItemTag {
 ```
 
 **Notes / things to confirm before locking the schema:**
+
 - Added `@@unique([userId, name])` on `Tag` and `@@index` on `Item` — worth confirming since tag names should probably be unique per user, and item lookups by user/collection will be frequent.
 - Consider `onDelete` behavior for relations (e.g. what happens to `Item`s when a `Collection` is deleted — cascade vs. set null).
 - Free-tier limits (50 items / 3 collections) will need to be enforced in application logic, not the schema itself.
@@ -225,28 +226,28 @@ model ItemTag {
 
 ## 🧱 Tech Stack
 
-| Category | Choice |
-|---|---|
-| Framework | **Next.js (React 19)** |
-| Language | TypeScript |
-| Database | Neon PostgreSQL + Prisma ORM |
-| Caching | Redis *(optional)* |
-| File Storage | Cloudflare R2 |
-| CSS / UI | Tailwind CSS v4 + ShadCN |
-| Auth | NextAuth v5 (email + GitHub) |
-| AI | OpenAI gpt-5-nano |
-| Payments | Stripe (subscriptions + webhooks) |
-| Deployment | Vercel *(likely)* |
-| Monitoring | Sentry *(later)* |
+| Category     | Choice                            |
+| ------------ | --------------------------------- |
+| Framework    | **Next.js (React 19)**            |
+| Language     | TypeScript                        |
+| Database     | Neon PostgreSQL + Prisma ORM      |
+| Caching      | Redis _(optional)_                |
+| File Storage | Cloudflare R2                     |
+| CSS / UI     | Tailwind CSS v4 + ShadCN          |
+| Auth         | NextAuth v5 (email + GitHub)      |
+| AI           | OpenAI gpt-5-nano                 |
+| Payments     | Stripe (subscriptions + webhooks) |
+| Deployment   | Vercel _(likely)_                 |
+| Monitoring   | Sentry _(later)_                  |
 
 ---
 
 ## 💰 Monetization
 
-| Plan | Price | Limits | Features |
-|---|---|---|---|
-| **Free** | $0 | 50 items, 3 collections | Basic search, image uploads, no AI |
-| **Pro** | $8/mo or $72/yr | Unlimited | File uploads, custom types, AI features, export |
+| Plan     | Price           | Limits                  | Features                                        |
+| -------- | --------------- | ----------------------- | ----------------------------------------------- |
+| **Free** | $0              | 50 items, 3 collections | Basic search, image uploads, no AI              |
+| **Pro**  | $8/mo or $72/yr | Unlimited               | File uploads, custom types, AI features, export |
 
 > Stripe handles subscriptions; webhooks keep `isPro` / subscription status in sync with the database.
 
@@ -264,6 +265,13 @@ model ItemTag {
 - Collapsible sidebar with filters & collections
 - Main grid/list workspace
 - Full-screen item editor
+
+### Screenshots
+
+Refer to the screenshots below as a base for the dashboard UI. It does not have be exact. use it as a refrence:
+
+- @context/screenshots/dashboard-ui-drawer.png
+- @context/screenshots/dashboard-ui-main.png
 
 ### Responsive
 
@@ -308,12 +316,12 @@ flowchart TD
 
 ---
 
-## 🗂️ Development Workflow *(For Course)*
+## 🗂️ Development Workflow _(For Course)_
 
 - One branch per lesson — students can follow along & compare
 - Use **Cursor / Claude Code / ChatGPT** for assistance
 - Sentry for runtime monitoring & error tracking
-- GitHub Actions *(optional, for CI)*
+- GitHub Actions _(optional, for CI)_
 
 **Branch example:**
 
@@ -326,6 +334,7 @@ git switch -c lesson-01-setup
 ## 🧭 Roadmap
 
 ### MVP
+
 - [ ] Items CRUD
 - [ ] Collections
 - [ ] Search
@@ -333,6 +342,7 @@ git switch -c lesson-01-setup
 - [ ] Free tier limits
 
 ### Pro Phase
+
 - [ ] AI features
 - [ ] Custom item types
 - [ ] File uploads
@@ -340,6 +350,7 @@ git switch -c lesson-01-setup
 - [ ] Billing & upgrade flow
 
 ### Future Enhancements
+
 - [ ] Shared collections
 - [ ] Team / Org plans
 - [ ] VS Code extension
