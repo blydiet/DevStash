@@ -1,0 +1,35 @@
+import { FolderPlus, Layers, Plus, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export function TopBar() {
+  return (
+    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-6">
+      <div className="flex items-center gap-2">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
+          <Layers className="size-4 text-primary-foreground" />
+        </div>
+        <span className="text-lg font-semibold">DevStash</span>
+      </div>
+
+      <div className="relative mx-auto w-full max-w-md">
+        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="Search items..." className="pl-9 pr-14" />
+        <kbd className="absolute top-1/2 right-3 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+          ⌘K
+        </kbd>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button variant="outline">
+          <FolderPlus className="size-4" />
+          New Collection
+        </Button>
+        <Button>
+          <Plus className="size-4" />
+          New Item
+        </Button>
+      </div>
+    </header>
+  );
+}
