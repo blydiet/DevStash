@@ -3,7 +3,6 @@ import { PinnedItems } from "@/components/dashboard/PinnedItems";
 import { RecentCollections } from "@/components/dashboard/RecentCollections";
 import { RecentItems } from "@/components/dashboard/RecentItems";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { collections } from "@/lib/mock-data";
 
 export default function DashboardPage() {
   return (
