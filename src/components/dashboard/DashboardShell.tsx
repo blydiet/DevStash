@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
@@ -17,6 +17,22 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       setMobileOpen((open) => !open);
     }
   }
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.code === "Escape") {
+         setSidebarOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+
+
+  }, [setSidebarOpen])
 
   return (
     <div className="flex h-full flex-col">
