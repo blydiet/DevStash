@@ -10,6 +10,8 @@ config({ path: ".env.local", override: true });
 
 neonConfig.webSocketConstructor = ws;
 
+const DEMO_EMAIL = "demo@devstash.io";
+
 async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -22,6 +24,38 @@ async function main() {
   try {
     const userCount = await prisma.user.count();
     console.log(`Connected to the database. User count: ${userCount}`);
+
+    const itemTypeCount = await prisma.itemType.count({ where: { isSystem: true } });
+    console.log(`System item types: ${itemTypeCount}`);
+
+    const demoUser = await prisma.user.findUnique({
+      where: { email: DEMO_EMAIL },
+      include: {
+        collections: {
+          orderBy: { name: "asc" },
+          include: {
+            items: {
+              orderBy: { title: "asc" },
+              include: { type: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!demoUser) {
+      console.log(`No demo user found (${DEMO_EMAIL}). Run "npm run db:seed" first.`);
+      return;
+    }
+
+    console.log(`\nDemo user: ${demoUser.name} <${demoUser.email}> (isPro: ${demoUser.isPro})`);
+
+    for (const collection of demoUser.collections) {
+      console.log(`\n- ${collection.name} (${collection.items.length} items)`);
+      for (const item of collection.items) {
+        console.log(`    [${item.type.name}] ${item.title}`);
+      }
+    }
   } finally {
     await prisma.$disconnect();
   }
