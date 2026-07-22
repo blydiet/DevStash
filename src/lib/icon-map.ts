@@ -11,6 +11,7 @@ import {
 
 export const iconMap: Record<string, LucideIcon> = {
   Code2: Code,
+  Code,
   Sparkles,
   Terminal,
   StickyNote,
