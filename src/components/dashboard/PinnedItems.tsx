@@ -1,9 +1,20 @@
 import { Pin } from "lucide-react";
-import { items } from "@/lib/mock-data";
+import { getPinnedItems, type ItemSummary } from "@/lib/db/items";
 import { ItemRow } from "./ItemRow";
 
-export function PinnedItems() {
-  const pinnedItems = items.filter((item) => item.isPinned);
+export async function PinnedItems() {
+  let pinnedItems: ItemSummary[] = [];
+  let error: string | null = null;
+
+  try {
+    pinnedItems = await getPinnedItems();
+  } catch (err) {
+    error = err instanceof Error ? err.message : "Failed to load pinned items";
+  }
+
+  if (error) {
+    return <p className="text-sm text-destructive">Failed to load pinned items: {error}</p>;
+  }
 
   if (pinnedItems.length === 0) return null;
 

@@ -1,6 +1,6 @@
 ## Current Feature
 
-None. Dashboard Collections is complete — see history below.
+None. Dashboard Items is complete — see history below.
 
 ## Status
 
@@ -10,11 +10,10 @@ Completed
 
 <!-- Goals and requirements -->
 
-- Create `src/lib/db/collections.ts` with data fetching functions
-- Fetch collections directly in server component
-- Collection card border color derived from most-used content type in that collection
-- Show small icons of all types in that collection
-- Keep the current design (reference `@context/screenshots/dashboard-ui-main.png` if needed — layout/design is already there)
+- Create `src/lib/db/items.ts` with data fetching functions
+- Fetch items directly in server component
+- Item card icon/border derived from the item type
+- Display item type tags and anything else currently there (reference `@context/screenshots/dashboard-ui-main.png` if needed — layout/design is already there)
 - Update collection stats display
 
 ## Notes
@@ -30,3 +29,4 @@ Completed
 - 2026-07-21: Added `scripts/test-db.ts` (standalone connectivity check, `npm run db:test`) and `prisma/seed.ts` (per @context/features/seed-spec.md, copied in from course resources) on the same `feature/prisma-neon-setup` branch. Seed creates the demo user (bcryptjs-hashed password), 7 system item types, and 5 collections with 18 items (real URLs for link items); deletes-then-recreates the demo user + system types first, so `npm run db:seed` is safe to re-run — verified by running it twice with identical output. Ran against the real dev Neon branch and confirmed via `db:test` (User count: 1). `npm run build` and `npm run lint` both pass. Ready to commit and merge.
 - 2026-07-21: Extended `scripts/test-db.ts` to fetch and print the seeded demo data — system item type count, then the demo user with each collection and its items (grouped by item type). Verified against the real dev Neon branch: prints all 7 item types, 5 collections, and 18 items correctly. `npm run build` and `npm run lint` both pass.
 - 2026-07-21/22: Dashboard Collections (per @context/features/dashboard-collections-spec.md) implemented on branch `feature/dashboard-collections`. Added `src/lib/db/collections.ts` (`getRecentCollections`, hardcoded to the demo user like the existing scripts since auth isn't wired up yet) computing per-collection item count, border color (from the most-used `ItemType.color` among its items), and the deduped list of item types present. Updated `RecentCollections.tsx` (now an async server component) and `CollectionCard.tsx` to consume this instead of `src/lib/mock-data.ts`. Fixed a pre-existing `icon-map.ts` gap where the seeded snippet type's icon name (`"Code"`) had no entry (only `"Code2"` did), which would've silently fallen back to a generic folder icon. Wrapped the fetch in a try/catch so a DB failure renders a visible `text-destructive` error message instead of crashing the page — verified by forcing a temporary throw and confirming the error rendered, then confirming normal data rendered again after reverting. Also caught and reverted an experimental `swr`/client-fetching detour that broke the build (RSC doesn't export `useSWR`); removed the `swr` dependency since it ended up unused. Verified in-browser: all 5 real collections render with correct item counts, type-derived border colors, and correct type icons. `npm run build`, `npm run lint`, and `tsc --noEmit` all pass. Ready to commit and merge.
+- 2026-07-22: Dashboard Items (per @context/features/dashboard-items-spec.md) implemented on branch `feature/dashboard-items`. Added `src/lib/db/items.ts` (`getPinnedItems`, `getRecentItems`, `getItemStats`, all demo-user-scoped like `collections.ts`), mapping each item's `type` relation and joined `tags` (via `ItemTag`) into a flat `ItemSummary` shape. Added `getCollectionStats` to the existing `src/lib/db/collections.ts` for real collection/favorite counts. Updated `PinnedItems.tsx`, `RecentItems.tsx`, and `StatsCards.tsx` to async server components consuming these instead of `src/lib/mock-data.ts`, with the same try/catch → `text-destructive` error-message pattern used for collections. Updated `ItemRow.tsx` to take the DB-shaped `ItemSummary` (type/tags no longer looked up from mock arrays; `createdAt` is now a `Date`). Left `src/lib/mock-data.ts` and `Sidebar.tsx` (still consumes it for nav/filters) untouched — out of scope for this spec. Verified in-browser via the seeded demo data: all 18 real items render in Recent Items with correct titles, descriptions, dates, and type-derived border colors/icons; Pinned section correctly renders nothing since no seeded items are pinned; stats cards show real counts (18 items, 5 collections, 0/0 favorites, matching the seed which sets no favorites/pins). `npm run build`, `npm run lint`, and `tsc --noEmit` all pass. Ready to commit and merge.

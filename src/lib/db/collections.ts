@@ -21,6 +21,20 @@ export interface CollectionSummary {
   types: CollectionType[];
 }
 
+export interface CollectionStats {
+  total: number;
+  favorites: number;
+}
+
+export async function getCollectionStats(): Promise<CollectionStats> {
+  const [total, favorites] = await Promise.all([
+    prisma.collection.count({ where: { user: { email: DEMO_EMAIL } } }),
+    prisma.collection.count({ where: { user: { email: DEMO_EMAIL }, isFavorite: true } }),
+  ]);
+
+  return { total, favorites };
+}
+
 export async function getRecentCollections(limit = 6): Promise<CollectionSummary[]> {
   const collections = await prisma.collection.findMany({
     where: { user: { email: DEMO_EMAIL } },
