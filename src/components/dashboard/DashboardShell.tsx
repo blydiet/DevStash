@@ -3,10 +3,15 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+export function DashboardShell({
+  sidebar,
+  children,
+}: {
+  sidebar: ReactNode;
+  children: ReactNode;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -44,15 +49,13 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             sidebarOpen ? "w-64" : "w-0 border-r-0"
           )}
         >
-          <div className="w-64">
-            <Sidebar />
-          </div>
+          <div className="w-64">{sidebar}</div>
         </aside>
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetContent side="left" className="w-64 p-0 md:hidden">
             <SheetTitle className="sr-only">Sidebar</SheetTitle>
-            <Sidebar />
+            {sidebar}
           </SheetContent>
         </Sheet>
 

@@ -7,7 +7,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { iconMap } from "@/lib/icon-map";
-import { collections, currentUser, itemTypes, type Collection } from "@/lib/mock-data";
+import type { ItemTypeWithCount } from "@/lib/db/items";
+import type { CollectionSummary } from "@/lib/db/collections";
+import type { CurrentUser } from "@/lib/db/user";
+
 
 function initials(name: string) {
   return name
@@ -15,6 +18,10 @@ function initials(name: string) {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function SectionHeader({
@@ -43,8 +50,8 @@ function CollectionList({
   trailing,
 }: {
   label: string;
-  collections: Collection[];
-  trailing: (collection: Collection) => ReactNode;
+  collections: CollectionSummary[];
+  trailing: (collection: CollectionSummary) => ReactNode;
 }) {
   if (collections.length === 0) return null;
 
@@ -58,7 +65,7 @@ function CollectionList({
             className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
           >
             <span className="flex items-center gap-2">
-              <Folder className="size-4" style={{ color: collection.color }} />
+              <Folder className="size-4" style={{ color: collection.borderColor }} />
               {collection.name}
             </span>
             {trailing(collection)}
@@ -69,12 +76,21 @@ function CollectionList({
   );
 }
 
-export function Sidebar() {
+export function Sidebar({
+  itemTypes,
+  collections,
+  currentUser,
+}: {
+  itemTypes: ItemTypeWithCount[];
+  collections: CollectionSummary[];
+  currentUser: CurrentUser;
+}) {
   const [typesOpen, setTypesOpen] = useState(true);
   const [collectionsOpen, setCollectionsOpen] = useState(true);
 
   const favoriteCollections = collections.filter((c) => c.isFavorite);
   const otherCollections = collections.filter((c) => !c.isFavorite);
+  
 
   return (
     <div className="flex h-full flex-col">
@@ -83,7 +99,7 @@ export function Sidebar() {
         {typesOpen && (
           <ul className="flex flex-col gap-0.5">
             {itemTypes.map((type) => {
-              const Icon = iconMap[type.icon] ?? Folder;
+              const Icon = iconMap[type.icon ?? ""] ?? Folder;
               return (
                 <li key={type.id}>
                   <Link
@@ -91,8 +107,8 @@ export function Sidebar() {
                     className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
                   >
                     <span className="flex items-center gap-2">
-                      <Icon className="size-4" style={{ color: type.color }} />
-                      {type.name}
+                      <Icon className="size-4" style={{ color: type.color ?? undefined }} />
+                      {capitalize(type.name)}
                     </span>
                     <span className="text-muted-foreground">{type.itemCount}</span>
                   </Link>
@@ -102,14 +118,18 @@ export function Sidebar() {
           </ul>
         )}
 
-        <Separator className="my-4" />
+        {collections.length > 0 && (
+          <>
+            <Separator className="my-4" />
 
-        <SectionHeader
-          label="Collections"
-          open={collectionsOpen}
-          onToggle={() => setCollectionsOpen((open) => !open)}
-        />
-        {collectionsOpen && (
+            <SectionHeader
+              label="Collections"
+              open={collectionsOpen}
+              onToggle={() => setCollectionsOpen((open) => !open)}
+            />
+          </>
+        )}
+        {collectionsOpen && collections.length > 0 && (
           <div className="flex flex-col gap-3">
             <CollectionList
               label="FAVORITES"
@@ -120,9 +140,18 @@ export function Sidebar() {
               label="ALL COLLECTIONS"
               collections={otherCollections}
               trailing={(collection) => (
-                <span className="text-muted-foreground">{collection.itemCount}</span>
+                <span
+                  className="size-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: collection.borderColor }}
+                />
               )}
             />
+            <Link
+              href="/collections"
+              className="px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
+              View all collections
+            </Link>
           </div>
         )}
       </div>

@@ -25,6 +25,10 @@ export interface ItemStats {
   favorites: number;
 }
 
+export interface ItemTypeWithCount extends ItemTypeSummary {
+  itemCount: number;
+}
+
 type PrismaItemWithRelations = {
   id: string;
   title: string;
@@ -77,4 +81,27 @@ export async function getItemStats(): Promise<ItemStats> {
   ]);
 
   return { total, favorites };
+}
+
+const ITEM_TYPE_ORDER = ["snippet", "prompt", "command", "note", "file", "image", "link"];
+
+export async function getItemTypes(): Promise<ItemTypeWithCount[]> {
+  const types = await prisma.itemType.findMany({
+    where: { isSystem: true },
+    include: {
+      _count: {
+        select: { items: { where: { user: { email: DEMO_EMAIL } } } },
+      },
+    },
+  });
+
+  types.sort((a, b) => ITEM_TYPE_ORDER.indexOf(a.name) - ITEM_TYPE_ORDER.indexOf(b.name));
+
+  return types.map((type) => ({
+    id: type.id,
+    name: type.name,
+    icon: type.icon,
+    color: type.color,
+    itemCount: type._count.items,
+  }));
 }

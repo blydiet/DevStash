@@ -66,6 +66,7 @@ async function main() {
         userId: user.id,
         name: "React Patterns",
         description: "Reusable React patterns and hooks",
+        isFavorite: true,
         items: {
           create: [
             {
@@ -73,6 +74,7 @@ async function main() {
               typeId: typeIdByName.snippet,
               title: "useDebounce Hook",
               description: "Custom hook to debounce a rapidly changing value",
+              isFavorite: true,
               contentType: "text",
               language: "typescript",
               content: `import { useEffect, useState } from "react";
@@ -264,6 +266,7 @@ volumes:
         userId: user.id,
         name: "Terminal Commands",
         description: "Useful shell commands for everyday development",
+        isFavorite: true,
         items: {
           create: [
             {
