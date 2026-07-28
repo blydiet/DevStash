@@ -27,6 +27,7 @@ export function DashboardShell({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.code === "Escape") {
          setSidebarOpen(false);
+         setMobileOpen(false);
       }
     }
 
