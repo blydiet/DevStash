@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-
-const DEMO_EMAIL = "demo@devstash.io";
+import { DEMO_USER_EMAIL } from "@/lib/demo-user";
 
 export interface CurrentUser {
   name: string;
@@ -9,7 +8,7 @@ export interface CurrentUser {
 
 export async function getCurrentUser(): Promise<CurrentUser> {
   const user = await prisma.user.findUniqueOrThrow({
-    where: { email: DEMO_EMAIL },
+    where: { email: DEMO_USER_EMAIL },
     select: { name: true, email: true },
   });
 

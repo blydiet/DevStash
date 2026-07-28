@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-
-const DEMO_EMAIL = "demo@devstash.io";
+import { DEMO_USER_EMAIL } from "@/lib/demo-user";
 
 export interface ItemTypeSummary {
   id: string;
@@ -55,7 +54,7 @@ function toItemSummary(item: PrismaItemWithRelations): ItemSummary {
 
 export async function getPinnedItems(): Promise<ItemSummary[]> {
   const items = await prisma.item.findMany({
-    where: { user: { email: DEMO_EMAIL }, isPinned: true },
+    where: { user: { email: DEMO_USER_EMAIL }, isPinned: true },
     orderBy: { updatedAt: "desc" },
     include: { type: true, tags: { include: { tag: true } } },
   });
@@ -65,7 +64,7 @@ export async function getPinnedItems(): Promise<ItemSummary[]> {
 
 export async function getRecentItems(limit = 10): Promise<ItemSummary[]> {
   const items = await prisma.item.findMany({
-    where: { user: { email: DEMO_EMAIL } },
+    where: { user: { email: DEMO_USER_EMAIL } },
     orderBy: { createdAt: "desc" },
     take: limit,
     include: { type: true, tags: { include: { tag: true } } },
@@ -76,8 +75,8 @@ export async function getRecentItems(limit = 10): Promise<ItemSummary[]> {
 
 export async function getItemStats(): Promise<ItemStats> {
   const [total, favorites] = await Promise.all([
-    prisma.item.count({ where: { user: { email: DEMO_EMAIL } } }),
-    prisma.item.count({ where: { user: { email: DEMO_EMAIL }, isFavorite: true } }),
+    prisma.item.count({ where: { user: { email: DEMO_USER_EMAIL } } }),
+    prisma.item.count({ where: { user: { email: DEMO_USER_EMAIL }, isFavorite: true } }),
   ]);
 
   return { total, favorites };
@@ -90,7 +89,7 @@ export async function getItemTypes(): Promise<ItemTypeWithCount[]> {
     where: { isSystem: true },
     include: {
       _count: {
-        select: { items: { where: { user: { email: DEMO_EMAIL } } } },
+        select: { items: { where: { user: { email: DEMO_USER_EMAIL } } } },
       },
     },
   });
