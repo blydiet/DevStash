@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { DEMO_USER_EMAIL } from "@/lib/demo-user";
+import {cache} from "react";
 
-const DEMO_EMAIL = "demo@devstash.io";
 
 const FALLBACK_BORDER_COLOR = "#94a3b8";
 
@@ -28,16 +29,16 @@ export interface CollectionStats {
 
 export async function getCollectionStats(): Promise<CollectionStats> {
   const [total, favorites] = await Promise.all([
-    prisma.collection.count({ where: { user: { email: DEMO_EMAIL } } }),
-    prisma.collection.count({ where: { user: { email: DEMO_EMAIL }, isFavorite: true } }),
+    prisma.collection.count({ where: { user: { email: DEMO_USER_EMAIL } } }),
+    prisma.collection.count({ where: { user: { email: DEMO_USER_EMAIL }, isFavorite: true } }),
   ]);
 
   return { total, favorites };
 }
-
-export async function getRecentCollections(limit = 6): Promise<CollectionSummary[]> {
+export const getRecentCollections = cache(
+ async (limit = 6): Promise<CollectionSummary[]> => {
   const collections = await prisma.collection.findMany({
-    where: { user: { email: DEMO_EMAIL } },
+    where: { user: { email: DEMO_USER_EMAIL } },
     orderBy: { updatedAt: "desc" },
     take: limit,
     include: {
@@ -70,4 +71,4 @@ export async function getRecentCollections(limit = 6): Promise<CollectionSummary
       types: usageByCount.map((usage) => usage.type),
     };
   });
-}
+});
