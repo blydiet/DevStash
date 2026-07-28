@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Folder, Settings, Star } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { iconMap } from "@/lib/icon-map";
@@ -109,6 +110,11 @@ export function Sidebar({
                     <span className="flex items-center gap-2">
                       <Icon className="size-4" style={{ color: type.color ?? undefined }} />
                       {capitalize(type.name)}
+                      {(type.name === "file" || type.name === "image") && (
+                        <Badge variant="outline" className="uppercase">
+                          Pro
+                        </Badge>
+                      )}
                     </span>
                     <span className="text-muted-foreground">{type.itemCount}</span>
                   </Link>

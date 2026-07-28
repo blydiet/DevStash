@@ -1,16 +1,19 @@
-## Current Feature
-
-None. Stats & Sidebar is complete — see history below.
+## Current Feature: Add Pro Badge to Sidebar
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add a "PRO" badge to the Files and Images item types in the sidebar
+- Use the ShadCN UI badge component
+- Badge should look clean and subtle
+- "PRO" text must be all uppercase
 
 ## Notes
+
+- Files and Images are Pro-tier features per @context/project-overview.md (custom types/file uploads are Pro features) — this badge signals that to free-tier users in the nav.
 
 ## History
 
