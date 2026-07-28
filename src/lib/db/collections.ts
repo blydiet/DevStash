@@ -41,9 +41,16 @@ export const getRecentCollections = cache(
     where: { user: { email: DEMO_USER_EMAIL } },
     orderBy: { updatedAt: "desc" },
     take: limit,
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      isFavorite: true,
       items: {
-        include: { type: true },
+        select: {
+          typeId: true,
+          type: { select: { id: true, name: true, icon: true, color: true } },
+        },
       },
     },
   });
