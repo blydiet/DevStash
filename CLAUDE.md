@@ -13,6 +13,14 @@ Read the following to get the full context of the project:
 - @context/ai-interaction.md
 - @context/current-feature.md
 
+## Neon MCP (Database)
+
+- Project: `devstash-dev` (id: `silent-wind-21391526`)
+- Always use the **`development`** branch (id: `br-fragrant-tooth-awtihnfl`) for any Neon MCP queries or actions — pass `branchId: "br-fragrant-tooth-awtihnfl"` explicitly on every call.
+- **Never** run anything against the **`production`** branch (id: `br-super-fog-awssjkae`) unless I explicitly say "production."
+- ⚠️ `production` is Neon's *default* branch (`primary`/`default` = true), so omitting `branchId` will silently hit production — never omit it.
+- Treat any destructive SQL (`DROP`, `DELETE`, `TRUNCATE`, unfiltered `UPDATE`) as requiring my explicit confirmation first, regardless of branch.
+
 ## Commands
 
 ```bash
