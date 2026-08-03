@@ -1,18 +1,27 @@
-## Current Feature
-
-None.
+## Current Feature: Auth Phase 2 — Email/Password Credentials Provider
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add NextAuth Credentials provider for email/password authentication (login)
+- Add a registration API route at `POST /api/auth/register` (name, email, password, confirmPassword)
+  - Validate passwords match
+  - Check if user already exists
+  - Hash password with bcryptjs
+  - Create user in DB
+  - Return success/error response
+- Sign in with email/password redirects to `/dashboard`
+- Existing GitHub OAuth flow (auth phase 1) continues to work unchanged
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- User model already has a `password String?` field (added during the original Prisma setup) — no new migration needed.
+- bcryptjs is already installed (used by `prisma/seed.ts`).
+- Spec's "Notes" section describes the split `auth.config.ts` (Credentials placeholder, `authorize: () => null`) / `auth.ts` (real bcrypt validation override) pattern — auth phase 1 deliberately deviated from this split and consolidated into a single `src/auth.ts` (`auth.config.ts` was deleted). Need to decide during `start`: reintroduce the split, or add the Credentials provider directly to the existing single `auth.ts`.
+- Testing per spec: curl the register route, then sign in at `/api/auth/signin` with email/password, verify redirect to `/dashboard`, and re-verify GitHub OAuth still works.
 
 ## History
 
