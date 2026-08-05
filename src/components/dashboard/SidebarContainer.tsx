@@ -1,12 +1,13 @@
 import { getRecentCollections, type CollectionSummary } from "@/lib/db/collections";
 import { getItemTypes, type ItemTypeWithCount } from "@/lib/db/items";
 import { getCurrentUser, type CurrentUser } from "@/lib/db/user";
+import { signOutAction } from "@/actions/auth";
 import { Sidebar } from "./Sidebar";
 
 export async function SidebarContainer() {
   let itemTypes: ItemTypeWithCount[] = [];
   let collections: CollectionSummary[] = [];
-  let currentUser: CurrentUser = { name: "", email: "" };
+  let currentUser: CurrentUser = { name: "", email: "", image: null };
   let error: string | null = null;
 
   try {
@@ -23,5 +24,12 @@ export async function SidebarContainer() {
     return <p className="p-4 text-sm text-destructive">Failed to load sidebar: {error}</p>;
   }
 
-  return <Sidebar itemTypes={itemTypes} collections={collections} currentUser={currentUser} />;
+  return (
+    <Sidebar
+      itemTypes={itemTypes}
+      collections={collections}
+      currentUser={currentUser}
+      signOutAction={signOutAction}
+    />
+  );
 }

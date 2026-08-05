@@ -3,23 +3,22 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Folder, Settings, Star } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import { iconMap } from "@/lib/icon-map";
 import type { ItemTypeWithCount } from "@/lib/db/items";
 import type { CollectionSummary } from "@/lib/db/collections";
 import type { CurrentUser } from "@/lib/db/user";
-
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-}
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -81,10 +80,12 @@ export function Sidebar({
   itemTypes,
   collections,
   currentUser,
+  signOutAction,
 }: {
   itemTypes: ItemTypeWithCount[];
   collections: CollectionSummary[];
   currentUser: CurrentUser;
+  signOutAction: () => Promise<void>;
 }) {
   const [typesOpen, setTypesOpen] = useState(true);
   const [collectionsOpen, setCollectionsOpen] = useState(true);
@@ -165,14 +166,34 @@ export function Sidebar({
       <Separator />
 
       <div className="flex items-center gap-2 p-4">
-        <Avatar>
-          <AvatarFallback>{initials(currentUser.name)}</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{currentUser.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{currentUser.email}</p>
-        </div>
-        <Button variant="ghost" size="icon" aria-label="Settings">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left hover:bg-muted">
+            <UserAvatar name={currentUser.name} image={currentUser.image} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{currentUser.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{currentUser.email}</p>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="top">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{currentUser.email}</DropdownMenuLabel>
+              <DropdownMenuItem closeOnClick={false} className="p-0">
+                <form action={signOutAction} className="w-full">
+                  <button type="submit" className="w-full px-1.5 py-1 text-left">
+                    Sign out
+                  </button>
+                </form>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Profile"
+          nativeButton={false}
+          render={<Link href="/profile" />}
+        >
           <Settings className="size-4" />
         </Button>
       </div>

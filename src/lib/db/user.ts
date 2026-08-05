@@ -1,16 +1,21 @@
-import { prisma } from "@/lib/prisma";
-import { DEMO_USER_EMAIL } from "@/lib/demo-user";
+import { auth } from "@/auth";
 
 export interface CurrentUser {
   name: string;
   email: string;
+  image: string | null;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { email: DEMO_USER_EMAIL },
-    select: { name: true, email: true },
-  });
+  const session = await auth();
 
-  return { name: user.name ?? user.email, email: user.email };
+  if (!session?.user) {
+    throw new Error("Not authenticated");
+  }
+
+  return {
+    name: session.user.name ?? session.user.email ?? "User",
+    email: session.user.email ?? "",
+    image: session.user.image ?? null,
+  };
 }
