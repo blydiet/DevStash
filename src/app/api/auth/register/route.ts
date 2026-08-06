@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -31,6 +32,12 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({
       data: { name, email, password: hashedPassword },
     });
+
+    try {
+      await sendVerificationEmail(email, new URL(request.url).origin);
+    } catch (err) {
+      console.error("Failed to send verification email:", err);
+    }
 
     return NextResponse.json({
       success: true,

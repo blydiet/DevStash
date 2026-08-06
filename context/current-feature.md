@@ -1,18 +1,30 @@
-# Current Feature
-
-None.
+# Current Feature: Email Verification on Register
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- New users who register via email/password must verify their email before it's considered verified (`User.emailVerified` set).
+- On successful registration, send a verification email via Resend containing a unique link.
+- Clicking the link verifies the account (sets `User.emailVerified`) and consumes the token so it can't be reused.
+- Expired or invalid/already-used tokens show a clear error instead of silently failing.
+- Users should have a way to request the verification email again if needed (resend).
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Email provider: **Resend**. `RESEND_API_KEY` is already present in `.env` (not yet in `.env.example` — add a blank placeholder entry there per project convention, without echoing the real key).
+- The `VerificationToken` model (`identifier`, `token`, `expires`, `@@unique([identifier, token])`) already exists in `prisma/schema.prisma` from the NextAuth/Auth.js adapter setup — reuse it (`identifier` = user email) rather than adding a new model, unless it proves to not fit (e.g. Auth.js's own magic-link flow also uses this table — confirm no collision risk before reusing).
+- `User.emailVerified: DateTime?` already exists on the `User` model — no migration needed for that field.
+- This is only for the Credentials (email/password) sign-up path from Auth Phase 2 (`/api/auth/register`) — GitHub OAuth users are already verified by GitHub and shouldn't need this.
+- Decided (during `start`): unverified users are **blocked** from credentials sign-in — `authorize()` rejects with a distinct error until `emailVerified` is set. GitHub OAuth users are unaffected (already verified by GitHub).
+- Follow existing coding standards: Zod validation, Server Actions/API routes per existing patterns, `{ success, data, error }` return shape.
+
+## Open follow-ups from prior phases (unrelated, tracked separately)
+
+- Token-version session revocation (from Auth Phase 2)
+- Distinct error for GitHub-only users on credentials sign-in (from Auth Phase 2)
 
 ## History
 

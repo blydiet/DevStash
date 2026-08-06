@@ -1,12 +1,49 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { SignInActionResult } from "@/types/auth";
 
 const initialState: SignInActionResult = { success: false };
+
+function ResendVerificationButton({
+  email,
+  resendAction,
+}: {
+  email: string;
+  resendAction: (email: string) => Promise<{ success: boolean; error?: string }>;
+}) {
+  const [isSending, setIsSending] = useState(false);
+
+  async function handleResend() {
+    setIsSending(true);
+    try {
+      const result = await resendAction(email);
+      if (result.success) {
+        toast.success("Verification email sent — check your inbox.");
+      } else {
+        toast.error(result.error ?? "Couldn't send the email. Try again in a moment.");
+      }
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="link"
+      className="h-auto self-start p-0 text-sm"
+      onClick={handleResend}
+      disabled={isSending}
+    >
+      {isSending ? "Sending..." : "Resend verification email"}
+    </Button>
+  );
+}
 
 function GitHubIcon() {
   return (
@@ -20,6 +57,7 @@ export function SignInForm({
   callbackUrl,
   signInAction,
   githubAction,
+  resendAction,
 }: {
   callbackUrl: string;
   signInAction: (
@@ -27,6 +65,7 @@ export function SignInForm({
     formData: FormData
   ) => Promise<SignInActionResult>;
   githubAction: () => Promise<void>;
+  resendAction: (email: string) => Promise<{ success: boolean; error?: string }>;
 }) {
   const [state, formAction, isPending] = useActionState(signInAction, initialState);
 
@@ -75,7 +114,14 @@ export function SignInForm({
           />
         </div>
 
-        {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+        {state.error && (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-destructive">{state.error}</p>
+            {state.unverified && state.email && (
+              <ResendVerificationButton email={state.email} resendAction={resendAction} />
+            )}
+          </div>
+        )}
 
         <Button type="submit" className="w-full rounded-[10px]" disabled={isPending}>
           {isPending ? "Signing in..." : "Sign In"}

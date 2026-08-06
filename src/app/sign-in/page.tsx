@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SignInForm } from "@/components/auth/SignInForm";
-import { signInWithCredentials, signInWithGithub } from "@/actions/auth";
+import { signInWithCredentials, signInWithGithub, resendVerificationEmail } from "@/actions/auth";
 import { auth } from "@/auth";
 
 export default async function SignInPage({
@@ -31,6 +31,7 @@ export default async function SignInPage({
             callbackUrl={resolvedCallbackUrl}
             signInAction={signInWithCredentials}
             githubAction={signInWithGithub.bind(null, resolvedCallbackUrl)}
+            resendAction={resendVerificationEmail}
           />
         </CardContent>
       </Card>
