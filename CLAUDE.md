@@ -21,6 +21,15 @@ Read the following to get the full context of the project:
 - ⚠️ `production` is Neon's *default* branch (`primary`/`default` = true), so omitting `branchId` will silently hit production — never omit it.
 - Treat any destructive SQL (`DROP`, `DELETE`, `TRUNCATE`, unfiltered `UPDATE`) as requiring my explicit confirmation first, regardless of branch.
 
+## Environment Variables
+
+Required in `.env` (never committed — see `.gitignore`):
+
+- `DATABASE_URL` — Neon Postgres connection string (direct, non-pooler — required for `prisma migrate`)
+- `AUTH_SECRET` — NextAuth v5 secret, generate with `npx auth secret`
+- `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` — GitHub OAuth App credentials (https://github.com/settings/developers)
+- `RESEND_API_KEY` — Resend API key, used for verification emails on register (https://resend.com/api-keys)
+
 ## Commands
 
 ```bash
