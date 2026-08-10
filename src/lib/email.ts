@@ -4,7 +4,7 @@ import { createVerificationToken } from "@/lib/db/verification-tokens";
 const FROM_EMAIL = "DevStash <onboarding@resend.dev>";
 
 export async function sendVerificationEmail(email: string, baseUrl: string) {
-  const token = await createVerificationToken(email);
+  const token = await createVerificationToken("email-verification", email);
   const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
 
   const { error } = await resend.emails.send({

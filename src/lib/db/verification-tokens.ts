@@ -3,17 +3,24 @@ import { prisma } from "@/lib/prisma";
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
+export type VerificationTokenPurpose = "email-verification" | "password-reset";
+
 function hashToken(rawToken: string) {
   return crypto.createHash("sha256").update(rawToken).digest("hex");
 }
 
-export async function createVerificationToken(email: string) {
+function namespacedIdentifier(purpose: VerificationTokenPurpose, email: string) {
+  return `${purpose}:${email}`;
+}
+
+export async function createVerificationToken(purpose: VerificationTokenPurpose, email: string) {
   const rawToken = crypto.randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + TOKEN_TTL_MS);
+  const identifier = namespacedIdentifier(purpose, email);
 
-  await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+  await prisma.verificationToken.deleteMany({ where: { identifier } });
   await prisma.verificationToken.create({
-    data: { identifier: email, token: hashToken(rawToken), expires },
+    data: { identifier, token: hashToken(rawToken), expires },
   });
 
   return rawToken;
@@ -24,19 +31,24 @@ type PeekResult =
   | { valid: false; reason: "invalid" }
   | { valid: false; reason: "expired"; email: string };
 
-export async function peekVerificationToken(rawToken: string): Promise<PeekResult> {
+export async function peekVerificationToken(
+  purpose: VerificationTokenPurpose,
+  rawToken: string
+): Promise<PeekResult> {
   const hashedToken = hashToken(rawToken);
   const record = await prisma.verificationToken.findUnique({ where: { token: hashedToken } });
 
-  if (!record) {
+  if (!record || !record.identifier.startsWith(`${purpose}:`)) {
     return { valid: false, reason: "invalid" };
   }
 
+  const email = record.identifier.slice(purpose.length + 1);
+
   if (record.expires < new Date()) {
-    return { valid: false, reason: "expired", email: record.identifier };
+    return { valid: false, reason: "expired", email };
   }
 
-  return { valid: true, email: record.identifier };
+  return { valid: true, email };
 }
 
 type ConsumeResult =
@@ -44,19 +56,24 @@ type ConsumeResult =
   | { success: false; error: "invalid" }
   | { success: false; error: "expired"; email: string };
 
-export async function consumeVerificationToken(rawToken: string): Promise<ConsumeResult> {
+export async function consumeVerificationToken(
+  purpose: VerificationTokenPurpose,
+  rawToken: string
+): Promise<ConsumeResult> {
   const hashedToken = hashToken(rawToken);
   const record = await prisma.verificationToken.findUnique({ where: { token: hashedToken } });
 
-  if (!record) {
+  if (!record || !record.identifier.startsWith(`${purpose}:`)) {
     return { success: false, error: "invalid" };
   }
+
+  const email = record.identifier.slice(purpose.length + 1);
 
   await prisma.verificationToken.delete({ where: { token: hashedToken } });
 
   if (record.expires < new Date()) {
-    return { success: false, error: "expired", email: record.identifier };
+    return { success: false, error: "expired", email };
   }
 
-  return { success: true, email: record.identifier };
+  return { success: true, email };
 }
