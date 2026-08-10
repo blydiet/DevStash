@@ -1,10 +1,12 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { signIn, signOut, EmailNotVerifiedError } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import { consumeVerificationToken } from "@/lib/db/verification-tokens";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
 import { credentialsSchema } from "@/lib/validations/auth";
 import type { SignInActionResult } from "@/types/auth";
@@ -81,4 +83,18 @@ export async function resendVerificationEmail(
   }
 
   return { success: true };
+}
+
+export async function confirmEmailVerification(rawToken: string) {
+  const result = await consumeVerificationToken(rawToken);
+
+  if (result.success) {
+    await prisma.user.update({
+      where: { email: result.email },
+      data: { emailVerified: new Date() },
+    });
+    redirect("/verify-email?status=success");
+  }
+
+  redirect("/verify-email?status=invalid");
 }

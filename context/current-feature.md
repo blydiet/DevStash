@@ -1,18 +1,21 @@
-# Current Feature
-
-None.
+# Current Feature: Two-Step Email Verification Confirm
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- `GET /verify-email?token=...` must never mutate anything — no token deletion, no `User.emailVerified` write. It should be safe for email link-scanners/prefetchers to hit repeatedly.
+- The actual verification (consuming the token, setting `emailVerified`) only happens from an explicit, user-initiated action (a button click / form POST), not as a side effect of page render.
+- A valid, unexpired token shows a "Confirm your email" step with a button; clicking it performs the real verification and shows success.
+- Invalid and expired states behave the same as today (expired still offers a resend, using the email read from the token record).
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Follow-up tracked from the `/do-i-understand` review of the original email-verification feature (2026-08-06): `consumeVerificationToken` deletes the token as its first side effect inside the page's GET render, so Microsoft/Google-style automated link-scanners or browser prefetching can burn a single-use token before the real user ever clicks, leaving them stuck on "Invalid verification link."
+- Plan: split the existing `consumeVerificationToken` (find + delete + expiry check) into a new read-only `peekVerificationToken` (find + expiry check, no delete) for the GET render, and keep `consumeVerificationToken` as the actual mutating step — now called only from a server action bound to the confirm button's form.
+- Edge case (token expires or gets consumed by someone else in the gap between the confirm-page render and the click): fold into the existing generic "invalid" state rather than plumbing the email through a redirect query param — avoids putting an email address in the URL/browser history for a rare race, and the sign-in page's resend flow is still available as a fallback.
 
 ## History
 
