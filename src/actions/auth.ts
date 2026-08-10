@@ -5,6 +5,7 @@ import { AuthError } from "next-auth";
 import { signIn, signOut, EmailNotVerifiedError } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import { isEmailVerificationEnabled } from "@/lib/feature-flags";
 import { credentialsSchema } from "@/lib/validations/auth";
 import type { SignInActionResult } from "@/types/auth";
 
@@ -61,6 +62,10 @@ export async function signOutAction() {
 export async function resendVerificationEmail(
   email: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!isEmailVerificationEnabled()) {
+    return { success: true };
+  }
+
   const user = await prisma.user.findUnique({ where: { email } });
 
   // Don't reveal whether the account exists or is GitHub-only.

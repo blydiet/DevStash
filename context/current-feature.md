@@ -1,18 +1,24 @@
-# Current Feature
-
-None.
+# Current Feature: Email Verification Toggle
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add a single, easy-to-flip switch that fully disables the email-verification requirement added in the previous feature.
+- When disabled: `POST /api/auth/register` does not attempt to send a verification email at all (avoids guaranteed-failure sends/log noise, since this environment has no verified Resend domain).
+- When disabled: credentials sign-in (`authorize()` in `src/auth.ts`) does not block on `User.emailVerified` being null.
+- One source of truth for the flag — every place that currently branches on verification (register route, `authorize()`, the resend action) reads the same flag rather than each growing its own check.
+- Toggle should not require a code change/redeploy of app logic to flip — just an env var change.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Motivated directly by a finding from the `/do-i-understand` review of the email-verification feature: this Resend account has no verified domain, so `onboarding@resend.dev` can only deliver to the account's own address — confirmed live that any other registered user hits a guaranteed dead end (account created, verification email fails silently, user permanently blocked from credentials sign-in).
+- Env var is the front-runner (e.g. `EMAIL_VERIFICATION_ENABLED`, default `true`/enabled when unset so behavior is safe-by-default and unaffected in any environment that doesn't explicitly opt out) — user explicitly said they're open to other approaches if a better one comes up during `start`.
+- Decided (during `start`): while the flag is disabled, `User.emailVerified` is auto-set at registration time (not left `null`), so re-enabling the flag later doesn't retroactively lock out anyone who registered during the disabled period.
+- Should document the new env var in `CLAUDE.md`'s Environment Variables section (per the recent decision to document required env vars there directly, since `.env.example` was removed as dead/untracked).
+- Out of scope, tracked separately from the same review: the `/verify-email` GET-triggers-a-mutation risk, the delete-then-check-expiry race (unhandled P2025 on a duplicate token consume), and the resend action's silent-success response for GitHub-only accounts.
 
 ## History
 

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 import { sendVerificationEmail } from "@/lib/email";
+import { isEmailVerificationEnabled } from "@/lib/feature-flags";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -28,15 +29,24 @@ export async function POST(request: Request) {
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
+  const verificationEnabled = isEmailVerificationEnabled();
+
   try {
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        emailVerified: verificationEnabled ? null : new Date(),
+      },
     });
 
-    try {
-      await sendVerificationEmail(email, new URL(request.url).origin);
-    } catch (err) {
-      console.error("Failed to send verification email:", err);
+    if (verificationEnabled) {
+      try {
+        await sendVerificationEmail(email, new URL(request.url).origin);
+      } catch (err) {
+        console.error("Failed to send verification email:", err);
+      }
     }
 
     return NextResponse.json({

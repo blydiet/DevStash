@@ -5,6 +5,7 @@ import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { credentialsSchema } from "@/lib/validations/auth";
+import { isEmailVerificationEnabled } from "@/lib/feature-flags";
 
 export class EmailNotVerifiedError extends CredentialsSignin {
   code = "email-not-verified";
@@ -44,7 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        if (!user.emailVerified) {
+        if (isEmailVerificationEnabled() && !user.emailVerified) {
           throw new EmailNotVerifiedError();
         }
 
