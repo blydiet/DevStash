@@ -86,7 +86,7 @@ export async function resendVerificationEmail(
 }
 
 export async function confirmEmailVerification(rawToken: string) {
-  const result = await consumeVerificationToken(rawToken);
+  const result = await consumeVerificationToken("email-verification", rawToken);
 
   if (result.success) {
     await prisma.user.update({

@@ -19,7 +19,7 @@ async function resolveView(token: string | undefined, status: string | undefined
     return { state: "invalid" };
   }
 
-  const peek = await peekVerificationToken(token);
+  const peek = await peekVerificationToken("email-verification", token);
 
   if (peek.valid) {
     return { state: "confirm", token };
