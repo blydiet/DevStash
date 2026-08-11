@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { DEMO_USER_EMAIL } from "@/lib/demo-user";
+import { getCurrentUserId } from "@/lib/db/user";
 import {cache} from "react";
 
 
@@ -28,17 +28,19 @@ export interface CollectionStats {
 }
 
 export async function getCollectionStats(): Promise<CollectionStats> {
+  const userId = await getCurrentUserId();
   const [total, favorites] = await Promise.all([
-    prisma.collection.count({ where: { user: { email: DEMO_USER_EMAIL } } }),
-    prisma.collection.count({ where: { user: { email: DEMO_USER_EMAIL }, isFavorite: true } }),
+    prisma.collection.count({ where: { userId } }),
+    prisma.collection.count({ where: { userId, isFavorite: true } }),
   ]);
 
   return { total, favorites };
 }
 export const getRecentCollections = cache(
  async (limit = 6): Promise<CollectionSummary[]> => {
+  const userId = await getCurrentUserId();
   const collections = await prisma.collection.findMany({
-    where: { user: { email: DEMO_USER_EMAIL } },
+    where: { userId },
     orderBy: { updatedAt: "desc" },
     take: limit,
     select: {

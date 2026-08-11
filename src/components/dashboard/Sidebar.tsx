@@ -2,15 +2,15 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Folder, Settings, Star } from "lucide-react";
+import { ChevronDown, ChevronRight, Folder, Star, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
@@ -177,6 +177,11 @@ export function Sidebar({
           <DropdownMenuContent align="start" side="top">
             <DropdownMenuGroup>
               <DropdownMenuLabel>{currentUser.email}</DropdownMenuLabel>
+              <DropdownMenuItem render={<Link href="/profile" />}>
+                <User className="size-4" />
+                View Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem closeOnClick={false} className="p-0">
                 <form action={signOutAction} className="w-full">
                   <button type="submit" className="w-full px-1.5 py-1 text-left">
@@ -187,15 +192,6 @@ export function Sidebar({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Profile"
-          nativeButton={false}
-          render={<Link href="/profile" />}
-        >
-          <Settings className="size-4" />
-        </Button>
       </div>
     </div>
   );

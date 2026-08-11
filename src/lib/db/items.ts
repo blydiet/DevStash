@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { DEMO_USER_EMAIL } from "@/lib/demo-user";
+import { getCurrentUserId } from "@/lib/db/user";
 
 export interface ItemTypeSummary {
   id: string;
@@ -53,8 +53,9 @@ function toItemSummary(item: PrismaItemWithRelations): ItemSummary {
 }
 
 export async function getPinnedItems(): Promise<ItemSummary[]> {
+  const userId = await getCurrentUserId();
   const items = await prisma.item.findMany({
-    where: { user: { email: DEMO_USER_EMAIL }, isPinned: true },
+    where: { userId, isPinned: true },
     orderBy: { updatedAt: "desc" },
     include: { type: true, tags: { include: { tag: true } } },
   });
@@ -63,8 +64,9 @@ export async function getPinnedItems(): Promise<ItemSummary[]> {
 }
 
 export async function getRecentItems(limit = 10): Promise<ItemSummary[]> {
+  const userId = await getCurrentUserId();
   const items = await prisma.item.findMany({
-    where: { user: { email: DEMO_USER_EMAIL } },
+    where: { userId },
     orderBy: { createdAt: "desc" },
     take: limit,
     include: { type: true, tags: { include: { tag: true } } },
@@ -74,9 +76,10 @@ export async function getRecentItems(limit = 10): Promise<ItemSummary[]> {
 }
 
 export async function getItemStats(): Promise<ItemStats> {
+  const userId = await getCurrentUserId();
   const [total, favorites] = await Promise.all([
-    prisma.item.count({ where: { user: { email: DEMO_USER_EMAIL } } }),
-    prisma.item.count({ where: { user: { email: DEMO_USER_EMAIL }, isFavorite: true } }),
+    prisma.item.count({ where: { userId } }),
+    prisma.item.count({ where: { userId, isFavorite: true } }),
   ]);
 
   return { total, favorites };
@@ -85,11 +88,12 @@ export async function getItemStats(): Promise<ItemStats> {
 const ITEM_TYPE_ORDER = ["snippet", "prompt", "command", "note", "file", "image", "link"];
 
 export async function getItemTypes(): Promise<ItemTypeWithCount[]> {
+  const userId = await getCurrentUserId();
   const types = await prisma.itemType.findMany({
     where: { isSystem: true },
     include: {
       _count: {
-        select: { items: { where: { user: { email: DEMO_USER_EMAIL } } } },
+        select: { items: { where: { userId } } },
       },
     },
   });

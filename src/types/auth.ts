@@ -9,3 +9,8 @@ export interface ResetPasswordActionResult {
   success: boolean;
   error?: string;
 }
+
+export interface ChangePasswordActionResult {
+  success: boolean;
+  error?: string;
+}
