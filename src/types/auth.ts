@@ -4,3 +4,8 @@ export interface SignInActionResult {
   unverified?: boolean;
   email?: string;
 }
+
+export interface ResetPasswordActionResult {
+  success: boolean;
+  error?: string;
+}
