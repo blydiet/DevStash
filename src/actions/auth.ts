@@ -3,13 +3,14 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import bcrypt from "bcryptjs";
 import { signIn, signOut, EmailNotVerifiedError } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { consumeVerificationToken } from "@/lib/db/verification-tokens";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
-import { credentialsSchema } from "@/lib/validations/auth";
-import type { SignInActionResult } from "@/types/auth";
+import { credentialsSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth";
+import type { SignInActionResult, ResetPasswordActionResult } from "@/types/auth";
 
 async function getBaseUrl() {
   const requestHeaders = await headers();
@@ -97,4 +98,59 @@ export async function confirmEmailVerification(rawToken: string) {
   }
 
   redirect("/verify-email?status=invalid");
+}
+
+export async function requestPasswordReset(
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  const parsed = forgotPasswordSchema.safeParse({ email });
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+
+  // Don't reveal whether the account exists or is GitHub-only.
+  if (!user?.password) {
+    return { success: true };
+  }
+
+  try {
+    await sendPasswordResetEmail(parsed.data.email, await getBaseUrl());
+  } catch (err) {
+    console.error("Failed to send password reset email:", err);
+    return { success: false, error: "Couldn't send the email. Try again in a moment." };
+  }
+
+  return { success: true };
+}
+
+export async function resetPassword(
+  rawToken: string,
+  _prevState: ResetPasswordActionResult,
+  formData: FormData
+): Promise<ResetPasswordActionResult> {
+  const parsed = resetPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const result = await consumeVerificationToken("password-reset", rawToken);
+
+  if (!result.success) {
+    return { success: false, error: "This reset link is invalid or has expired." };
+  }
+
+  const hashedPassword = await bcrypt.hash(parsed.data.password, 12);
+  await prisma.user.update({
+    where: { email: result.email },
+    data: { password: hashedPassword },
+  });
+
+  redirect("/reset-password?status=success");
 }

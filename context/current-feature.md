@@ -1,18 +1,26 @@
-# Current Feature
-
-None.
+# Current Feature: Forgot Password
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Add a "Forgot password?" link on the sign-in page (`SignInForm.tsx`)
+- Add a forgot-password request page where a user submits their email and (if eligible) receives a reset email
+- Send the reset email via the existing Resend setup (`src/lib/resend.ts` / `src/lib/email.ts` pattern), with a time-limited, single-use token link
+- Add a reset-password page where the user sets a new password using a valid token, hashed with bcryptjs (12 rounds, matching existing register/seed code)
+- Reuse the existing `VerificationToken` model — no new Prisma model/migration
+- On success, invalidate the token (single-use) and let the user sign in with the new password
+- Don't leak account existence: same generic response whether or not the email matches a user (mirrors `resendVerificationEmail`'s existing behavior)
+- GET requests must stay side-effect-free — follow the two-step confirm pattern already established for `/verify-email` (see 2026-08-10 History entries) rather than repeating the GET-mutates mistake
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Reuse the established token-flow shape from this codebase: `src/lib/db/verification-tokens.ts` (create/peek/consume), `src/lib/email.ts` (Resend send), `src/app/verify-email/page.tsx` (discriminated-union view states), `src/actions/auth.ts` (server actions).
+- **Resolved (prep fix, merged into `main` ahead of this feature):** `VerificationToken` identifiers are now namespaced by purpose — `createVerificationToken`/`peekVerificationToken`/`consumeVerificationToken` in `src/lib/db/verification-tokens.ts` take a `VerificationTokenPurpose` (`"email-verification" | "password-reset"`) and store `identifier` as `"{purpose}:{email}"`. A lookup/consume with the wrong purpose is rejected without deleting the token. Email verification call sites already updated to pass `"email-verification"`. This feature's request/reset flow should call these with `"password-reset"`.
+- Only credentials users have a `User.password` to reset — GitHub-only accounts have none. Decide how the request form responds for a GitHub-only email (existing `resendVerificationEmail()` returns `{success:true}` silently for this case to avoid leaking account existence; likely the same approach here).
+- Follow the same `{ success, data/error }` action-result pattern and toast/error UI conventions used by `SignInForm`/`RegisterForm`.
 
 ## History
 
