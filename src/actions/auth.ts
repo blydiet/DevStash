@@ -4,11 +4,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
-import { signIn, signOut, EmailNotVerifiedError } from "@/auth";
+import { signIn, signOut, EmailNotVerifiedError, RateLimitedError } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { consumeVerificationToken } from "@/lib/db/verification-tokens";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
+import { checkRateLimit, getClientIp, rateLimitMessage } from "@/lib/rate-limit";
 import { credentialsSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth";
 import type { SignInActionResult, ResetPasswordActionResult } from "@/types/auth";
 
@@ -37,6 +38,9 @@ export async function signInWithCredentials(
       redirectTo: (formData.get("callbackUrl") as string) || "/dashboard",
     });
   } catch (error) {
+    if (error instanceof RateLimitedError) {
+      return { success: false, error: rateLimitMessage(error.reset) };
+    }
     if (error instanceof EmailNotVerifiedError) {
       return {
         success: false,
@@ -67,6 +71,16 @@ export async function resendVerificationEmail(
 ): Promise<{ success: boolean; error?: string }> {
   if (!isEmailVerificationEnabled()) {
     return { success: true };
+  }
+
+  const ip = await getClientIp();
+  const { success: withinLimit, reset } = await checkRateLimit(
+    "resend-verification",
+    `${ip}:${email}`
+  );
+
+  if (!withinLimit) {
+    return { success: false, error: rateLimitMessage(reset) };
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -109,6 +123,13 @@ export async function requestPasswordReset(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
+  const ip = await getClientIp();
+  const { success: withinLimit, reset } = await checkRateLimit("forgot-password", ip);
+
+  if (!withinLimit) {
+    return { success: false, error: rateLimitMessage(reset) };
+  }
+
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
 
   // Don't reveal whether the account exists or is GitHub-only.
@@ -138,6 +159,13 @@ export async function resetPassword(
 
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const ip = await getClientIp();
+  const { success: withinLimit, reset } = await checkRateLimit("reset-password", ip);
+
+  if (!withinLimit) {
+    return { success: false, error: rateLimitMessage(reset) };
   }
 
   const result = await consumeVerificationToken("password-reset", rawToken);

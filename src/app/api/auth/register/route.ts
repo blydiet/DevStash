@@ -4,8 +4,19 @@ import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
+import { checkRateLimit, getClientIp, rateLimitMessage, retryAfterSeconds } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const ip = await getClientIp();
+  const { success: withinLimit, reset } = await checkRateLimit("register", ip);
+
+  if (!withinLimit) {
+    return NextResponse.json(
+      { success: false, error: rateLimitMessage(reset) },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds(reset)) } }
+    );
+  }
+
   const body = await request.json();
   const parsed = registerSchema.safeParse(body);
 

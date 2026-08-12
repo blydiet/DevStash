@@ -6,9 +6,20 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { credentialsSchema } from "@/lib/validations/auth";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export class EmailNotVerifiedError extends CredentialsSignin {
   code = "email-not-verified";
+}
+
+export class RateLimitedError extends CredentialsSignin {
+  code = "rate-limited";
+  reset: number;
+
+  constructor(reset: number) {
+    super();
+    this.reset = reset;
+  }
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -32,6 +43,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         const { email, password } = parsed.data;
+
+        const ip = await getClientIp();
+        const { success: withinLimit, reset } = await checkRateLimit(
+          "sign-in",
+          `${ip}:${email}`
+        );
+
+        if (!withinLimit) {
+          throw new RateLimitedError(reset);
+        }
 
         const user = await prisma.user.findUnique({ where: { email } });
 

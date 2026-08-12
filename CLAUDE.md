@@ -23,13 +23,7 @@ Read the following to get the full context of the project:
 
 ## Environment Variables
 
-Required in `.env` (never committed — see `.gitignore`):
-
-- `DATABASE_URL` — Neon Postgres connection string (direct, non-pooler — required for `prisma migrate`)
-- `AUTH_SECRET` — NextAuth v5 secret, generate with `npx auth secret`
-- `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` — GitHub OAuth App credentials (https://github.com/settings/developers)
-- `RESEND_API_KEY` — Resend API key, used for verification emails on register (https://resend.com/api-keys)
-- `EMAIL_VERIFICATION_ENABLED` — optional, defaults to enabled. Set to `"false"` to disable the email-verification requirement entirely (skips sending on register, skips the block on sign-in, auto-verifies new users) — useful in this environment since no Resend domain is verified yet, so real delivery only works to the Resend account's own address
+See `.env.example` for the full list of required/optional variables and what each is for. Copy it to `.env` (never committed — see `.gitignore`) and fill in real values.
 
 ## Commands
 
