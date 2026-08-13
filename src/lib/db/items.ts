@@ -75,6 +75,27 @@ export async function getRecentItems(limit = 10): Promise<ItemSummary[]> {
   return items.map(toItemSummary);
 }
 
+export async function getItemsByType(typeName: string): Promise<ItemSummary[]> {
+  const userId = await getCurrentUserId();
+  const items = await prisma.item.findMany({
+    where: { userId, type: { name: typeName } },
+    orderBy: { createdAt: "desc" },
+    include: { type: true, tags: { include: { tag: true } } },
+  });
+
+  return items.map(toItemSummary);
+}
+
+export async function getItemTypeByName(typeName: string): Promise<ItemTypeSummary | null> {
+  const type = await prisma.itemType.findFirst({
+    where: { name: typeName, isSystem: true },
+  });
+
+  if (!type) return null;
+
+  return { id: type.id, name: type.name, icon: type.icon, color: type.color };
+}
+
 export async function getItemStats(): Promise<ItemStats> {
   const userId = await getCurrentUserId();
   const [total, favorites] = await Promise.all([
