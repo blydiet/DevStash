@@ -40,6 +40,9 @@ yarn-error.log*
 # Playwright MCP local test artifacts
 /.playwright-mcp/
 
+# local tooling (separate git repo, not part of this project)
+/unslop/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

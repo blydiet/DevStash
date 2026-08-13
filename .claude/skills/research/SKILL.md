@@ -1,12 +1,38 @@
 ---
 name: research
-description: Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.
+description: Run a research task to generate documentation
+argument-hint: <prompt-name>
 ---
 
-Spin up a **background agent** to do the research, so you keep working while it reads.
+## Task
 
-Its job:
+Execute research task: $ARGUMENTS
 
-1. Investigate the question against **primary sources** — official docs, source code, specs, first-party APIs — not a secondary write-up of them. Follow every claim back to the source that owns it.
-2. Write the findings to a single Markdown file, citing each claim's source.
-3. Save it where the repo already keeps such notes; match the existing convention, and if there is none, put it somewhere sensible and say where.
+---
+
+### Instructions
+
+1. If no argument provided, error: "Usage: /research <prompt-name>"
+2. Look for prompt file at `context/research/{$ARGUMENTS}.md`
+3. If not found, error: "Prompt file not found at context/research/{$ARGUMENTS}.md"
+4. Read the prompt file which should contain:
+   - **Output**: Where to write results (e.g., `context/content-types.md`)
+   - **Research**: What to investigate
+   - **Include**: Specific details to capture
+   - **Sources**: What files/tools to use
+5. Execute the research using appropriate tools:
+   - Read files (Prisma schema, constants, components)
+   - Query database via Neon MCP if needed
+   - Search codebase for patterns
+6. Write findings to the specified output location
+7. Summarize what was discovered
+
+---
+
+### Rules
+
+- This command produces DOCUMENTATION only
+- Do NOT modify source code files
+- Do NOT create branches or commits
+- Output should go to `/docs/` unless otherwise specified
+- Use subagents for thorough exploration if needed
