@@ -28,8 +28,11 @@ See `.env.example` for the full list of required/optional variables and what eac
 ## Commands
 
 ```bash
-npm run dev      # start dev server (Turbopack, stable by default in Next 16) at localhost:3000
-npm run build    # production build (Turbopack by default; fails if a webpack config is present — see below)
-npm run start    # serve the production build
-npm run lint     # ESLint via eslint-config-next (flat config)
+npm run dev           # start dev server (Turbopack, stable by default in Next 16) at localhost:3000
+npm run build         # production build (Turbopack by default; fails if a webpack config is present — see below)
+npm run start         # serve the production build
+npm run lint          # ESLint via eslint-config-next (flat config)
+npm run test          # unit tests via Vitest (src/actions/ and src/lib/ only — see context/ai-interaction.md)
+npm run test:watch    # unit tests in watch mode
+npm run test:coverage # unit tests with a coverage report
 ```
