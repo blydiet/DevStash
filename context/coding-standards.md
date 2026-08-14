@@ -89,6 +89,13 @@ Example v4 configuration:
 - Return `{ success, data, error }` pattern from actions
 - Display user-friendly error messages via toast
 
+## Testing
+
+- Unit tests via Vitest, scoped to Server Actions (`src/actions/`) and utilities (`src/lib/`) only — no component/UI testing
+- Colocate test files next to the source file: `foo.ts` → `foo.test.ts`
+- Mock Prisma and external services (email, auth, rate limiting) at the module boundary with `vi.mock`; never hit the real dev Neon DB or third-party APIs from a unit test
+- See @context/ai-interaction.md for the full workflow
+
 ## Code Quality
 
 - No commented-out code unless specified

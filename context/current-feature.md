@@ -1,18 +1,22 @@
-# Current Feature
-
-None.
+# Current Feature: Set Up Vitest for Unit Testing
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Install and configure Vitest for this Next.js 16 / TypeScript project
+- Add an `npm run test` (and `test:watch`) script
+- Test coverage scope: only Server Actions (`src/actions/`) and utilities/lib code (`src/lib/`) — explicitly NOT React components
+- Write initial unit tests for existing server actions and utility functions to prove the setup works
+- Update `context/ai-interaction.md`'s workflow (and `CLAUDE.md`/`context/coding-standards.md` if relevant) to reflect that unit tests now exist and are part of the standard feature workflow, superseding the "Implement unit testing later" note
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Mock Prisma/DB and external services (Resend, Upstash) at the boundary rather than hitting the real dev Neon DB — unlike this project's established pattern of verifying features live against real services, unit tests should be fast/isolated.
+- Coding standards mandate strict TypeScript, no `any` — tests should follow the same standard.
+- Do not add component/UI testing (e.g. React Testing Library) — explicitly out of scope per user request.
 
 ## History
 
