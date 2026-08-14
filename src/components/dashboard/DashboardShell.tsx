@@ -3,6 +3,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ItemDrawerProvider } from "./ItemDrawerContext";
 import { TopBar } from "./TopBar";
 
 export function DashboardShell({
@@ -60,7 +61,9 @@ export function DashboardShell({
           </SheetContent>
         </Sheet>
 
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <ItemDrawerProvider>{children}</ItemDrawerProvider>
+        </main>
       </div>
     </div>
   );

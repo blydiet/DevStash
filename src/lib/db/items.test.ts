@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getItemTypeByName, getItemTypes, getPinnedItems } from "@/lib/db/items";
+import { getItemDetail, getItemTypeByName, getItemTypes, getPinnedItems } from "@/lib/db/items";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
   prismaMock: {
     item: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
     },
     itemType: {
       findFirst: vi.fn(),
@@ -46,6 +47,43 @@ describe("getPinnedItems", () => {
 
     expect(result.tags).toEqual(["react", "hooks"]);
     expect(result.type.name).toBe("snippet");
+  });
+});
+
+describe("getItemDetail", () => {
+  it("scopes the lookup to the current user and flattens joined tags", async () => {
+    prismaMock.item.findFirst.mockResolvedValue({
+      id: "item-1",
+      title: "useDebounce Hook",
+      description: "Custom hook",
+      contentType: "text",
+      content: "export function useDebounce() {}",
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+      url: null,
+      language: "typescript",
+      isFavorite: true,
+      isPinned: false,
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-02"),
+      type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
+      tags: [{ tag: { name: "react" } }],
+      collection: { id: "col-1", name: "React Patterns" },
+    });
+
+    const result = await getItemDetail("item-1");
+
+    expect(prismaMock.item.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "item-1", userId: "user-1" } })
+    );
+    expect(result?.tags).toEqual(["react"]);
+    expect(result?.collection).toEqual({ id: "col-1", name: "React Patterns" });
+  });
+
+  it("returns null when no item matches (not found, or belongs to another user)", async () => {
+    prismaMock.item.findFirst.mockResolvedValue(null);
+    await expect(getItemDetail("item-1")).resolves.toBeNull();
   });
 });
 

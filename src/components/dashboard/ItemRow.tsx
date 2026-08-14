@@ -1,7 +1,10 @@
+"use client";
+
 import { File, Pin, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/icon-map";
+import { useItemDrawer } from "./ItemDrawerContext";
 import type { ItemSummary } from "@/lib/db/items";
 
 function formatDate(date: Date) {
@@ -12,12 +15,14 @@ function formatDate(date: Date) {
 }
 
 export function ItemRow({ item }: { item: ItemSummary }) {
+  const { openItem } = useItemDrawer();
   const Icon = iconMap[item.type.icon ?? ""] ?? File;
 
   return (
     <Card
-      className="border-l-4 border-y-0 border-r-0"
+      className="cursor-pointer border-l-4 border-y-0 border-r-0 transition-colors hover:bg-muted/50"
       style={{ borderLeftColor: item.type.color ?? undefined }}
+      onClick={() => openItem(item.id)}
     >
       <CardContent className="flex items-center gap-4">
         <div
