@@ -1,13 +1,43 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
+import { toast } from "sonner";
 import { Calendar, Copy, File, FolderOpen, Pencil, Pin, Star, Tag, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { iconMap } from "@/lib/icon-map";
+import { updateItem } from "@/actions/items";
 import type { ItemDetail } from "@/lib/db/items";
+
+const TYPES_WITH_CONTENT = ["snippet", "prompt", "command", "note"];
+const TYPES_WITH_LANGUAGE = ["snippet", "command"];
+const TYPES_WITH_URL = ["link"];
+
+interface EditForm {
+  title: string;
+  description: string;
+  content: string;
+  url: string;
+  language: string;
+  tags: string;
+}
+
+function toEditForm(item: ItemDetail): EditForm {
+  return {
+    title: item.title,
+    description: item.description ?? "",
+    content: item.content ?? "",
+    url: item.url ?? "",
+    language: item.language ?? "",
+    tags: item.tags.join(", "),
+  };
+}
 
 async function fetcher(url: string): Promise<ItemDetail> {
   const res = await fetch(url);
@@ -51,13 +81,70 @@ export function ItemDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const router = useRouter();
   const {
     data: item,
     error,
     isLoading,
+    mutate,
   } = useSWR(open && itemId ? `/api/items/${itemId}` : null, fetcher);
 
+  const [mode, setMode] = useState<"view" | "edit">("view");
+  const [form, setForm] = useState<EditForm | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const resetKey = open ? itemId : null;
+  const [lastResetKey, setLastResetKey] = useState(resetKey);
+  if (resetKey !== lastResetKey) {
+    setLastResetKey(resetKey);
+    setMode("view");
+    setForm(null);
+  }
+
   const Icon = item ? (iconMap[item.type.icon ?? ""] ?? File) : File;
+  const showsContent = item ? TYPES_WITH_CONTENT.includes(item.type.name) : false;
+  const showsLanguage = item ? TYPES_WITH_LANGUAGE.includes(item.type.name) : false;
+  const showsUrl = item ? TYPES_WITH_URL.includes(item.type.name) : false;
+
+  function startEdit() {
+    if (!item) return;
+    setForm(toEditForm(item));
+    setMode("edit");
+  }
+
+  function cancelEdit() {
+    setMode("view");
+    setForm(null);
+  }
+
+  async function saveEdit() {
+    if (!item || !form) return;
+
+    setIsSaving(true);
+    const result = await updateItem(item.id, {
+      title: form.title,
+      description: form.description.trim() === "" ? null : form.description,
+      content: showsContent && form.content.trim() !== "" ? form.content : null,
+      url: showsUrl && form.url.trim() !== "" ? form.url : null,
+      language: showsLanguage && form.language.trim() !== "" ? form.language : null,
+      tags: form.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    });
+    setIsSaving(false);
+
+    if (!result.success || !result.data) {
+      toast.error(result.error ?? "Failed to update item");
+      return;
+    }
+
+    mutate(result.data, { revalidate: false });
+    setMode("view");
+    setForm(null);
+    toast.success("Item updated");
+    router.refresh();
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -80,7 +167,16 @@ export function ItemDrawer({
                 >
                   <Icon className="size-5" style={{ color: item.type.color ?? undefined }} />
                 </div>
-                <SheetTitle className="pr-8">{item.title}</SheetTitle>
+                {mode === "edit" && form ? (
+                  <Input
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="Title"
+                    className="flex-1"
+                  />
+                ) : (
+                  <SheetTitle className="pr-8">{item.title}</SheetTitle>
+                )}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 <Badge variant="secondary">{item.type.name}</Badge>
@@ -89,83 +185,165 @@ export function ItemDrawer({
             </SheetHeader>
 
             <div className="flex items-center gap-1 border-b border-border p-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={item.isFavorite ? "text-yellow-500" : ""}
-              >
-                <Star className={item.isFavorite ? "fill-yellow-500" : ""} />
-                <span className="hidden sm:inline">Favorite</span>
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Pin />
-                <span className="hidden sm:inline">Pin</span>
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Copy />
-                <span className="hidden sm:inline">Copy</span>
-              </Button>
-              <Button variant="ghost" size="sm" className="ml-auto">
-                <Pencil />
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-              <Button variant="ghost" size="icon-sm" className="text-destructive">
-                <Trash2 />
-              </Button>
+              {mode === "view" ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={item.isFavorite ? "text-yellow-500" : ""}
+                  >
+                    <Star className={item.isFavorite ? "fill-yellow-500" : ""} />
+                    <span className="hidden sm:inline">Favorite</span>
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Pin />
+                    <span className="hidden sm:inline">Pin</span>
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Copy />
+                    <span className="hidden sm:inline">Copy</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="ml-auto" onClick={startEdit}>
+                    <Pencil />
+                    <span className="hidden sm:inline">Edit</span>
+                  </Button>
+                  <Button variant="ghost" size="icon-sm" className="text-destructive">
+                    <Trash2 />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={isSaving}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="ml-auto"
+                    onClick={saveEdit}
+                    disabled={isSaving || !form?.title.trim()}
+                  >
+                    Save
+                  </Button>
+                </>
+              )}
             </div>
 
             <div className="flex flex-col gap-6 p-6">
-              {item.description && (
+              {mode === "edit" && form ? (
                 <div>
                   <h3 className="pb-2 text-sm font-medium text-muted-foreground">Description</h3>
-                  <p className="text-sm">{item.description}</p>
+                  <Textarea
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Description"
+                    
+                  />
                 </div>
+              ) : (
+                item.description && (
+                  <div>
+                    <h3 className="pb-2 text-sm font-medium text-muted-foreground">
+                      Description
+                    </h3>
+                    <p className="text-sm">{item.description}</p>
+                  </div>
+                )
               )}
 
-              {item.content && (
-                <div>
-                  <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
-                  <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
-                    <code>{item.content}</code>
-                  </pre>
-                </div>
-              )}
+              {mode === "edit" && form
+                ? showsContent && (
+                    <div>
+                      <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
+                      <Textarea
+                        value={form.content}
+                        onChange={(e) => setForm({ ...form, content: e.target.value })}
+                        placeholder="Content"
+                        className="min-h-32 font-mono text-xs"
+                      />
+                    </div>
+                  )
+                : item.content && (
+                    <div>
+                      <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
+                      <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
+                        <code>{item.content}</code>
+                      </pre>
+                    </div>
+                  )}
 
-              {item.url && (
-                <div>
-                  <h3 className="pb-2 text-sm font-medium text-muted-foreground">URL</h3>
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all text-sm text-primary underline underline-offset-4"
-                  >
-                    {item.url}
-                  </a>
-                </div>
-              )}
+              {mode === "edit" && form
+                ? showsLanguage && (
+                    <div>
+                      <h3 className="pb-2 text-sm font-medium text-muted-foreground">Language</h3>
+                      <Input
+                        value={form.language}
+                        onChange={(e) => setForm({ ...form, language: e.target.value })}
+                        placeholder="e.g. typescript"
+                      />
+                    </div>
+                  )
+                : null}
 
-              {item.fileName && (
+              {mode === "edit" && form
+                ? showsUrl && (
+                    <div>
+                      <h3 className="pb-2 text-sm font-medium text-muted-foreground">URL</h3>
+                      <Input
+                        value={form.url}
+                        onChange={(e) => setForm({ ...form, url: e.target.value })}
+                        placeholder="https://example.com"
+                      />
+                    </div>
+                  )
+                : item.url && (
+                    <div>
+                      <h3 className="pb-2 text-sm font-medium text-muted-foreground">URL</h3>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="break-all text-sm text-primary underline underline-offset-4"
+                      >
+                        {item.url}
+                      </a>
+                    </div>
+                  )}
+
+              {mode === "view" && item.fileName && (
                 <div>
                   <h3 className="pb-2 text-sm font-medium text-muted-foreground">File</h3>
                   <p className="break-all text-sm">{item.fileName}</p>
                 </div>
               )}
 
-              {item.tags.length > 0 && (
+              {mode === "edit" && form ? (
                 <div>
                   <h3 className="flex items-center gap-1.5 pb-2 text-sm font-medium text-muted-foreground">
                     <Tag className="size-4" />
                     Tags
                   </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+                  <Input
+                    value={form.tags}
+                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                    placeholder="react, hooks, custom"
+                  />
                 </div>
+              ) : (
+                item.tags.length > 0 && (
+                  <div>
+                    <h3 className="flex items-center gap-1.5 pb-2 text-sm font-medium text-muted-foreground">
+                      <Tag className="size-4" />
+                      Tags
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )
               )}
 
               {item.collection && (

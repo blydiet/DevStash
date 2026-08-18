@@ -1,8 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getItemDetail, getItemTypeByName, getItemTypes, getPinnedItems } from "@/lib/db/items";
+import {
+  getItemDetail,
+  getItemTypeByName,
+  getItemTypes,
+  getPinnedItems,
+  updateItem,
+} from "@/lib/db/items";
 
-const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
+const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
+  txMock: {
+    item: { update: vi.fn() },
+    itemTag: { deleteMany: vi.fn(), create: vi.fn() },
+    tag: { upsert: vi.fn() },
+  },
   prismaMock: {
     item: {
       findMany: vi.fn(),
@@ -12,6 +23,7 @@ const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
       findFirst: vi.fn(),
       findMany: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -26,6 +38,9 @@ vi.mock("@/lib/prisma", () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   getCurrentUserIdMock.mockResolvedValue("user-1");
+  prismaMock.$transaction.mockImplementation(async (cb: (tx: typeof txMock) => unknown) =>
+    cb(txMock)
+  );
 });
 
 describe("getPinnedItems", () => {
@@ -122,5 +137,74 @@ describe("getItemTypes", () => {
 
     expect(result.map((t) => t.name)).toEqual(["snippet", "note", "link"]);
     expect(result.map((t) => t.itemCount)).toEqual([4, 2, 1]);
+  });
+});
+
+describe("updateItem", () => {
+  const input = {
+    title: "Updated title",
+    description: null,
+    content: null,
+    url: null,
+    language: null,
+    tags: ["react", "hooks"],
+  };
+
+  it("returns null without writing when the item isn't owned by the current user", async () => {
+    prismaMock.item.findFirst.mockResolvedValueOnce(null);
+
+    await expect(updateItem("item-1", input)).resolves.toBeNull();
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("replaces tags and returns the refreshed detail on success", async () => {
+    prismaMock.item.findFirst
+      .mockResolvedValueOnce({ id: "item-1" }) // ownership check
+      .mockResolvedValueOnce({
+        // final getItemDetail refresh
+        id: "item-1",
+        title: "Updated title",
+        description: null,
+        contentType: "text",
+        content: null,
+        fileUrl: null,
+        fileName: null,
+        fileSize: null,
+        url: null,
+        language: null,
+        isFavorite: false,
+        isPinned: false,
+        createdAt: new Date("2026-01-01"),
+        updatedAt: new Date("2026-01-02"),
+        type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
+        tags: [{ tag: { name: "react" } }, { tag: { name: "hooks" } }],
+        collection: null,
+      });
+    txMock.tag.upsert
+      .mockResolvedValueOnce({ id: "tag-react" })
+      .mockResolvedValueOnce({ id: "tag-hooks" });
+
+    const result = await updateItem("item-1", input);
+
+    expect(txMock.item.update).toHaveBeenCalledWith({
+      where: { id: "item-1" },
+      data: {
+        title: "Updated title",
+        description: null,
+        content: null,
+        url: null,
+        language: null,
+      },
+    });
+    expect(txMock.itemTag.deleteMany).toHaveBeenCalledWith({ where: { itemId: "item-1" } });
+    expect(txMock.tag.upsert).toHaveBeenCalledWith({
+      where: { userId_name: { userId: "user-1", name: "react" } },
+      update: {},
+      create: { userId: "user-1", name: "react" },
+    });
+    expect(txMock.itemTag.create).toHaveBeenCalledWith({
+      data: { itemId: "item-1", tagId: "tag-react" },
+    });
+    expect(result?.tags).toEqual(["react", "hooks"]);
   });
 });

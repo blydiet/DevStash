@@ -1,18 +1,30 @@
-# Current Feature
-
-None.
+# Current Feature: Item Drawer — Edit Mode
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Edit button (pencil icon) in the item drawer's action bar toggles the drawer into inline edit mode (same drawer, no navigation)
+- In edit mode, the action bar is replaced with Save and Cancel buttons
+- Cancel discards changes and returns to view mode
+- Save persists changes via a server action, returns to view mode, and refreshes the drawer data
+- Toast notification on save success or error
+- All item types: Title (text input, required), Description (textarea, optional), Tags (comma-separated text input → tag array on save) are editable
+- Type-specific editable fields, shown only for the relevant type: Content (textarea) for snippet/prompt/command/note; Language (text input) for snippet/command; URL (text input) for link
+- Item type, Collections, and Created/Updated dates are display-only in edit mode (not editable)
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Zod schema validates the update payload per coding standards: `title` non-empty trimmed string; `description`/`content`/`url`/`language` string-or-null optional (`url` must be a valid URL string when present); `tags` array of trimmed non-empty strings. Validate in the server action before hitting the database; return Zod errors via `{ success: false, error }`.
+- New `updateItem(itemId, data)` server action in `src/actions/items.ts`, following the existing `{ success, data, error }` pattern — validates with Zod, gets session via `auth()`, validates ownership, calls the query function.
+- New `updateItem` query function in `lib/db/items.ts`. Tag handling: disconnect all existing tags, connect-or-create new ones. Returns the updated `ItemDetail` so the drawer can refresh without a second fetch.
+- Keep it simple — no form library, controlled inputs with local state.
+- Client-side: disable Save when title is empty (basic UX guard). Server-side Zod validation is the source of truth.
+- Content textarea doesn't need to be a code editor yet — deferred.
+- After save, call `router.refresh()` so the underlying card list reflects changes.
+- Known open item from the prior Item Drawer feature: `ItemDetail.createdAt`/`updatedAt` `Date`-vs-`string` mismatch between server (`ItemCard`/`ItemRow`) and client (`ItemDrawer`'s SWR fetch) — worth checking whether edit mode's refresh path touches this.
 
 ## History
 

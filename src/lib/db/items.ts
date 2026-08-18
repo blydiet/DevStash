@@ -136,6 +136,50 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
   return { ...item, tags: item.tags.map(({ tag }) => tag.name) };
 }
 
+export interface UpdateItemInput {
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  language: string | null;
+  tags: string[];
+}
+
+export async function updateItem(id: string, data: UpdateItemInput): Promise<ItemDetail | null> {
+  const userId = await getCurrentUserId();
+
+  const existing = await prisma.item.findFirst({ where: { id, userId }, select: { id: true } });
+
+  if (!existing) return null;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.item.update({
+      where: { id },
+      data: {
+        title: data.title,
+        description: data.description,
+        content: data.content,
+        url: data.url,
+        language: data.language,
+      },
+    });
+
+    await tx.itemTag.deleteMany({ where: { itemId: id } });
+
+    for (const name of data.tags) {
+      const tag = await tx.tag.upsert({
+        where: { userId_name: { userId, name } },
+        update: {},
+        create: { userId, name },
+      });
+
+      await tx.itemTag.create({ data: { itemId: id, tagId: tag.id } });
+    }
+  });
+
+  return getItemDetail(id);
+}
+
 export async function getItemTypeByName(typeName: string): Promise<ItemTypeSummary | null> {
   const type = await prisma.itemType.findFirst({
     where: { name: typeName, isSystem: true },
