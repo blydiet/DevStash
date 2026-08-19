@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  deleteItem,
   getItemDetail,
   getItemTypeByName,
   getItemTypes,
@@ -18,6 +19,7 @@ const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
     item: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      deleteMany: vi.fn(),
     },
     itemType: {
       findFirst: vi.fn(),
@@ -206,5 +208,22 @@ describe("updateItem", () => {
       data: { itemId: "item-1", tagId: "tag-react" },
     });
     expect(result?.tags).toEqual(["react", "hooks"]);
+  });
+});
+
+describe("deleteItem", () => {
+  it("returns false when the item isn't owned by the current user (or doesn't exist)", async () => {
+    prismaMock.item.deleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(deleteItem("item-1")).resolves.toBe(false);
+    expect(prismaMock.item.deleteMany).toHaveBeenCalledWith({
+      where: { id: "item-1", userId: "user-1" },
+    });
+  });
+
+  it("returns true when the item is deleted", async () => {
+    prismaMock.item.deleteMany.mockResolvedValue({ count: 1 });
+
+    await expect(deleteItem("item-1")).resolves.toBe(true);
   });
 });

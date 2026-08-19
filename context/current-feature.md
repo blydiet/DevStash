@@ -1,18 +1,22 @@
-# Current Feature
-
-None.
+# Current Feature: Item Delete
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Goals and requirements -->
+- Wire up the existing but currently unwired `Trash2` delete button in `ItemDrawer.tsx`'s view-mode action bar (`src/components/dashboard/ItemDrawer.tsx:210-212`)
+- Clicking it opens a shadcn `AlertDialog` confirmation ("Delete this item?" / cannot be undone), matching the existing pattern in `AccountActions.tsx`'s "Delete account" flow — no accidental one-click deletes
+- Confirming deletes the item, closes the drawer, shows a `sonner` success toast, and refreshes the underlying grid/list (`router.refresh()`, same as `saveEdit`) so the deleted item disappears without a manual reload
+- Canceling the dialog does nothing (item untouched, drawer stays open)
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Follows the same layering as Edit Mode: `deleteItem(itemId)` Server Action in `src/actions/items.ts` (`auth()` check, `{success,data,error}` pattern) calling a new `deleteItem(id)` in `src/lib/db/items.ts`
+- `deleteItem` in `src/lib/db/items.ts` must be ownership-scoped like `updateItem`/`getItemDetail` (`findFirst`/`deleteMany` on `{ id, userId }`) — returns `false`/`null` for a wrong-owner or missing id rather than leaking existence
+- Needs a unit test in `src/actions/items.test.ts` and `src/lib/db/items.test.ts` per this project's testing convention (Server Actions + `src/lib/` only)
+- Scope is limited to the drawer's delete button — `ItemCard.tsx`/`ItemRow.tsx` have no separate delete affordance today and none is being added
 
 ## History
 

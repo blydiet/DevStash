@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { updateItem } from "@/actions/items";
+import { deleteItem, updateItem } from "@/actions/items";
 
-const { authMock, updateItemInDbMock } = vi.hoisted(() => ({
+const { authMock, updateItemInDbMock, deleteItemInDbMock } = vi.hoisted(() => ({
   authMock: vi.fn(),
   updateItemInDbMock: vi.fn(),
+  deleteItemInDbMock: vi.fn(),
 }));
 
 vi.mock("@/auth", () => ({
@@ -12,6 +13,7 @@ vi.mock("@/auth", () => ({
 
 vi.mock("@/lib/db/items", () => ({
   updateItem: updateItemInDbMock,
+  deleteItem: deleteItemInDbMock,
 }));
 
 beforeEach(() => {
@@ -73,5 +75,35 @@ describe("updateItem", () => {
 
     expect(updateItemInDbMock).toHaveBeenCalledWith("item-1", validData);
     expect(result).toEqual({ success: true, data: updated });
+  });
+});
+
+describe("deleteItem", () => {
+  it("rejects when there is no session", async () => {
+    authMock.mockResolvedValue(null);
+
+    const result = await deleteItem("item-1");
+
+    expect(result).toEqual({ success: false, error: "Not authenticated" });
+    expect(deleteItemInDbMock).not.toHaveBeenCalled();
+  });
+
+  it("reports item-not-found when the query function returns false (wrong owner or missing)", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    deleteItemInDbMock.mockResolvedValue(false);
+
+    const result = await deleteItem("item-1");
+
+    expect(result).toEqual({ success: false, error: "Item not found" });
+  });
+
+  it("returns success when the item is deleted", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    deleteItemInDbMock.mockResolvedValue(true);
+
+    const result = await deleteItem("item-1");
+
+    expect(deleteItemInDbMock).toHaveBeenCalledWith("item-1");
+    expect(result).toEqual({ success: true });
   });
 });

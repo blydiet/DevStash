@@ -1,9 +1,9 @@
 "use server";
 
 import { auth } from "@/auth";
-import { updateItem as updateItemInDb } from "@/lib/db/items";
+import { deleteItem as deleteItemInDb, updateItem as updateItemInDb } from "@/lib/db/items";
 import { updateItemSchema } from "@/lib/validations/items";
-import type { UpdateItemActionResult } from "@/types/items";
+import type { DeleteItemActionResult, UpdateItemActionResult } from "@/types/items";
 
 export async function updateItem(
   itemId: string,
@@ -35,4 +35,20 @@ export async function updateItem(
   }
 
   return { success: true, data: item };
+}
+
+export async function deleteItem(itemId: string): Promise<DeleteItemActionResult> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const deleted = await deleteItemInDb(itemId);
+
+  if (!deleted) {
+    return { success: false, error: "Item not found" };
+  }
+
+  return { success: true };
 }

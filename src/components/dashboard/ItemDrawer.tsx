@@ -6,13 +6,24 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import { Calendar, Copy, File, FolderOpen, Pencil, Pin, Star, Tag, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { iconMap } from "@/lib/icon-map";
-import { updateItem } from "@/actions/items";
+import { deleteItem, updateItem } from "@/actions/items";
 import type { ItemDetail } from "@/lib/db/items";
 
 const TYPES_WITH_CONTENT = ["snippet", "prompt", "command", "note"];
@@ -92,6 +103,7 @@ export function ItemDrawer({
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [form, setForm] = useState<EditForm | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const resetKey = open ? itemId : null;
   const [lastResetKey, setLastResetKey] = useState(resetKey);
@@ -143,6 +155,23 @@ export function ItemDrawer({
     setMode("view");
     setForm(null);
     toast.success("Item updated");
+    router.refresh();
+  }
+
+  async function handleDelete() {
+    if (!item) return;
+
+    setIsDeleting(true);
+    const result = await deleteItem(item.id);
+    setIsDeleting(false);
+
+    if (!result.success) {
+      toast.error(result.error ?? "Failed to delete item");
+      return;
+    }
+
+    onOpenChange(false);
+    toast.success("Item deleted");
     router.refresh();
   }
 
@@ -207,9 +236,34 @@ export function ItemDrawer({
                     <Pencil />
                     <span className="hidden sm:inline">Edit</span>
                   </Button>
-                  <Button variant="ghost" size="icon-sm" className="text-destructive">
-                    <Trash2 />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger
+                      render={
+                        <Button variant="ghost" size="icon-sm" className="text-destructive" />
+                      }
+                    >
+                      <Trash2 />
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this item?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This permanently deletes &ldquo;{item.title}&rdquo;. This action cannot
+                          be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          disabled={isDeleting}
+                          variant="destructive"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </>
               ) : (
                 <>

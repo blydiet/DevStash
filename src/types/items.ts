@@ -5,3 +5,8 @@ export interface UpdateItemActionResult {
   data?: ItemDetail;
   error?: string;
 }
+
+export interface DeleteItemActionResult {
+  success: boolean;
+  error?: string;
+}

@@ -180,6 +180,14 @@ export async function updateItem(id: string, data: UpdateItemInput): Promise<Ite
   return getItemDetail(id);
 }
 
+export async function deleteItem(id: string): Promise<boolean> {
+  const userId = await getCurrentUserId();
+
+  const { count } = await prisma.item.deleteMany({ where: { id, userId } });
+
+  return count > 0;
+}
+
 export async function getItemTypeByName(typeName: string): Promise<ItemTypeSummary | null> {
   const type = await prisma.itemType.findFirst({
     where: { name: typeName, isSystem: true },
