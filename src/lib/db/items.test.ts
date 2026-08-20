@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  createItem,
   deleteItem,
   getItemDetail,
   getItemTypeByName,
@@ -11,7 +12,7 @@ import {
 const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
   txMock: {
-    item: { update: vi.fn() },
+    item: { create: vi.fn(), update: vi.fn() },
     itemTag: { deleteMany: vi.fn(), create: vi.fn() },
     tag: { upsert: vi.fn() },
   },
@@ -208,6 +209,76 @@ describe("updateItem", () => {
       data: { itemId: "item-1", tagId: "tag-react" },
     });
     expect(result?.tags).toEqual(["react", "hooks"]);
+  });
+});
+
+describe("createItem", () => {
+  const type = { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" };
+  const input = {
+    type,
+    title: "New Snippet",
+    description: null,
+    content: "console.log('hi')",
+    url: null,
+    language: "typescript",
+    tags: ["react", "hooks"],
+  };
+  const createdRow = {
+    id: "item-1",
+    title: "New Snippet",
+    description: null,
+    contentType: "text",
+    content: "console.log('hi')",
+    fileUrl: null,
+    fileName: null,
+    fileSize: null,
+    url: null,
+    language: "typescript",
+    isFavorite: false,
+    isPinned: false,
+    createdAt: new Date("2026-01-01"),
+    updatedAt: new Date("2026-01-01"),
+  };
+
+  it("creates the item and tags within a transaction, returning the built ItemDetail", async () => {
+    txMock.item.create.mockResolvedValue(createdRow);
+    txMock.tag.upsert
+      .mockResolvedValueOnce({ id: "tag-react" })
+      .mockResolvedValueOnce({ id: "tag-hooks" });
+
+    const result = await createItem(input);
+
+    expect(txMock.item.create).toHaveBeenCalledWith({
+      data: {
+        title: "New Snippet",
+        description: null,
+        content: "console.log('hi')",
+        url: null,
+        language: "typescript",
+        contentType: "text",
+        userId: "user-1",
+        typeId: "type-snippet",
+      },
+    });
+    expect(txMock.tag.upsert).toHaveBeenCalledWith({
+      where: { userId_name: { userId: "user-1", name: "react" } },
+      update: {},
+      create: { userId: "user-1", name: "react" },
+    });
+    expect(txMock.itemTag.create).toHaveBeenCalledWith({
+      data: { itemId: "item-1", tagId: "tag-react" },
+    });
+    expect(result).toEqual({ ...createdRow, type, tags: ["react", "hooks"], collection: null });
+  });
+
+  it("creates the item with no tags when none are given", async () => {
+    txMock.item.create.mockResolvedValue(createdRow);
+
+    const result = await createItem({ ...input, tags: [] });
+
+    expect(txMock.tag.upsert).not.toHaveBeenCalled();
+    expect(txMock.itemTag.create).not.toHaveBeenCalled();
+    expect(result.tags).toEqual([]);
   });
 });
 

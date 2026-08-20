@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { FolderPlus, Layers, PanelLeft, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CreateItemDialog } from "./CreateItemDialog";
 
 export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+  const [createItemOpen, setCreateItemOpen] = useState(false);
+
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-6">
       <div className="flex items-center gap-2">
@@ -31,11 +35,13 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
           <FolderPlus className="size-4" />
           New Collection
         </Button>
-        <Button>
+        <Button onClick={() => setCreateItemOpen(true)}>
           <Plus className="size-4" />
           New Item
         </Button>
       </div>
+
+      <CreateItemDialog open={createItemOpen} onOpenChange={setCreateItemOpen} />
     </header>
   );
 }

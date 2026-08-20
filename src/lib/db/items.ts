@@ -180,6 +180,67 @@ export async function updateItem(id: string, data: UpdateItemInput): Promise<Ite
   return getItemDetail(id);
 }
 
+export interface CreateItemInput {
+  type: ItemTypeSummary;
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  language: string | null;
+  tags: string[];
+}
+
+export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
+  const userId = await getCurrentUserId();
+
+  const created = await prisma.$transaction(async (tx) => {
+    const item = await tx.item.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        content: data.content,
+        url: data.url,
+        language: data.language,
+        contentType: "text",
+        userId,
+        typeId: data.type.id,
+      },
+    });
+
+    for (const name of data.tags) {
+      const tag = await tx.tag.upsert({
+        where: { userId_name: { userId, name } },
+        update: {},
+        create: { userId, name },
+      });
+
+      await tx.itemTag.create({ data: { itemId: item.id, tagId: tag.id } });
+    }
+
+    return item;
+  });
+
+  return {
+    id: created.id,
+    title: created.title,
+    description: created.description,
+    contentType: created.contentType,
+    content: created.content,
+    fileUrl: created.fileUrl,
+    fileName: created.fileName,
+    fileSize: created.fileSize,
+    url: created.url,
+    language: created.language,
+    isFavorite: created.isFavorite,
+    isPinned: created.isPinned,
+    createdAt: created.createdAt,
+    updatedAt: created.updatedAt,
+    type: data.type,
+    tags: data.tags,
+    collection: null,
+  };
+}
+
 export async function deleteItem(id: string): Promise<boolean> {
   const userId = await getCurrentUserId();
 
