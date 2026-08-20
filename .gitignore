@@ -40,6 +40,12 @@ yarn-error.log*
 # Playwright MCP local test artifacts
 /.playwright-mcp/
 
+# Playwright E2E test artifacts
+/playwright/.auth/
+/playwright-report/
+/test-results/
+/blob-report/
+
 # local tooling (separate git repo, not part of this project)
 /unslop/
 

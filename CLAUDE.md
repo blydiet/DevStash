@@ -35,4 +35,6 @@ npm run lint          # ESLint via eslint-config-next (flat config)
 npm run test          # unit tests via Vitest (src/actions/ and src/lib/ only — see context/ai-interaction.md)
 npm run test:watch    # unit tests in watch mode
 npm run test:coverage # unit tests with a coverage report
+npm run test:e2e      # Playwright E2E tests (e2e/, browser-driven CRUD flows against the demo user)
+npm run test:e2e:ui   # Playwright E2E tests in interactive UI mode
 ```

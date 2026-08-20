@@ -239,7 +239,12 @@ export function ItemDrawer({
                   <AlertDialog>
                     <AlertDialogTrigger
                       render={
-                        <Button variant="ghost" size="icon-sm" className="text-destructive" />
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-destructive"
+                          aria-label="Delete item"
+                        />
                       }
                     >
                       <Trash2 />
