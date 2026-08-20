@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Playwright E2E Tests — Items CRUD
 
 ## Status
 
-Not Started
+Complete
 
 ## Goals
 
-<!-- What does success look like? -->
+- Log in as the seeded demo user (demo@devstash.io / 12345678) and verify redirect to `/dashboard`; all other tests run as this authenticated user
+- **Create**: open the create dialog via "New Item" in the top bar, fill required fields, submit, verify dialog closes and the new item appears in the items list
+- **Read**: navigate to an items list page (e.g. `/items/snippets`), verify grid rendering and correct title/content per card, open an item's detail drawer and verify all fields (title, content, tags, dates)
+- **Update**: open an item's drawer, enter edit mode, verify fields are pre-filled, modify one or more fields, Save, verify the change reflects in both the drawer and the list
+- **Delete**: open an item's drawer, click delete, confirm in the confirmation dialog, verify the drawer closes and the item is removed from the list
 
 ## Notes
 
-<!-- Context, constraints, details from spec -->
+- Source spec: `context/features/playwright-e2e-items-spec.md`
+- Tests must be independent (not order-dependent) and clean up their own test data (or use unique identifiers)
+- This is a Playwright E2E suite, not Vitest — scope is browser-driven CRUD flows, not `src/actions/`/`src/lib/` unit coverage
 
 ## History
 
