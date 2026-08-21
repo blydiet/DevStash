@@ -13,10 +13,10 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
   loading: () => <div className="h-[120px] bg-[#1e1e1e]" />,
 });
 
-const MIN_HEIGHT = 200;
+const MIN_HEIGHT = 157;
 const MAX_HEIGHT = 400;
 const EXPANDED_MIN_HEIGHT = 400;
-const EXPANDED_MAX_HEIGHT = 600;
+const EXPANDED_MAX_HEIGHT = 500;
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -62,11 +62,22 @@ export function CodeEditor({ value, onChange, language, readOnly = false }: Code
   const handleMount: OnMount = useCallback(
     (editor) => {
       const syncHeight = () => {
+        // Force a remeasure against the container's actual current width before reading
+        // content height. Monaco's word-wrap width is otherwise whatever it was at
+        // construction time, which is stale when this editor mounts inside a Sheet that's
+        // still mid-transition (e.g. a second, SWR-cache-hit open of the same drawer skips
+        // the loading-skeleton frame that normally gives layout time to settle first,
+        // so Monaco measures against a container that hasn't reached its final size yet).
+        editor.layout();
         const height = Math.min(maxHeight, Math.max(minHeight, editor.getContentHeight()));
         if (wrapperRef.current) wrapperRef.current.style.height = `${height}px`;
+        // Monaco doesn't know the wrapper's height just changed, so its internal viewport/
+        // scroll positioning would otherwise lag a frame behind the new container size.
         editor.layout();
       };
-      syncHeight();
+      // Defer the first sync two animation frames so the browser has committed a real
+      // layout/paint pass first, rather than measuring mid-transition.
+      requestAnimationFrame(() => requestAnimationFrame(syncHeight));
       editor.onDidContentSizeChange(syncHeight);
 
       // Monaco swallows Tab for indentation by default, trapping keyboard focus inside the
@@ -138,6 +149,7 @@ export function CodeEditor({ value, onChange, language, readOnly = false }: Code
           options={{
             readOnly,
             domReadOnly: readOnly,
+            automaticLayout: true,
             minimap: { enabled: false },
             fontSize: 13,
             scrollBeyondLastLine: false,
