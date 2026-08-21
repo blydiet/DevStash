@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { iconMap } from "@/lib/icon-map";
 import { deleteItem, updateItem } from "@/actions/items";
 import type { ItemDetail } from "@/lib/db/items";
@@ -29,6 +30,7 @@ import type { ItemDetail } from "@/lib/db/items";
 const TYPES_WITH_CONTENT = ["snippet", "prompt", "command", "note"];
 const TYPES_WITH_LANGUAGE = ["snippet", "command"];
 const TYPES_WITH_URL = ["link"];
+const TYPES_WITH_CODE_EDITOR = ["snippet", "command"];
 
 interface EditForm {
   title: string;
@@ -117,6 +119,7 @@ export function ItemDrawer({
   const showsContent = item ? TYPES_WITH_CONTENT.includes(item.type.name) : false;
   const showsLanguage = item ? TYPES_WITH_LANGUAGE.includes(item.type.name) : false;
   const showsUrl = item ? TYPES_WITH_URL.includes(item.type.name) : false;
+  const showsCodeEditor = item ? TYPES_WITH_CODE_EDITOR.includes(item.type.name) : false;
 
   function startEdit() {
     if (!item) return;
@@ -313,20 +316,32 @@ export function ItemDrawer({
                 ? showsContent && (
                     <div>
                       <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
-                      <Textarea
-                        value={form.content}
-                        onChange={(e) => setForm({ ...form, content: e.target.value })}
-                        placeholder="Content"
-                        className="min-h-32 font-mono text-xs"
-                      />
+                      {showsCodeEditor ? (
+                        <CodeEditor
+                          value={form.content}
+                          onChange={(value) => setForm({ ...form, content: value })}
+                          language={form.language}
+                        />
+                      ) : (
+                        <Textarea
+                          value={form.content}
+                          onChange={(e) => setForm({ ...form, content: e.target.value })}
+                          placeholder="Content"
+                          className="min-h-32 font-mono text-xs"
+                        />
+                      )}
                     </div>
                   )
                 : item.content && (
                     <div>
                       <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
-                      <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
-                        <code>{item.content}</code>
-                      </pre>
+                      {showsCodeEditor ? (
+                        <CodeEditor value={item.content} language={item.language} readOnly />
+                      ) : (
+                        <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
+                          <code>{item.content}</code>
+                        </pre>
+                      )}
                     </div>
                   )}
 

@@ -20,7 +20,7 @@ export function ItemCard({ item }: { item: ItemSummary }) {
 
   return (
     <Card
-      className="cursor-pointer border-l-4 border-y-0 border-r-0 transition-colors hover:bg-muted/50"
+      className="cursor-pointer rounded-l-none border-l-4 border-y-0 border-r-0 transition-colors hover:bg-muted/50"
       style={{ borderLeftColor: item.type.color ?? undefined }}
       onClick={() => openItem(item.id)}
     >

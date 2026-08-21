@@ -1,7 +1,9 @@
+import { AddTypeItemButton } from "@/components/dashboard/AddTypeItemButton";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ItemsGrid } from "@/components/dashboard/ItemsGrid";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { getItemTypeByName, type ItemTypeSummary } from "@/lib/db/items";
+import { ITEM_TYPES } from "@/lib/item-types";
 
 function formatTypeLabel(name: string) {
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}s`;
@@ -23,18 +25,27 @@ export default async function ItemsByTypePage({
     error = err instanceof Error ? err.message : "Failed to load item type";
   }
 
+  const creatableType = itemType
+    ? ITEM_TYPES.find((candidate) => candidate.value === itemType.name)
+    : undefined;
+
   return (
     <DashboardShell sidebar={<SidebarContainer />}>
       <div className="flex flex-col gap-8">
-        <div>
-          <h1 className="text-3xl font-bold">
-            {itemType ? formatTypeLabel(itemType.name) : "Items"}
-          </h1>
-          <p className="text-muted-foreground">
-            {itemType
-              ? `All your ${formatTypeLabel(itemType.name).toLowerCase()}`
-              : "Browse items by type"}
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">
+              {itemType ? formatTypeLabel(itemType.name) : "Items"}
+            </h1>
+            <p className="text-muted-foreground">
+              {itemType
+                ? `All your ${formatTypeLabel(itemType.name).toLowerCase()}`
+                : "Browse items by type"}
+            </p>
+          </div>
+          {creatableType && (
+            <AddTypeItemButton type={creatableType.value} label={creatableType.label} />
+          )}
         </div>
 
         {error && (

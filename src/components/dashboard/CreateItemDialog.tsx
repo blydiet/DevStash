@@ -4,15 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import FocusLock from "react-focus-lock";
-import {
-  Code,
-  Link as LinkIcon,
-  Maximize2,
-  Sparkles,
-  StickyNote,
-  Terminal,
-  XIcon,
-} from "lucide-react";
+import { Maximize2, XIcon } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -32,22 +24,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { createItem } from "@/actions/items";
 import { cn } from "@/lib/utils";
-
-const ITEM_TYPES = [
-  { value: "snippet", label: "Snippet", icon: Code, color: "#3b82f6" },
-  { value: "prompt", label: "Prompt", icon: Sparkles, color: "#8b5cf6" },
-  { value: "command", label: "Command", icon: Terminal, color: "#f97316" },
-  { value: "note", label: "Note", icon: StickyNote, color: "#fde047" },
-  { value: "link", label: "Link", icon: LinkIcon, color: "#10b981" },
-] as const;
-
-type ItemType = (typeof ITEM_TYPES)[number]["value"];
+import { ITEM_TYPES, type ItemType } from "@/lib/item-types";
 
 const TYPES_WITH_CONTENT: ItemType[] = ["snippet", "prompt", "command", "note"];
 const TYPES_WITH_LANGUAGE: ItemType[] = ["snippet", "command"];
 const TYPES_WITH_URL: ItemType[] = ["link"];
+const TYPES_WITH_CODE_EDITOR: ItemType[] = ["snippet", "command"];
 
 const EMPTY_FORM = {
   type: "snippet" as ItemType,
@@ -62,22 +47,25 @@ const EMPTY_FORM = {
 export function CreateItemDialog({
   open,
   onOpenChange,
+  defaultType,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultType?: ItemType;
 }) {
   const router = useRouter();
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, type: defaultType ?? EMPTY_FORM.type }));
   const [isSaving, setIsSaving] = useState(false);
   const [contentModalOpen, setContentModalOpen] = useState(false);
 
   const showsContent = TYPES_WITH_CONTENT.includes(form.type);
   const showsLanguage = TYPES_WITH_LANGUAGE.includes(form.type);
   const showsUrl = TYPES_WITH_URL.includes(form.type);
+  const showsCodeEditor = TYPES_WITH_CODE_EDITOR.includes(form.type);
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, type: defaultType ?? EMPTY_FORM.type });
       setContentModalOpen(false);
     }
     onOpenChange(nextOpen);
@@ -199,25 +187,37 @@ export function CreateItemDialog({
 
                   {showsContent && (
                     <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => setContentModalOpen(true)}
-                          aria-label="Expand content box"
-                        >
-                          <Maximize2 />
-                        </Button>
-                        <Label htmlFor="item-content">Content</Label>
-                      </div>
-                      <Textarea
-                        id="item-content"
-                        value={form.content}
-                        onChange={(e) => setForm({ ...form, content: e.target.value })}
-                        placeholder="Content"
-                        className="rounded-[5px] min-h-50 overflow-auto font-mono text-xs md:field-sizing-fixed resize-none"
-                      />
+                      {showsCodeEditor ? (
+                        <Label>Content</Label>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => setContentModalOpen(true)}
+                            aria-label="Expand content box"
+                          >
+                            <Maximize2 />
+                          </Button>
+                          <Label htmlFor="item-content">Content</Label>
+                        </div>
+                      )}
+                      {showsCodeEditor ? (
+                        <CodeEditor
+                          value={form.content}
+                          onChange={(value) => setForm({ ...form, content: value })}
+                          language={form.language}
+                        />
+                      ) : (
+                        <Textarea
+                          id="item-content"
+                          value={form.content}
+                          onChange={(e) => setForm({ ...form, content: e.target.value })}
+                          placeholder="Content"
+                          className="rounded-[5px] min-h-50 overflow-auto font-mono text-xs md:field-sizing-fixed resize-none"
+                        />
+                      )}
                     </div>
                   )}
                 </div>

@@ -6,7 +6,7 @@ import type { CollectionSummary } from "@/lib/db/collections";
 export function CollectionCard({ collection }: { collection: CollectionSummary }) {
   return (
     <Card
-      className="border-l-4 border-y-0 border-r-0"
+      className="rounded-l-none border-l-4 border-y-0 border-r-0"
       style={{ borderLeftColor: collection.borderColor }}
     >
       <CardContent className="flex flex-col gap-3">
