@@ -94,6 +94,160 @@
   body {
     @apply bg-background text-foreground;
     background-color: var(--background);
-    
+
   }
+}
+
+.markdown-preview {
+  color: oklch(0.985 0 0);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.markdown-preview > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-preview > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  font-weight: 600;
+  color: oklch(0.985 0 0);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-preview h1 {
+  font-size: 1.5em;
+}
+.markdown-preview h2 {
+  font-size: 1.3em;
+}
+.markdown-preview h3 {
+  font-size: 1.15em;
+}
+.markdown-preview h4 {
+  font-size: 1em;
+}
+.markdown-preview h5 {
+  font-size: 0.9em;
+}
+.markdown-preview h6 {
+  font-size: 0.85em;
+  color: oklch(0.708 0 0);
+}
+
+.markdown-preview p {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+.markdown-preview strong {
+  font-weight: 600;
+}
+
+.markdown-preview a {
+  color: oklch(0.72 0.15 250);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-preview a:hover {
+  color: oklch(0.8 0.13 250);
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  margin-top: 0;
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.markdown-preview ul {
+  list-style-type: disc;
+}
+
+.markdown-preview ol {
+  list-style-type: decimal;
+}
+
+.markdown-preview li {
+  margin-top: 0.25em;
+}
+
+.markdown-preview li > ul,
+.markdown-preview li > ol {
+  margin-top: 0.25em;
+  margin-bottom: 0;
+}
+
+.markdown-preview blockquote {
+  margin: 0 0 1em;
+  padding-left: 1em;
+  border-left: 3px solid oklch(1 0 0 / 20%);
+  color: oklch(0.708 0 0);
+}
+
+.markdown-preview blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview code {
+  background-color: oklch(1 0 0 / 10%);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85em;
+}
+
+.markdown-preview pre {
+  background-color: #1e1e1e;
+  border: 1px solid oklch(1 0 0 / 10%);
+  border-radius: 8px;
+  padding: 0.75em 1em;
+  margin-bottom: 1em;
+  overflow-x: auto;
+}
+
+.markdown-preview pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 0.85em;
+}
+
+.markdown-preview table {
+  width: 100%;
+  margin-bottom: 1em;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  border: 1px solid oklch(1 0 0 / 10%);
+  padding: 0.4em 0.75em;
+  text-align: left;
+}
+
+.markdown-preview th {
+  background-color: oklch(1 0 0 / 6%);
+  font-weight: 600;
+}
+
+.markdown-preview hr {
+  border: none;
+  border-top: 1px solid oklch(1 0 0 / 10%);
+  margin: 1.5em 0;
+}
+
+.markdown-preview img {
+  max-width: 100%;
+  border-radius: 6px;
 }

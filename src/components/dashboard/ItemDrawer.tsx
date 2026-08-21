@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
+import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { iconMap } from "@/lib/icon-map";
 import { deleteItem, updateItem } from "@/actions/items";
 import type { ItemDetail } from "@/lib/db/items";
@@ -31,6 +32,7 @@ const TYPES_WITH_CONTENT = ["snippet", "prompt", "command", "note"];
 const TYPES_WITH_LANGUAGE = ["snippet", "command"];
 const TYPES_WITH_URL = ["link"];
 const TYPES_WITH_CODE_EDITOR = ["snippet", "command"];
+const TYPES_WITH_MARKDOWN_EDITOR = ["prompt", "note"];
 
 interface EditForm {
   title: string;
@@ -120,6 +122,7 @@ export function ItemDrawer({
   const showsLanguage = item ? TYPES_WITH_LANGUAGE.includes(item.type.name) : false;
   const showsUrl = item ? TYPES_WITH_URL.includes(item.type.name) : false;
   const showsCodeEditor = item ? TYPES_WITH_CODE_EDITOR.includes(item.type.name) : false;
+  const showsMarkdownEditor = item ? TYPES_WITH_MARKDOWN_EDITOR.includes(item.type.name) : false;
 
   function startEdit() {
     if (!item) return;
@@ -322,14 +325,13 @@ export function ItemDrawer({
                           onChange={(value) => setForm({ ...form, content: value })}
                           language={form.language}
                         />
-                      ) : (
-                        <Textarea
+                      ) : showsMarkdownEditor ? (
+                        <MarkdownEditor
+                          key="edit"
                           value={form.content}
-                          onChange={(e) => setForm({ ...form, content: e.target.value })}
-                          placeholder="Content"
-                          className="min-h-32 font-mono text-xs"
+                          onChange={(value) => setForm({ ...form, content: value })}
                         />
-                      )}
+                      ) : null}
                     </div>
                   )
                 : item.content && (
@@ -337,11 +339,9 @@ export function ItemDrawer({
                       <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
                       {showsCodeEditor ? (
                         <CodeEditor value={item.content} language={item.language} readOnly />
-                      ) : (
-                        <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
-                          <code>{item.content}</code>
-                        </pre>
-                      )}
+                      ) : showsMarkdownEditor ? (
+                        <MarkdownEditor key="view" value={item.content} readOnly />
+                      ) : null}
                     </div>
                   )}
 
