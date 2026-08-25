@@ -1,3 +1,5 @@
+import { File, FileCode, FileJson, FileSpreadsheet, FileText, type LucideIcon } from "lucide-react";
+
 export type UploadKind = "image" | "file";
 
 interface FileConstraint {
@@ -63,6 +65,21 @@ export function validateFile(
 export function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
+
+export const EXTENSION_ICONS: Record<string, LucideIcon> = {
+  ".pdf": FileText,
+  ".txt": FileText,
+  ".md": FileText,
+  ".json": FileJson,
+  ".yaml": FileCode,
+  ".yml": FileCode,
+  ".xml": FileCode,
+  ".csv": FileSpreadsheet,
+  ".toml": FileCode,
+  ".ini": FileCode,
+};
+
+export const DEFAULT_FILE_ICON: LucideIcon = File;
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

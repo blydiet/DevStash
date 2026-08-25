@@ -1,4 +1,5 @@
 import { getItemsByType, type ItemSummary } from "@/lib/db/items";
+import { FileListItem } from "./FileListItem";
 import { ImageCard } from "./ImageCard";
 import { ItemCard } from "./ItemCard";
 
@@ -28,6 +29,17 @@ export async function ItemsGrid({ typeName }: { typeName: string }) {
   }
 
   const isImageGallery = typeName === "image";
+  const isFileList = typeName === "file";
+
+  if (isFileList) {
+    return (
+      <div className="rounded-lg border">
+        {items.map((item) => (
+          <FileListItem key={item.id} item={item} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div

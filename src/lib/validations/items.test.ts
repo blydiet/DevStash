@@ -58,6 +58,16 @@ describe("createItemSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("rejects a fileUrl with no fileName", () => {
+    const result = createItemSchema.safeParse({
+      ...base,
+      type: "file",
+      fileUrl: "https://public.example/user-1/abc-notes.txt",
+      fileName: null,
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("updateItemSchema", () => {

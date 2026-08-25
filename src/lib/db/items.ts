@@ -19,6 +19,8 @@ export interface ItemSummary {
   type: ItemTypeSummary;
   tags: string[];
   fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
 }
 
 export interface ItemStats {
@@ -60,6 +62,8 @@ type PrismaItemWithRelations = {
   type: ItemTypeSummary;
   tags: { tag: { name: string } }[];
   fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
 };
 
 function toItemSummary(item: PrismaItemWithRelations): ItemSummary {
@@ -73,6 +77,8 @@ function toItemSummary(item: PrismaItemWithRelations): ItemSummary {
     type: item.type,
     tags: item.tags.map(({ tag }) => tag.name),
     fileUrl: item.fileUrl,
+    fileName: item.fileName,
+    fileSize: item.fileSize,
   };
 }
 

@@ -29,4 +29,8 @@ export const createItemSchema = z
   .refine((data) => (data.type !== "file" && data.type !== "image") || data.fileUrl !== null, {
     message: "A file upload is required",
     path: ["fileUrl"],
+  })
+  .refine((data) => data.fileUrl === null || data.fileName !== null, {
+    message: "A file name is required",
+    path: ["fileName"],
   });
