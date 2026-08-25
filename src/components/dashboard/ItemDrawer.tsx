@@ -26,6 +26,7 @@ import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { iconMap } from "@/lib/icon-map";
 import { formatFileSize } from "@/lib/file-constraints";
+import { fetchItemDetail } from "@/lib/swr-fetcher";
 import { deleteItem, updateItem } from "@/actions/items";
 import type { ItemDetail } from "@/lib/db/items";
 
@@ -53,17 +54,6 @@ function toEditForm(item: ItemDetail): EditForm {
     language: item.language ?? "",
     tags: item.tags.join(", "),
   };
-}
-
-async function fetcher(url: string): Promise<ItemDetail> {
-  const res = await fetch(url);
-  const body = await res.json();
-
-  if (!res.ok || !body.success) {
-    throw new Error(body.error ?? "Failed to load item");
-  }
-
-  return body.data as ItemDetail;
 }
 
 function formatDate(date: string) {
@@ -103,7 +93,7 @@ export function ItemDrawer({
     error,
     isLoading,
     mutate,
-  } = useSWR(open && itemId ? `/api/items/${itemId}` : null, fetcher);
+  } = useSWR(open && itemId ? `/api/items/${itemId}` : null, fetchItemDetail);
 
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [form, setForm] = useState<EditForm | null>(null);

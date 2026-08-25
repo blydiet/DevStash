@@ -1,9 +1,13 @@
 "use client";
 
-import { File, Pin, Star } from "lucide-react";
+import useSWRMutation from "swr/mutation";
+import { toast } from "sonner";
+import { Copy, File, Pin, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/icon-map";
+import { fetchItemDetail } from "@/lib/swr-fetcher";
 import { useItemDrawer } from "./ItemDrawerContext";
 import type { ItemSummary } from "@/lib/db/items";
 
@@ -17,6 +21,29 @@ function formatDate(date: Date) {
 export function ItemCard({ item }: { item: ItemSummary }) {
   const { openItem } = useItemDrawer();
   const Icon = iconMap[item.type.icon ?? ""] ?? File;
+  const itemDetailUrl = `/api/items/${item.id}`;
+  const { trigger: loadItem, isMutating: copying } = useSWRMutation(
+    itemDetailUrl,
+    (url: string) => fetchItemDetail(url),
+  );
+
+  async function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      const detail = await loadItem();
+      const text = detail.type.name === "link" ? detail.url : detail.content;
+
+      if (!text) {
+        toast.error("Nothing to copy");
+        return;
+      }
+
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Failed to copy");
+    }
+  }
 
   return (
     <Card
@@ -54,7 +81,19 @@ export function ItemCard({ item }: { item: ItemSummary }) {
             ))}
           </div>
         )}
-        <p className="text-sm text-muted-foreground">{formatDate(item.createdAt)}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground">{formatDate(item.createdAt)}</p>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            disabled={copying}
+            onClick={handleCopy}
+          >
+            <Copy className="size-3.5" />
+            <span className="sr-only">Copy</span>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
