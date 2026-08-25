@@ -95,16 +95,16 @@ export function FileUpload({
 
   if (value) {
     return (
-      <div className="flex items-center gap-3 rounded-[5px] border border-border p-3">
+      <div className="flex items-center gap-3 rounded-[5px] p-3">
         {kind === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={value.fileUrl}
             alt={value.fileName}
-            className="size-12 shrink-0 rounded-[5px] object-cover"
+            className="size-12 shrink-0 rounded-[5px] border-b-4 border-border object-cover"
           />
         ) : (
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-[5px] bg-muted">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-[5px] border-b-4 border-border bg-muted">
             <FileIcon className="size-5 text-muted-foreground" />
           </div>
         )}
@@ -138,7 +138,7 @@ export function FileUpload({
         }}
         disabled={progress !== null}
         className={cn(
-          "flex flex-col items-center justify-center gap-2 rounded-[5px] border border-dashed border-border p-6 text-center transition-colors",
+          "flex flex-col items-center justify-center gap-2 rounded-[5px] border border-dashed border-border p-6 text-center transition-colors sm:min-h-[200px]",
           isDragging && "border-primary bg-accent",
           progress === null && "hover:border-primary hover:bg-accent"
         )}

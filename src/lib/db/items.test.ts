@@ -68,6 +68,7 @@ describe("getPinnedItems", () => {
         createdAt: new Date("2026-01-01"),
         type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
         tags: [{ tag: { name: "react" } }, { tag: { name: "hooks" } }],
+        fileUrl: null,
       },
     ]);
 
@@ -75,6 +76,7 @@ describe("getPinnedItems", () => {
 
     expect(result.tags).toEqual(["react", "hooks"]);
     expect(result.type.name).toBe("snippet");
+    expect(result.fileUrl).toBeNull();
   });
 });
 
