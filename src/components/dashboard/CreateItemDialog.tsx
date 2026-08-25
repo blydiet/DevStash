@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
+import { FileUpload, type UploadedFile } from "@/components/dashboard/FileUpload";
 import { createItem } from "@/actions/items";
 import { cn } from "@/lib/utils";
 import { ITEM_TYPES, type ItemType } from "@/lib/item-types";
@@ -35,6 +36,7 @@ const TYPES_WITH_LANGUAGE: ItemType[] = ["snippet", "command"];
 const TYPES_WITH_URL: ItemType[] = ["link"];
 const TYPES_WITH_CODE_EDITOR: ItemType[] = ["snippet", "command"];
 const TYPES_WITH_MARKDOWN_EDITOR: ItemType[] = ["prompt", "note"];
+const TYPES_WITH_FILE_UPLOAD: ItemType[] = ["file", "image"];
 
 const EMPTY_FORM = {
   type: "snippet" as ItemType,
@@ -43,6 +45,7 @@ const EMPTY_FORM = {
   content: "",
   url: "",
   language: "",
+  file: null as UploadedFile | null,
   tags: "",
 };
 
@@ -64,6 +67,7 @@ export function CreateItemDialog({
   const showsUrl = TYPES_WITH_URL.includes(form.type);
   const showsCodeEditor = TYPES_WITH_CODE_EDITOR.includes(form.type);
   const showsMarkdownEditor = TYPES_WITH_MARKDOWN_EDITOR.includes(form.type);
+  const showsFileUpload = TYPES_WITH_FILE_UPLOAD.includes(form.type);
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
@@ -81,6 +85,9 @@ export function CreateItemDialog({
       content: showsContent && form.content.trim() !== "" ? form.content : null,
       url: showsUrl && form.url.trim() !== "" ? form.url : null,
       language: showsLanguage && form.language.trim() !== "" ? form.language : null,
+      fileUrl: showsFileUpload ? (form.file?.fileUrl ?? null) : null,
+      fileName: showsFileUpload ? (form.file?.fileName ?? null) : null,
+      fileSize: showsFileUpload ? (form.file?.fileSize ?? null) : null,
       tags: form.tags
         .split(",")
         .map((tag) => tag.trim())
@@ -98,7 +105,10 @@ export function CreateItemDialog({
     router.refresh();
   }
 
-  const canSave = form.title.trim() !== "" && (!showsUrl || form.url.trim() !== "");
+  const canSave =
+    form.title.trim() !== "" &&
+    (!showsUrl || form.url.trim() !== "") &&
+    (!showsFileUpload || form.file !== null);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -201,6 +211,17 @@ export function CreateItemDialog({
                         onChange={(value) => setForm({ ...form, content: value })}
                       />
                     ) : null}
+                  </div>
+                )}
+
+                {showsFileUpload && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label>{form.type === "image" ? "Image" : "File"}</Label>
+                    <FileUpload
+                      kind={form.type as "file" | "image"}
+                      value={form.file}
+                      onChange={(file) => setForm({ ...form, file })}
+                    />
                   </div>
                 )}
               </div>

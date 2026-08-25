@@ -17,6 +17,9 @@ export async function createItem(data: {
   content: string | null;
   url: string | null;
   language: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
   tags: string[];
 }): Promise<CreateItemActionResult> {
   const session = await auth();

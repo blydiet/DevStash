@@ -30,12 +30,22 @@ const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
   },
 }));
 
+const { deleteFromR2Mock, extractKeyFromUrlMock } = vi.hoisted(() => ({
+  deleteFromR2Mock: vi.fn(),
+  extractKeyFromUrlMock: vi.fn((url: string) => url.replace("https://public.example/", "")),
+}));
+
 vi.mock("@/lib/db/user", () => ({
   getCurrentUserId: getCurrentUserIdMock,
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: prismaMock,
+}));
+
+vi.mock("@/lib/r2", () => ({
+  deleteFromR2: deleteFromR2Mock,
+  extractKeyFromUrl: extractKeyFromUrlMock,
 }));
 
 beforeEach(() => {
@@ -221,6 +231,9 @@ describe("createItem", () => {
     content: "console.log('hi')",
     url: null,
     language: "typescript",
+    fileUrl: null,
+    fileName: null,
+    fileSize: null,
     tags: ["react", "hooks"],
   };
   const createdRow = {
@@ -255,6 +268,9 @@ describe("createItem", () => {
         content: "console.log('hi')",
         url: null,
         language: "typescript",
+        fileUrl: null,
+        fileName: null,
+        fileSize: null,
         contentType: "text",
         userId: "user-1",
         typeId: "type-snippet",
@@ -280,21 +296,93 @@ describe("createItem", () => {
     expect(txMock.itemTag.create).not.toHaveBeenCalled();
     expect(result.tags).toEqual([]);
   });
+
+  it("sets contentType to file and stores file fields when a fileUrl is given", async () => {
+    const fileType = { id: "type-image", name: "image", icon: "Image", color: "#ec4899" };
+    txMock.item.create.mockResolvedValue({
+      ...createdRow,
+      content: null,
+      contentType: "file",
+      fileUrl: "https://public.example/user-1/abc-photo.png",
+      fileName: "photo.png",
+      fileSize: 1024,
+    });
+
+    await createItem({
+      ...input,
+      type: fileType,
+      content: null,
+      fileUrl: "https://public.example/user-1/abc-photo.png",
+      fileName: "photo.png",
+      fileSize: 1024,
+      tags: [],
+    });
+
+    expect(txMock.item.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        contentType: "file",
+        fileUrl: "https://public.example/user-1/abc-photo.png",
+        fileName: "photo.png",
+        fileSize: 1024,
+      }),
+    });
+  });
 });
 
 describe("deleteItem", () => {
   it("returns false when the item isn't owned by the current user (or doesn't exist)", async () => {
+    prismaMock.item.findFirst.mockResolvedValue(null);
     prismaMock.item.deleteMany.mockResolvedValue({ count: 0 });
 
     await expect(deleteItem("item-1")).resolves.toBe(false);
     expect(prismaMock.item.deleteMany).toHaveBeenCalledWith({
       where: { id: "item-1", userId: "user-1" },
     });
+    expect(deleteFromR2Mock).not.toHaveBeenCalled();
   });
 
-  it("returns true when the item is deleted", async () => {
+  it("returns true when the item is deleted, with no R2 cleanup for a text item", async () => {
+    prismaMock.item.findFirst.mockResolvedValue({ fileUrl: null });
     prismaMock.item.deleteMany.mockResolvedValue({ count: 1 });
 
     await expect(deleteItem("item-1")).resolves.toBe(true);
+    expect(deleteFromR2Mock).not.toHaveBeenCalled();
+  });
+
+  it("deletes the R2 object when a file item is deleted", async () => {
+    prismaMock.item.findFirst.mockResolvedValue({
+      fileUrl: "https://public.example/user-1/abc-photo.png",
+    });
+    prismaMock.item.deleteMany.mockResolvedValue({ count: 1 });
+
+    await expect(deleteItem("item-1")).resolves.toBe(true);
+    expect(extractKeyFromUrlMock).toHaveBeenCalledWith(
+      "https://public.example/user-1/abc-photo.png"
+    );
+    expect(deleteFromR2Mock).toHaveBeenCalledWith("user-1/abc-photo.png");
+  });
+
+  it("still returns true (and logs) when R2 cleanup fails after the DB row is already gone", async () => {
+    prismaMock.item.findFirst.mockResolvedValue({
+      fileUrl: "https://public.example/user-1/abc-photo.png",
+    });
+    prismaMock.item.deleteMany.mockResolvedValue({ count: 1 });
+    deleteFromR2Mock.mockRejectedValueOnce(new Error("R2 object not found"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(deleteItem("item-1")).resolves.toBe(true);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("skips R2 cleanup when the row was already gone by the time it deleted", async () => {
+    prismaMock.item.findFirst.mockResolvedValue({
+      fileUrl: "https://public.example/user-1/abc-photo.png",
+    });
+    prismaMock.item.deleteMany.mockResolvedValue({ count: 0 });
+
+    await expect(deleteItem("item-1")).resolves.toBe(false);
+    expect(deleteFromR2Mock).not.toHaveBeenCalled();
   });
 });

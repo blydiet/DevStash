@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/db/user";
+import { deleteFromR2, extractKeyFromUrl } from "@/lib/r2";
 
 export interface ItemTypeSummary {
   id: string;
@@ -187,6 +188,9 @@ export interface CreateItemInput {
   content: string | null;
   url: string | null;
   language: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
   tags: string[];
 }
 
@@ -201,7 +205,10 @@ export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
         content: data.content,
         url: data.url,
         language: data.language,
-        contentType: "text",
+        fileUrl: data.fileUrl,
+        fileName: data.fileName,
+        fileSize: data.fileSize,
+        contentType: data.fileUrl ? "file" : "text",
         userId,
         typeId: data.type.id,
       },
@@ -244,7 +251,20 @@ export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
 export async function deleteItem(id: string): Promise<boolean> {
   const userId = await getCurrentUserId();
 
+  const existing = await prisma.item.findFirst({
+    where: { id, userId },
+    select: { fileUrl: true },
+  });
+
   const { count } = await prisma.item.deleteMany({ where: { id, userId } });
+
+  if (count > 0 && existing?.fileUrl) {
+    try {
+      await deleteFromR2(extractKeyFromUrl(existing.fileUrl));
+    } catch (err) {
+      console.error(`Failed to delete R2 object for item ${id}:`, err);
+    }
+  }
 
   return count > 0;
 }

@@ -41,6 +41,9 @@ const validCreateData = {
   content: "console.log('hi')",
   url: null,
   language: "typescript",
+  fileUrl: null,
+  fileName: null,
+  fileSize: null,
   tags: ["react"],
 };
 
@@ -72,6 +75,15 @@ describe("createItem", () => {
     expect(createItemInDbMock).not.toHaveBeenCalled();
   });
 
+  it("rejects an image item with no fileUrl via schema validation", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+
+    const result = await createItem({ ...validCreateData, type: "image", fileUrl: null });
+
+    expect(result.success).toBe(false);
+    expect(createItemInDbMock).not.toHaveBeenCalled();
+  });
+
   it("reports an error when the type doesn't resolve to a system item type", async () => {
     authMock.mockResolvedValue({ user: { id: "user-1" } });
     getItemTypeByNameMock.mockResolvedValue(null);
@@ -92,6 +104,28 @@ describe("createItem", () => {
     const result = await createItem(validCreateData);
 
     expect(createItemInDbMock).toHaveBeenCalledWith({ ...validCreateData, type });
+    expect(result).toEqual({ success: true, data: created });
+  });
+
+  it("creates an image item that has a fileUrl", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    const type = { id: "type-image", name: "image", icon: "Image", color: "#ec4899" };
+    getItemTypeByNameMock.mockResolvedValue(type);
+    const created = { id: "item-1", title: "Photo" };
+    createItemInDbMock.mockResolvedValue(created);
+
+    const data = {
+      ...validCreateData,
+      type: "image",
+      content: null,
+      fileUrl: "https://public.example/user-1/abc-photo.png",
+      fileName: "photo.png",
+      fileSize: 1024,
+    };
+
+    const result = await createItem(data);
+
+    expect(createItemInDbMock).toHaveBeenCalledWith({ ...data, type });
     expect(result).toEqual({ success: true, data: created });
   });
 });

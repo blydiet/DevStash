@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { Calendar, Copy, File, FolderOpen, Pencil, Pin, Star, Tag, Trash2 } from "lucide-react";
+import { Calendar, Copy, Download, File, FolderOpen, Pencil, Pin, Star, Tag, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { iconMap } from "@/lib/icon-map";
+import { formatFileSize } from "@/lib/file-constraints";
 import { deleteItem, updateItem } from "@/actions/items";
 import type { ItemDetail } from "@/lib/db/items";
 
@@ -238,6 +239,17 @@ export function ItemDrawer({
                     <Copy />
                     <span className="hidden sm:inline">Copy</span>
                   </Button>
+                  {item.contentType === "file" && item.fileUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      nativeButton={false}
+                      render={<a href={`/api/items/${item.id}/download`} />}
+                    >
+                      <Download />
+                      <span className="hidden sm:inline">Download</span>
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" className="ml-auto" onClick={startEdit}>
                     <Pencil />
                     <span className="hidden sm:inline">Edit</span>
@@ -383,10 +395,34 @@ export function ItemDrawer({
                     </div>
                   )}
 
-              {mode === "view" && item.fileName && (
+              {mode === "view" && item.type.name === "image" && item.fileUrl && (
+                <div>
+                  <h3 className="pb-2 text-sm font-medium text-muted-foreground">Preview</h3>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.fileUrl}
+                    alt={item.fileName ?? item.title}
+                    className="max-h-64 w-full rounded-[5px] object-contain"
+                  />
+                </div>
+              )}
+
+              {mode === "view" && item.type.name === "file" && item.fileName && (
                 <div>
                   <h3 className="pb-2 text-sm font-medium text-muted-foreground">File</h3>
-                  <p className="break-all text-sm">{item.fileName}</p>
+                  <div className="flex items-center gap-3 rounded-[5px] border border-border p-3">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-[5px] bg-muted">
+                      <File className="size-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm">{item.fileName}</span>
+                      {item.fileSize !== null && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatFileSize(item.fileSize)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
