@@ -31,7 +31,13 @@ export async function createItem(page: Page, data: TestItemData) {
 
   await dialog.getByLabel("Title", { exact: true }).fill(data.title);
   await dialog.getByLabel("Description", { exact: true }).fill(data.description);
-  await dialog.getByLabel("Content", { exact: true }).fill(data.content);
+  // Content is a Monaco editor (CodeEditor) for snippets/commands. Its edit-context node
+  // ("Editor content") isn't a real <textarea>/[contenteditable] so .fill() is rejected,
+  // and clicking it directly gets blocked by its own rendered view-line on top of it —
+  // click the editor container instead (focuses the same hidden input) and insert text
+  // the way a paste would.
+  await dialog.locator(".monaco-editor").first().click();
+  await dialog.page().keyboard.insertText(data.content);
   await dialog.getByLabel("Language", { exact: true }).fill(data.language);
   await dialog.getByLabel("Tags", { exact: true }).fill(data.tags);
 

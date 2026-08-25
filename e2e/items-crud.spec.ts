@@ -59,11 +59,13 @@ test.describe("Items CRUD", () => {
     await createItem(page, data);
 
     const drawer = await openItemDrawer(page, title);
-    await drawer.getByRole("button", { name: "Edit" }).click();
+    await drawer.getByRole("button", { name: "Edit", exact: true }).click();
 
     await expect(drawer.getByPlaceholder("Title")).toHaveValue(title);
     await expect(drawer.getByPlaceholder("Description")).toHaveValue(data.description);
-    await expect(drawer.getByPlaceholder("Content")).toHaveValue(data.content);
+    // Content is a Monaco editor (CodeEditor) for snippets, not a placeholder-bearing
+    // <textarea> — assert the pre-filled text is visible instead.
+    await expect(drawer.getByText(data.content)).toBeVisible();
 
     await drawer.getByPlaceholder("Title").fill(updatedTitle);
     await drawer.getByRole("button", { name: "Save" }).click();
