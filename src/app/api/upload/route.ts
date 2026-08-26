@@ -32,6 +32,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    data: { fileUrl: buildPublicUrl(key), fileName: file.name, fileSize: file.size },
+    data: { fileUrl: buildPublicUrl(key), fileName: sanitizedName, fileSize: file.size },
   });
 }
