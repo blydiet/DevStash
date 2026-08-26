@@ -1,7 +1,7 @@
 import { Boxes, FolderOpen, Heart, Star, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCollectionStats, type CollectionStats } from "@/lib/db/collections";
-import { getItemStats, type ItemStats } from "@/lib/db/items";
+import { getItemStats, type ItemStats } from "@/lib/db/item-metadata";
 
 export async function StatsCards() {
   let itemStats: ItemStats = { total: 0, favorites: 0 };

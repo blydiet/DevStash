@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { iconMap } from "@/lib/icon-map";
-import type { ItemTypeWithCount } from "@/lib/db/items";
+import type { ItemTypeWithCount } from "@/lib/db/item-metadata";
 import type { CollectionSummary } from "@/lib/db/collections";
 import type { CurrentUser } from "@/lib/db/user";
 

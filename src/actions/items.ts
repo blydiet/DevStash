@@ -4,9 +4,9 @@ import { auth } from "@/auth";
 import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
-  getItemTypeByName,
   updateItem as updateItemInDb,
-} from "@/lib/db/items";
+} from "@/lib/db/items-mutations";
+import { getItemTypeByName } from "@/lib/db/item-metadata";
 import { createItemSchema, updateItemSchema } from "@/lib/validations/items";
 import type { CreateItemActionResult, DeleteItemActionResult, UpdateItemActionResult } from "@/types/items";
 

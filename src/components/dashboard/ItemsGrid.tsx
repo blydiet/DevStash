@@ -1,4 +1,4 @@
-import { getItemsByType, type ItemSummary } from "@/lib/db/items";
+import { getItemsByType, type ItemSummary } from "@/lib/db/items-queries";
 import { FileListItem } from "./FileListItem";
 import { ImageCard } from "./ImageCard";
 import { ItemCard } from "./ItemCard";

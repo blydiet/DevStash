@@ -2,7 +2,8 @@ import { AddTypeItemButton } from "@/components/dashboard/AddTypeItemButton";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ItemsGrid } from "@/components/dashboard/ItemsGrid";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
-import { getItemTypeByName, type ItemTypeSummary } from "@/lib/db/items";
+import { getItemTypeByName } from "@/lib/db/item-metadata";
+import type { ItemTypeSummary } from "@/lib/db/items-queries";
 import { ITEM_TYPES } from "@/lib/item-types";
 
 function formatTypeLabel(name: string) {

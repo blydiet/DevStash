@@ -4,7 +4,7 @@ import { Download, Pin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_FILE_ICON, EXTENSION_ICONS, formatFileSize, getExtension } from "@/lib/file-constraints";
 import { useItemDrawer } from "./ItemDrawerContext";
-import type { ItemSummary } from "@/lib/db/items";
+import type { ItemSummary } from "@/lib/db/items-queries";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", {

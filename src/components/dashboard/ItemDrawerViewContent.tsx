@@ -4,7 +4,7 @@ import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { formatFileSize } from "@/lib/file-constraints";
 import { typeShowsCodeEditor, typeShowsMarkdownEditor } from "@/lib/item-type-capabilities";
-import type { ItemDetail } from "@/lib/db/items";
+import type { ItemDetail } from "@/lib/db/items-queries";
 
 export function ItemDrawerViewContent({ item }: { item: ItemDetail }) {
   const showsCodeEditor = typeShowsCodeEditor(item.type.name);

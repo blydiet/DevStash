@@ -2,17 +2,24 @@
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+Complete
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Split `src/lib/db/items.ts` (323 lines, blends reads/mutations/metadata) into:
+  - `src/lib/db/items-queries.ts` — `ItemTypeSummary`/`ItemSummary`/`ItemDetail` types, `getPinnedItems`, `getRecentItems`, `getItemsByType`, `getItemDetail`
+  - `src/lib/db/items-mutations.ts` — `createItem`, `updateItem`, `deleteItem`
+  - `src/lib/db/item-metadata.ts` — `getItemTypeByName`, `getItemTypes`, `getItemStats` (named to avoid a basename collision with the existing `src/lib/item-types.ts`)
+- Pure refactor, no behavior change
+- Update all consumer imports (~20 files) and split the colocated `items.test.ts` to match
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+Raised by the `codebase-scanner` agent: no single function in `items.ts` is too long, but it blends three concerns.
 
 ## History
+
+- 2026-08-26: Split `src/lib/db/items.ts` (per this file's own spec, raised by a `codebase-scanner` pass) implemented on branch `feature/split-items-db-module`. Reads moved to `src/lib/db/items-queries.ts`, mutations to `src/lib/db/items-mutations.ts` (imports `getItemDetail` from `items-queries.ts` for `updateItem`'s post-write refresh), metadata to `src/lib/db/item-metadata.ts` — named to avoid a basename collision with the pre-existing `src/lib/item-types.ts` (UI constant module, unrelated), an explicit choice offered up front. Updated all ~20 consumer imports across `src/app/`, `src/components/`, `src/actions/items.ts`, and `src/types/items.ts`, splitting any that pulled from more than one of the new modules. Split the colocated `items.test.ts` into `items-queries.test.ts`/`items-mutations.test.ts`/`item-metadata.test.ts` to match, and split `actions/items.test.ts`'s single `vi.mock("@/lib/db/items")` into two mocks matching the new import paths. One small logic tweak bundled in at explicit user request while reviewing the split, not part of the original scope: in `deleteItem`, moved the `if (count > 0 && existing?.fileUrl)` check inside the `try` block wrapping the R2 delete (previously the `if` wrapped the `try`) — behaviorally identical since the condition itself can't throw, but a clearer read of what's actually being guarded. Verified live via Playwright as the demo user: `/dashboard` renders real sidebar type counts (from `item-metadata.ts`), stats cards, collections, and recent items (from `items-queries.ts`) with no console errors; opening the "Tailwind CSS Docs" item drawer correctly fetches and renders full detail (description/URL/collection) via `getItemDetail`; `/items/link` (using `getItemsByType`/`getItemTypeByName`) renders all 6 real links with no console errors. `npm run test` (148/148, no regressions), `npm run lint` (only the pre-existing, unrelated `JWT` warning), `npm run build`, and `tsc --noEmit` all pass. Ready to commit and merge.
 
 <!-- Keep this updated. Earliest ot latest -->
 

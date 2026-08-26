@@ -1,5 +1,5 @@
 import { Pin } from "lucide-react";
-import { getPinnedItems, type ItemSummary } from "@/lib/db/items";
+import { getPinnedItems, type ItemSummary } from "@/lib/db/items-queries";
 import { ItemRow } from "./ItemRow";
 
 export async function PinnedItems() {

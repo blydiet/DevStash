@@ -13,7 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import type { ItemDetail } from "@/lib/db/items";
+import type { ItemDetail } from "@/lib/db/items-queries";
 
 interface ItemDrawerActionBarProps {
   item: ItemDetail;
