@@ -2,15 +2,15 @@
 
 ## Status
 
-Complete
+<!-- Not Started | In Progress | Complete -->
 
 ## Goals
 
-Fix: distinct sign-in error for GitHub-only accounts. Follow-up from auth-phase-2/auth-phase-3 history: `authorize()` in `src/auth.ts` collapses unknown-email, GitHub-only-account, and wrong-password into one generic "Invalid email or password" message. A user who signed up via GitHub and tries email/password sign-in gets no indication of why it's failing.
-
-Fix: when the email belongs to a real account with no password set (GitHub-only), throw a distinct error and show "This account uses GitHub — sign in with GitHub instead." Unknown email and wrong password both stay on the generic message. Explicit user choice (offered as a question before implementing, consistent with this project's pattern for existence-revealing trade-offs): accept the minor enumeration trade-off (revealing "this email is a GitHub-only account", not whether an unknown email exists at all) for better UX.
+<!-- Bullet points of what success looks like -->
 
 ## Notes
+
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
 
