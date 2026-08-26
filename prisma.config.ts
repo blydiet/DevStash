@@ -1,9 +1,15 @@
-import { config } from "dotenv";
+import { loadEnvFile } from "node:process";
 import { defineConfig, env } from "prisma/config";
 
-// Match Next.js's env file precedence: .env, then .env.local overrides it.
-config();
-config({ path: ".env.local", override: true });
+// Match Next.js's env file precedence: .env.local overrides .env.
+// loadEnvFile() never overwrites a key already present in process.env, so the
+// file that should win is loaded first; .env.local is optional (gitignored).
+try {
+  loadEnvFile(".env.local");
+} catch {
+  // .env.local is optional
+}
+loadEnvFile(".env");
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
