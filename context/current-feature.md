@@ -2,16 +2,11 @@
 
 ## Status
 
-Complete
+<!-- Not Started | In Progress | Complete -->
 
 ## Goals
 
-Split up the two largest components flagged by a `codebase-scanner` pass (`ItemDrawer.tsx`, 481 lines; `CreateItemDialog.tsx`, 274 lines) into smaller, focused pieces. No behavior change intended — pure refactor.
-
-- `ItemDrawer.tsx`: extract `ItemDrawerSkeleton`, `ItemDrawerActionBar` (view/edit action buttons + delete confirmation), `ItemDrawerViewContent`, `ItemDrawerEditForm`, and `ItemDrawerMetadata` (collection + dates, shown in both modes) into their own files under `src/components/dashboard/`.
-- `CreateItemDialog.tsx`: extract `ItemTypeSelect` and `CreateItemFields` (URL/content/file-upload conditional group) into their own files.
-- Dedupe the `TYPES_WITH_CONTENT`/`TYPES_WITH_LANGUAGE`/`TYPES_WITH_URL`/`TYPES_WITH_CODE_EDITOR`/`TYPES_WITH_MARKDOWN_EDITOR`/`TYPES_WITH_FILE_UPLOAD` arrays, which were defined identically in both files, into a shared `src/lib/item-type-capabilities.ts`.
-- Move `EditForm`/`toEditForm`/`formatDate` out of `ItemDrawer.tsx` into `src/lib/item-drawer-utils.ts`.
+<!-- Bullet points of what success looks like -->
 
 ## Notes
 
