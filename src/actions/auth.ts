@@ -3,7 +3,13 @@
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
-import { signIn, signOut, EmailNotVerifiedError, RateLimitedError } from "@/auth";
+import {
+  signIn,
+  signOut,
+  EmailNotVerifiedError,
+  RateLimitedError,
+  GitHubOnlyAccountError,
+} from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { consumeVerificationToken } from "@/lib/db/verification-tokens";
@@ -41,6 +47,12 @@ export async function signInWithCredentials(
         error: "Please verify your email before signing in.",
         unverified: true,
         email: parsed.data.email,
+      };
+    }
+    if (error instanceof GitHubOnlyAccountError) {
+      return {
+        success: false,
+        error: "This account uses GitHub — sign in with GitHub instead.",
       };
     }
     if (error instanceof AuthError) {

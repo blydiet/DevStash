@@ -12,6 +12,10 @@ export class EmailNotVerifiedError extends CredentialsSignin {
   code = "email-not-verified";
 }
 
+export class GitHubOnlyAccountError extends CredentialsSignin {
+  code = "github-only-account";
+}
+
 export class RateLimitedError extends CredentialsSignin {
   code = "rate-limited";
   reset: number;
@@ -56,8 +60,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({ where: { email } });
 
-        if (!user?.password) {
+        if (!user) {
           return null;
+        }
+
+        if (!user.password) {
+          throw new GitHubOnlyAccountError();
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);

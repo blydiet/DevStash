@@ -12,6 +12,7 @@ const {
   AuthError,
   EmailNotVerifiedError,
   RateLimitedError,
+  GitHubOnlyAccountError,
   redirectMock,
   prismaMock,
   sendVerificationEmailMock,
@@ -34,12 +35,16 @@ const {
       this.reset = reset;
     }
   }
+  class GitHubOnlyAccountError extends Error {
+    code = "github-only-account";
+  }
   class AuthError extends Error {}
   return {
     signInMock: vi.fn(),
     AuthError,
     EmailNotVerifiedError,
     RateLimitedError,
+    GitHubOnlyAccountError,
     redirectMock: vi.fn((url: string) => {
       throw new Error(`REDIRECT:${url}`);
     }),
@@ -65,6 +70,7 @@ vi.mock("@/auth", () => ({
   signOut: vi.fn(),
   EmailNotVerifiedError,
   RateLimitedError,
+  GitHubOnlyAccountError,
 }));
 
 vi.mock("next-auth", () => ({
@@ -171,6 +177,20 @@ describe("signInWithCredentials", () => {
       error: "Please verify your email before signing in.",
       unverified: true,
       email: "a@b.com",
+    });
+  });
+
+  it("maps GitHubOnlyAccountError to a distinct message", async () => {
+    signInMock.mockRejectedValue(new GitHubOnlyAccountError());
+
+    const result = await signInWithCredentials(
+      { success: false },
+      formData({ email: "a@b.com", password: "secret" })
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "This account uses GitHub — sign in with GitHub instead.",
     });
   });
 
