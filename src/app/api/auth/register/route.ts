@@ -5,6 +5,7 @@ import { registerSchema } from "@/lib/validations/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
 import { checkRateLimit, getClientIp, rateLimitMessage, retryAfterSeconds } from "@/lib/rate-limit";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function POST(request: Request) {
   const ip = await getClientIp();
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
 
     if (verificationEnabled) {
       try {
-        await sendVerificationEmail(email, new URL(request.url).origin);
+        await sendVerificationEmail(email, getAppUrl());
       } catch (err) {
         console.error("Failed to send verification email:", err);
       }

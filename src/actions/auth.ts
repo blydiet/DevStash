@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
@@ -10,14 +9,9 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { consumeVerificationToken } from "@/lib/db/verification-tokens";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
 import { checkRateLimit, getClientIp, rateLimitMessage } from "@/lib/rate-limit";
+import { getAppUrl } from "@/lib/app-url";
 import { credentialsSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth";
 import type { SignInActionResult, ResetPasswordActionResult } from "@/types/auth";
-
-async function getBaseUrl() {
-  const requestHeaders = await headers();
-  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-  return `${protocol}://${requestHeaders.get("host")}`;
-}
 
 export async function signInWithCredentials(
   _prevState: SignInActionResult,
@@ -91,7 +85,7 @@ export async function resendVerificationEmail(
   }
 
   try {
-    await sendVerificationEmail(email, await getBaseUrl());
+    await sendVerificationEmail(email, getAppUrl());
   } catch (err) {
     console.error("Failed to resend verification email:", err);
     return { success: false, error: "Couldn't send the email. Try again in a moment." };
@@ -138,7 +132,7 @@ export async function requestPasswordReset(
   }
 
   try {
-    await sendPasswordResetEmail(parsed.data.email, await getBaseUrl());
+    await sendPasswordResetEmail(parsed.data.email, getAppUrl());
   } catch (err) {
     console.error("Failed to send password reset email:", err);
     return { success: false, error: "Couldn't send the email. Try again in a moment." };

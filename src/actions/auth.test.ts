@@ -12,7 +12,6 @@ const {
   AuthError,
   EmailNotVerifiedError,
   RateLimitedError,
-  headersMock,
   redirectMock,
   prismaMock,
   sendVerificationEmailMock,
@@ -41,7 +40,6 @@ const {
     AuthError,
     EmailNotVerifiedError,
     RateLimitedError,
-    headersMock: vi.fn(),
     redirectMock: vi.fn((url: string) => {
       throw new Error(`REDIRECT:${url}`);
     }),
@@ -71,10 +69,6 @@ vi.mock("@/auth", () => ({
 
 vi.mock("next-auth", () => ({
   AuthError,
-}));
-
-vi.mock("next/headers", () => ({
-  headers: headersMock,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -118,7 +112,7 @@ function formData(fields: Record<string, string>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  headersMock.mockResolvedValue(new Headers({ host: "devstash.io" }));
+  process.env.APP_URL = "http://devstash.io";
   getClientIpMock.mockResolvedValue("1.2.3.4");
   checkRateLimitMock.mockResolvedValue({ success: true, remaining: 5, reset: 0 });
   isEmailVerificationEnabledMock.mockReturnValue(true);
