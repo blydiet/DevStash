@@ -2,12 +2,22 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { validateFile, sanitizeFileName, type UploadKind } from "@/lib/file-constraints";
 import { buildObjectKey, buildPublicUrl, uploadToR2 } from "@/lib/r2";
+import { checkRateLimit, rateLimitMessage, retryAfterSeconds } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
     return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
+  }
+
+  const { success: withinLimit, reset } = await checkRateLimit("upload", session.user.id);
+
+  if (!withinLimit) {
+    return NextResponse.json(
+      { success: false, error: rateLimitMessage(reset) },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds(reset)) } }
+    );
   }
 
   const formData = await request.formData();

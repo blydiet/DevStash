@@ -7,7 +7,8 @@ export type RateLimitScope =
   | "register"
   | "forgot-password"
   | "reset-password"
-  | "resend-verification";
+  | "resend-verification"
+  | "upload";
 
 const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m" | "h"}` }> = {
   "sign-in": { requests: 5, window: "15 m" },
@@ -15,6 +16,7 @@ const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m
   "forgot-password": { requests: 3, window: "1 h" },
   "reset-password": { requests: 5, window: "15 m" },
   "resend-verification": { requests: 3, window: "15 m" },
+  upload: { requests: 20, window: "1 h" },
 };
 
 const redis =
