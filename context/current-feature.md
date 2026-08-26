@@ -2,20 +2,15 @@
 
 ## Status
 
-Complete
+<!-- Not Started | In Progress | Complete -->
 
 ## Goals
 
-- Split `src/lib/db/items.ts` (323 lines, blends reads/mutations/metadata) into:
-  - `src/lib/db/items-queries.ts` — `ItemTypeSummary`/`ItemSummary`/`ItemDetail` types, `getPinnedItems`, `getRecentItems`, `getItemsByType`, `getItemDetail`
-  - `src/lib/db/items-mutations.ts` — `createItem`, `updateItem`, `deleteItem`
-  - `src/lib/db/item-metadata.ts` — `getItemTypeByName`, `getItemTypes`, `getItemStats` (named to avoid a basename collision with the existing `src/lib/item-types.ts`)
-- Pure refactor, no behavior change
-- Update all consumer imports (~20 files) and split the colocated `items.test.ts` to match
+<!-- Bullet points of what success looks like -->
 
 ## Notes
 
-Raised by the `codebase-scanner` agent: no single function in `items.ts` is too long, but it blends three concerns.
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
 
