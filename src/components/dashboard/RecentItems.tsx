@@ -1,4 +1,4 @@
-import { getRecentItems, type ItemSummary } from "@/lib/db/items";
+import { getRecentItems, type ItemSummary } from "@/lib/db/items-queries";
 import { ItemRow } from "./ItemRow";
 
 export async function RecentItems() {

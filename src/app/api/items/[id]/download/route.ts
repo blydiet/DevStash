@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getItemDetail } from "@/lib/db/items";
+import { getItemDetail } from "@/lib/db/items-queries";
 import { extractKeyFromUrl, getR2Object } from "@/lib/r2";
 import { sanitizeFileName } from "@/lib/file-constraints";
 

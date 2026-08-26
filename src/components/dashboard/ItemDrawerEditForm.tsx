@@ -13,7 +13,7 @@ import {
   typeShowsUrl,
 } from "@/lib/item-type-capabilities";
 import type { EditForm } from "@/lib/item-drawer-utils";
-import type { ItemDetail } from "@/lib/db/items";
+import type { ItemDetail } from "@/lib/db/items-queries";
 
 interface ItemDrawerEditFormProps {
   item: ItemDetail;

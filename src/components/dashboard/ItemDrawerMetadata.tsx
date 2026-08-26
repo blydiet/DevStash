@@ -1,7 +1,7 @@
 import { Calendar, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/item-drawer-utils";
-import type { ItemDetail } from "@/lib/db/items";
+import type { ItemDetail } from "@/lib/db/items-queries";
 
 export function ItemDrawerMetadata({ item }: { item: ItemDetail }) {
   return (

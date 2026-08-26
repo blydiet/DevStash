@@ -1,5 +1,5 @@
 import { getRecentCollections, type CollectionSummary } from "@/lib/db/collections";
-import { getItemTypes, type ItemTypeWithCount } from "@/lib/db/items";
+import { getItemTypes, type ItemTypeWithCount } from "@/lib/db/item-metadata";
 import { getCurrentUser, type CurrentUser } from "@/lib/db/user";
 import { signOutAction } from "@/actions/auth";
 import { Sidebar } from "./Sidebar";

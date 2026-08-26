@@ -1,4 +1,4 @@
-import type { ItemDetail } from "@/lib/db/items";
+import type { ItemDetail } from "@/lib/db/items-queries";
 
 export async function fetchItemDetail(url: string): Promise<ItemDetail> {
   const res = await fetch(url);

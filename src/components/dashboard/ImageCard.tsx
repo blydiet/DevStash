@@ -3,7 +3,7 @@
 import { ImageOff, Pin, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useItemDrawer } from "./ItemDrawerContext";
-import type { ItemSummary } from "@/lib/db/items";
+import type { ItemSummary } from "@/lib/db/items-queries";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", {

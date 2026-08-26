@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getItemDetail } from "@/lib/db/items";
+import { getItemDetail } from "@/lib/db/items-queries";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

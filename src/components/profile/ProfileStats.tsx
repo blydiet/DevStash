@@ -1,6 +1,6 @@
 import { Boxes, Folder, FolderOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getItemStats, getItemTypes, type ItemStats, type ItemTypeWithCount } from "@/lib/db/items";
+import { getItemStats, getItemTypes, type ItemStats, type ItemTypeWithCount } from "@/lib/db/item-metadata";
 import { getCollectionStats, type CollectionStats } from "@/lib/db/collections";
 import { iconMap } from "@/lib/icon-map";
 

@@ -14,11 +14,14 @@ vi.mock("@/auth", () => ({
   auth: authMock,
 }));
 
-vi.mock("@/lib/db/items", () => ({
+vi.mock("@/lib/db/items-mutations", () => ({
   createItem: createItemInDbMock,
-  getItemTypeByName: getItemTypeByNameMock,
   updateItem: updateItemInDbMock,
   deleteItem: deleteItemInDbMock,
+}));
+
+vi.mock("@/lib/db/item-metadata", () => ({
+  getItemTypeByName: getItemTypeByNameMock,
 }));
 
 beforeEach(() => {
