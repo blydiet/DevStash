@@ -1,4 +1,4 @@
-import { config } from "dotenv";
+import { loadEnvFile } from "node:process";
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import ws from "ws";
@@ -6,8 +6,15 @@ import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 
 // Load env vars ourselves — this script runs standalone, outside Next.js's automatic loading.
-config();
-config({ path: ".env.local", override: true });
+// .env.local (optional, gitignored) is loaded first since loadEnvFile() never
+// overwrites a key already present in process.env — the file that should win
+// (.env.local) has to go first.
+try {
+  loadEnvFile(".env.local");
+} catch {
+  // .env.local is optional
+}
+loadEnvFile(".env");
 
 neonConfig.webSocketConstructor = ws;
 
