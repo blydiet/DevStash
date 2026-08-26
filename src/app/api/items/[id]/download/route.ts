@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getItemDetail } from "@/lib/db/items";
 import { extractKeyFromUrl, getR2Object } from "@/lib/r2";
+import { sanitizeFileName } from "@/lib/file-constraints";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -32,10 +33,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const bytes = await object.Body.transformToByteArray();
 
+  const safeFileName = sanitizeFileName(item.fileName ?? "download");
+
   return new NextResponse(Buffer.from(bytes), {
     headers: {
       "Content-Type": object.ContentType ?? "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${item.fileName ?? "download"}"`,
+      "Content-Disposition": `attachment; filename="${safeFileName}"`,
     },
   });
 }
