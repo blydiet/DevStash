@@ -5,9 +5,11 @@ import { FolderPlus, Layers, PanelLeft, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateItemDialog } from "./CreateItemDialog";
+import { CreateCollectionDialog } from "./CreateCollectionDialog";
 
 export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const [createItemOpen, setCreateItemOpen] = useState(false);
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-6">
@@ -31,7 +33,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => setCreateCollectionOpen(true)}>
           <FolderPlus className="size-4" />
           New Collection
         </Button>
@@ -42,6 +44,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
       </div>
 
       <CreateItemDialog open={createItemOpen} onOpenChange={setCreateItemOpen} />
+      <CreateCollectionDialog open={createCollectionOpen} onOpenChange={setCreateCollectionOpen} />
     </header>
   );
 }

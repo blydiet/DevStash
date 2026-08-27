@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getCollectionStats, getRecentCollections } from "@/lib/db/collections";
+import { createCollection, getCollectionStats, getRecentCollections } from "@/lib/db/collections";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
@@ -7,6 +7,7 @@ const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
     collection: {
       count: vi.fn(),
       findMany: vi.fn(),
+      create: vi.fn(),
     },
   },
 }));
@@ -72,5 +73,31 @@ describe("getRecentCollections", () => {
     expect(result.itemCount).toBe(0);
     expect(result.borderColor).toBe("#94a3b8");
     expect(result.types).toEqual([]);
+  });
+});
+
+describe("createCollection", () => {
+  it("creates a collection scoped to the current user and returns a summary", async () => {
+    prismaMock.collection.create.mockResolvedValue({
+      id: "col-3",
+      name: "Python Snippets",
+      description: "Useful scripts",
+      isFavorite: false,
+    });
+
+    const result = await createCollection({ name: "Python Snippets", description: "Useful scripts" });
+
+    expect(prismaMock.collection.create).toHaveBeenCalledWith({
+      data: { name: "Python Snippets", description: "Useful scripts", userId: "user-1" },
+    });
+    expect(result).toEqual({
+      id: "col-3",
+      name: "Python Snippets",
+      description: "Useful scripts",
+      isFavorite: false,
+      itemCount: 0,
+      borderColor: "#94a3b8",
+      types: [],
+    });
   });
 });

@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: Collection Create
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- A "New Collection" button in the top bar (mirroring the existing "New Item" button/`CreateItemDialog` pattern)
+- Clicking it opens a modal with the fields needed to create a collection: name and description
+- Submitting creates a collection scoped to the current user
+- Show a toast on success and on failure
+- On success, the UI updates to reflect the new collection (sidebar collections list, recent collections, `/collections`, etc. — wherever collections currently render) without a manual refresh
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Follow the same patterns already established for items:
+  - Server components fetch collections via `lib/db` functions (e.g. `src/lib/db/collections.ts`), not client-side
+  - Client-side creation goes through an API route (matching `POST /api/upload`'s pattern), not a Server Action — consistent with this project's existing rule that API routes are used for client-facing endpoints while Server Actions are used for form submissions/simple mutations elsewhere
+  - Auth-check + user-scoping in the API route via the session (`getCurrentUserId()`/`auth()`), matching `getItemTypeByName`/`createItem`'s ownership model
+  - Modal built the same way as `CreateItemDialog.tsx` (shadcn `Dialog`), with `sonner` toast on success/failure
+  - After create, close the dialog and refresh affected views (`router.refresh()` and/or local cache update), matching `CreateItemDialog`'s existing on-success flow
+- Fields: name (required) and description (optional) per the `Collection` Prisma model — no other fields specified
+- New collections are not yet assigned any items at creation time (matches existing `Item.collectionId` being optional/set later)
 
 ## History
 

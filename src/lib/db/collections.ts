@@ -27,6 +27,29 @@ export interface CollectionStats {
   favorites: number;
 }
 
+export interface CreateCollectionInput {
+  name: string;
+  description: string | null;
+}
+
+export async function createCollection(data: CreateCollectionInput): Promise<CollectionSummary> {
+  const userId = await getCurrentUserId();
+
+  const collection = await prisma.collection.create({
+    data: { name: data.name, description: data.description, userId },
+  });
+
+  return {
+    id: collection.id,
+    name: collection.name,
+    description: collection.description,
+    isFavorite: collection.isFavorite,
+    itemCount: 0,
+    borderColor: FALLBACK_BORDER_COLOR,
+    types: [],
+  };
+}
+
 export async function getCollectionStats(): Promise<CollectionStats> {
   const userId = await getCurrentUserId();
   const [total, favorites] = await Promise.all([
