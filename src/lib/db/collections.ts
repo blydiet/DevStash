@@ -73,13 +73,12 @@ export async function getCollectionStats(): Promise<CollectionStats> {
 
   return { total, favorites };
 }
-export const getRecentCollections = cache(
- async (limit = 6): Promise<CollectionSummary[]> => {
+async function fetchCollectionSummaries(take?: number): Promise<CollectionSummary[]> {
   const userId = await getCurrentUserId();
   const collections = await prisma.collection.findMany({
     where: { userId },
     orderBy: { updatedAt: "desc" },
-    take: limit,
+    ...(take !== undefined ? { take } : {}),
     select: {
       id: true,
       name: true,
@@ -121,4 +120,29 @@ export const getRecentCollections = cache(
       types: usageByCount.map((usage) => usage.type),
     };
   });
-});
+}
+
+export const getRecentCollections = cache(
+  async (limit = 6): Promise<CollectionSummary[]> => fetchCollectionSummaries(limit),
+);
+
+export const getAllCollectionSummaries = cache(
+  async (): Promise<CollectionSummary[]> => fetchCollectionSummaries(),
+);
+
+export interface CollectionDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  isFavorite: boolean;
+}
+
+export const getCollectionById = cache(
+  async (id: string): Promise<CollectionDetail | null> => {
+    const userId = await getCurrentUserId();
+    return prisma.collection.findFirst({
+      where: { id, userId },
+      select: { id: true, name: true, description: true, isFavorite: true },
+    });
+  },
+);

@@ -111,6 +111,17 @@ export async function getItemsByType(typeName: string): Promise<ItemSummary[]> {
   return items.map(toItemSummary);
 }
 
+export async function getItemsByCollection(collectionId: string): Promise<ItemSummary[]> {
+  const userId = await getCurrentUserId();
+  const items = await prisma.item.findMany({
+    where: { userId, collections: { some: { collectionId, collection: { userId } } } },
+    orderBy: { createdAt: "desc" },
+    include: { type: true, tags: { include: { tag: true } } },
+  });
+
+  return items.map(toItemSummary);
+}
+
 export async function getItemDetail(id: string): Promise<ItemDetail | null> {
   const userId = await getCurrentUserId();
   const item = await prisma.item.findFirst({

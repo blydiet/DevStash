@@ -6,7 +6,9 @@ export const proxy = auth((req) => {
   const isProtected =
     req.nextUrl.pathname.startsWith("/dashboard") ||
     req.nextUrl.pathname.startsWith("/profile") ||
-    req.nextUrl.pathname.startsWith("/items/");
+    req.nextUrl.pathname.startsWith("/items/") ||
+    req.nextUrl.pathname === "/collections" ||
+    req.nextUrl.pathname.startsWith("/collections/");
 
   if (isProtected && !req.auth) {
     const signInUrl = new URL("/sign-in", req.nextUrl.origin);
@@ -18,5 +20,5 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*", "/items/:path*"],
+  matcher: ["/dashboard/:path*", "/profile/:path*", "/items/:path*", "/collections/:path*"],
 };

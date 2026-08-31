@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Collections Pages
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Create `/collections` page listing all of the current user's collections, using the existing `CollectionCard` component
+- Create `/collections/[id]` page showing the items belonging to that collection, using the existing item card components (`ItemCard`/`ImageCard`/`FileListItem` as appropriate per item type, matching `ItemsGrid`'s existing per-type branching)
+- Link the sidebar's "View all collections" to `/collections` (already points there — verify still correct)
+- Make each `CollectionCard` (wherever rendered — sidebar, dashboard's Recent Collections, and the new `/collections` page) link to its `/collections/[id]` page
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Reuse existing DB helpers where possible: `getAllCollections`/`getRecentCollections`/`getCollectionStats` (`src/lib/db/collections.ts`) for the list page; likely need a new user-scoped, ownership-checked query (matching `getItemDetail`'s no-existence-leak convention) to fetch a single collection plus its items for `/collections/[id]`
+- `ItemsGrid.tsx` already branches per item type (`ImageCard` for images, `FileListItem` for files, `ItemCard` otherwise) — reuse or extend that logic rather than duplicating it for the collection detail page
+- Both new pages are protected routes — add them to `proxy.ts`'s matcher like `/items` and `/profile`
+- Follow the existing try/catch → `text-destructive` error-message pattern used throughout dashboard data-fetching components
 
 ## History
 

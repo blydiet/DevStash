@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { FolderPlus, Layers, PanelLeft, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,12 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-6">
-      <div className="flex items-center gap-2">
+      <Link href="/dashboard" className="flex items-center gap-2">
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
           <Layers className="size-4 text-primary-foreground" />
         </div>
         <span className="text-lg font-semibold">DevStash</span>
-      </div>
+      </Link>
 
       <Button variant="ghost" size="icon" aria-label="Toggle sidebar" onClick={onToggleSidebar}>
         <PanelLeft className="size-4" />
