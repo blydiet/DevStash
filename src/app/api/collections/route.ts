@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createCollection } from "@/lib/db/collections";
+import { createCollection, getAllCollections } from "@/lib/db/collections";
 import { createCollectionSchema } from "@/lib/validations/collections";
+
+export async function GET() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
+  }
+
+  const collections = await getAllCollections();
+
+  return NextResponse.json({ success: true, data: collections });
+}
 
 export async function POST(request: Request) {
   const session = await auth();

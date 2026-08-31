@@ -1,7 +1,25 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 import { getCurrentUserId } from "@/lib/db/user";
 import { getItemDetail, type ItemDetail, type ItemTypeSummary } from "@/lib/db/items-queries";
 import { deleteFromR2, extractKeyFromUrl } from "@/lib/r2";
+
+// Filters to only the collection ids the user actually owns, so a client can't
+// splice an item into another user's collection by passing an arbitrary id.
+async function getOwnedCollectionIds(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  collectionIds: string[]
+): Promise<string[]> {
+  if (collectionIds.length === 0) return [];
+
+  const owned = await tx.collection.findMany({
+    where: { id: { in: collectionIds }, userId },
+    select: { id: true },
+  });
+
+  return owned.map((collection) => collection.id);
+}
 
 export interface UpdateItemInput {
   title: string;
@@ -10,6 +28,7 @@ export interface UpdateItemInput {
   url: string | null;
   language: string | null;
   tags: string[];
+  collectionIds: string[];
 }
 
 export async function updateItem(id: string, data: UpdateItemInput): Promise<ItemDetail | null> {
@@ -42,6 +61,16 @@ export async function updateItem(id: string, data: UpdateItemInput): Promise<Ite
 
       await tx.itemTag.create({ data: { itemId: id, tagId: tag.id } });
     }
+
+    await tx.itemCollection.deleteMany({ where: { itemId: id } });
+
+    const ownedCollectionIds = await getOwnedCollectionIds(tx, userId, data.collectionIds);
+
+    if (ownedCollectionIds.length > 0) {
+      await tx.itemCollection.createMany({
+        data: ownedCollectionIds.map((collectionId) => ({ itemId: id, collectionId })),
+      });
+    }
   });
 
   return getItemDetail(id);
@@ -58,6 +87,7 @@ export interface CreateItemInput {
   fileName: string | null;
   fileSize: number | null;
   tags: string[];
+  collectionIds: string[];
 }
 
 export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
@@ -90,27 +120,42 @@ export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
       await tx.itemTag.create({ data: { itemId: item.id, tagId: tag.id } });
     }
 
-    return item;
+    const ownedCollectionIds = await getOwnedCollectionIds(tx, userId, data.collectionIds);
+
+    if (ownedCollectionIds.length === 0) {
+      return { item, collections: [] };
+    }
+
+    await tx.itemCollection.createMany({
+      data: ownedCollectionIds.map((collectionId) => ({ itemId: item.id, collectionId })),
+    });
+
+    const collections = await tx.collection.findMany({
+      where: { id: { in: ownedCollectionIds } },
+      select: { id: true, name: true },
+    });
+
+    return { item, collections };
   });
 
   return {
-    id: created.id,
-    title: created.title,
-    description: created.description,
-    contentType: created.contentType,
-    content: created.content,
-    fileUrl: created.fileUrl,
-    fileName: created.fileName,
-    fileSize: created.fileSize,
-    url: created.url,
-    language: created.language,
-    isFavorite: created.isFavorite,
-    isPinned: created.isPinned,
-    createdAt: created.createdAt,
-    updatedAt: created.updatedAt,
+    id: created.item.id,
+    title: created.item.title,
+    description: created.item.description,
+    contentType: created.item.contentType,
+    content: created.item.content,
+    fileUrl: created.item.fileUrl,
+    fileName: created.item.fileName,
+    fileSize: created.item.fileSize,
+    url: created.item.url,
+    language: created.item.language,
+    isFavorite: created.item.isFavorite,
+    isPinned: created.item.isPinned,
+    createdAt: created.item.createdAt,
+    updatedAt: created.item.updatedAt,
     type: data.type,
     tags: data.tags,
-    collection: null,
+    collections: created.collections,
   };
 }
 

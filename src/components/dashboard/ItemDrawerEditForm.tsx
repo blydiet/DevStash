@@ -1,10 +1,11 @@
 "use client";
 
-import { Tag } from "lucide-react";
+import { FolderOpen, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
+import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
 import {
   typeShowsCodeEditor,
   typeShowsContent,
@@ -14,14 +15,23 @@ import {
 } from "@/lib/item-type-capabilities";
 import type { EditForm } from "@/lib/item-drawer-utils";
 import type { ItemDetail } from "@/lib/db/items-queries";
+import type { CollectionOption } from "@/lib/db/collections";
 
 interface ItemDrawerEditFormProps {
   item: ItemDetail;
   form: EditForm;
   setForm: (form: EditForm) => void;
+  collections: CollectionOption[];
+  collectionsHaveError?: boolean;
 }
 
-export function ItemDrawerEditForm({ item, form, setForm }: ItemDrawerEditFormProps) {
+export function ItemDrawerEditForm({
+  item,
+  form,
+  setForm,
+  collections,
+  collectionsHaveError = false,
+}: ItemDrawerEditFormProps) {
   const showsContent = typeShowsContent(item.type.name);
   const showsLanguage = typeShowsLanguage(item.type.name);
   const showsUrl = typeShowsUrl(item.type.name);
@@ -89,6 +99,19 @@ export function ItemDrawerEditForm({ item, form, setForm }: ItemDrawerEditFormPr
           value={form.tags}
           onChange={(e) => setForm({ ...form, tags: e.target.value })}
           placeholder="react, hooks, custom"
+        />
+      </div>
+
+      <div>
+        <h3 className="flex items-center gap-1.5 pb-2 text-sm font-medium text-muted-foreground">
+          <FolderOpen className="size-4" />
+          Collections
+        </h3>
+        <CollectionsMultiSelect
+          collections={collections}
+          selectedIds={form.collectionIds}
+          onChange={(collectionIds) => setForm({ ...form, collectionIds })}
+          hasError={collectionsHaveError}
         />
       </div>
     </>

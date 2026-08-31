@@ -11,6 +11,7 @@ const base = {
   fileName: null,
   fileSize: null,
   tags: [],
+  collectionIds: [],
 };
 
 describe("createItemSchema", () => {
@@ -79,6 +80,7 @@ describe("updateItemSchema", () => {
       url: null,
       language: null,
       tags: ["react"],
+      collectionIds: [],
     });
     expect(result.success).toBe(true);
   });
@@ -91,6 +93,7 @@ describe("updateItemSchema", () => {
       url: "not-a-url",
       language: null,
       tags: [],
+      collectionIds: [],
     });
     expect(result.success).toBe(false);
   });

@@ -23,6 +23,7 @@ export interface CreateItemFormState {
   language: string;
   file: UploadedFile | null;
   tags: string;
+  collectionIds: string[];
 }
 
 interface CreateItemFieldsProps {

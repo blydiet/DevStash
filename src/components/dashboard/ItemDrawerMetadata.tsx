@@ -3,16 +3,27 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/item-drawer-utils";
 import type { ItemDetail } from "@/lib/db/items-queries";
 
-export function ItemDrawerMetadata({ item }: { item: ItemDetail }) {
+interface ItemDrawerMetadataProps {
+  item: ItemDetail;
+  showCollections: boolean;
+}
+
+export function ItemDrawerMetadata({ item, showCollections }: ItemDrawerMetadataProps) {
   return (
     <>
-      {item.collection && (
+      {showCollections && item.collections.length > 0 && (
         <div>
           <h3 className="flex items-center gap-1.5 pb-2 text-sm font-medium text-muted-foreground">
             <FolderOpen className="size-4" />
             Collections
           </h3>
-          <Badge variant="secondary">{item.collection.name}</Badge>
+          <div className="flex flex-wrap gap-1.5">
+            {item.collections.map((collection) => (
+              <Badge key={collection.id} variant="secondary">
+                {collection.name}
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
 

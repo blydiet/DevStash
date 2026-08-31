@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createCollection, getCollectionStats, getRecentCollections } from "@/lib/db/collections";
+import {
+  createCollection,
+  getAllCollections,
+  getCollectionStats,
+  getRecentCollections,
+} from "@/lib/db/collections";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
@@ -49,9 +54,9 @@ describe("getRecentCollections", () => {
         description: null,
         isFavorite: false,
         items: [
-          { typeId: "type-snippet", type: snippetType },
-          { typeId: "type-snippet", type: snippetType },
-          { typeId: "type-note", type: noteType },
+          { item: { typeId: "type-snippet", type: snippetType } },
+          { item: { typeId: "type-snippet", type: snippetType } },
+          { item: { typeId: "type-note", type: noteType } },
         ],
       },
     ]);
@@ -73,6 +78,27 @@ describe("getRecentCollections", () => {
     expect(result.itemCount).toBe(0);
     expect(result.borderColor).toBe("#94a3b8");
     expect(result.types).toEqual([]);
+  });
+});
+
+describe("getAllCollections", () => {
+  it("returns id/name pairs for the current user's collections, ordered by name", async () => {
+    prismaMock.collection.findMany.mockResolvedValue([
+      { id: "col-1", name: "AI Workflows" },
+      { id: "col-2", name: "React Patterns" },
+    ]);
+
+    const result = await getAllCollections();
+
+    expect(prismaMock.collection.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+    expect(result).toEqual([
+      { id: "col-1", name: "AI Workflows" },
+      { id: "col-2", name: "React Patterns" },
+    ]);
   });
 });
 

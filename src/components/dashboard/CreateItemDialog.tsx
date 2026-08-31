@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 import { toast } from "sonner";
 import FocusLock from "react-focus-lock";
 import { XIcon } from "lucide-react";
@@ -19,7 +20,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ItemTypeSelect } from "@/components/dashboard/ItemTypeSelect";
 import { CreateItemFields, type CreateItemFormState } from "@/components/dashboard/CreateItemFields";
+import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
 import { createItem } from "@/actions/items";
+import { fetchCollectionOptions } from "@/lib/swr-fetcher";
 import {
   typeShowsContent,
   typeShowsFileUpload,
@@ -38,6 +41,7 @@ const EMPTY_FORM: CreateItemFormState = {
   language: "",
   file: null,
   tags: "",
+  collectionIds: [],
 };
 
 export function CreateItemDialog({
@@ -55,6 +59,10 @@ export function CreateItemDialog({
     type: defaultType ?? EMPTY_FORM.type,
   }));
   const [isSaving, setIsSaving] = useState(false);
+  const { data: collections = [], error: collectionsError } = useSWR(
+    open ? "/api/collections" : null,
+    fetchCollectionOptions
+  );
 
   const showsLanguage = typeShowsLanguage(form.type);
   const showsUrl = typeShowsUrl(form.type);
@@ -84,6 +92,7 @@ export function CreateItemDialog({
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean),
+      collectionIds: form.collectionIds,
     });
     setIsSaving(false);
 
@@ -169,6 +178,17 @@ export function CreateItemDialog({
                   className="rounded-[5px]"
                 />
               </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Collections</Label>
+              <CollectionsMultiSelect
+                collections={collections}
+                selectedIds={form.collectionIds}
+                onChange={(collectionIds) => setForm({ ...form, collectionIds })}
+                hasError={Boolean(collectionsError)}
+                className="rounded-[5px]"
+              />
             </div>
           </div>
 

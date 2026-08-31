@@ -22,6 +22,11 @@ export interface ItemSummary {
   fileSize: number | null;
 }
 
+export interface CollectionRef {
+  id: string;
+  name: string;
+}
+
 export interface ItemDetail {
   id: string;
   title: string;
@@ -39,7 +44,7 @@ export interface ItemDetail {
   updatedAt: Date;
   type: ItemTypeSummary;
   tags: string[];
-  collection: { id: string; name: string } | null;
+  collections: CollectionRef[];
 }
 
 type PrismaItemWithRelations = {
@@ -127,11 +132,15 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
       updatedAt: true,
       type: { select: { id: true, name: true, icon: true, color: true } },
       tags: { select: { tag: { select: { name: true } } } },
-      collection: { select: { id: true, name: true } },
+      collections: { select: { collection: { select: { id: true, name: true } } } },
     },
   });
 
   if (!item) return null;
 
-  return { ...item, tags: item.tags.map(({ tag }) => tag.name) };
+  return {
+    ...item,
+    tags: item.tags.map(({ tag }) => tag.name),
+    collections: item.collections.map(({ collection }) => collection),
+  };
 }

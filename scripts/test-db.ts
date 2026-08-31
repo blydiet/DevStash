@@ -42,8 +42,8 @@ async function main() {
           orderBy: { name: "asc" },
           include: {
             items: {
-              orderBy: { title: "asc" },
-              include: { type: true },
+              orderBy: { item: { title: "asc" } },
+              include: { item: { include: { type: true } } },
             },
           },
         },
@@ -59,7 +59,7 @@ async function main() {
 
     for (const collection of demoUser.collections) {
       console.log(`\n- ${collection.name} (${collection.items.length} items)`);
-      for (const item of collection.items) {
+      for (const { item } of collection.items) {
         console.log(`    [${item.type.name}] ${item.title}`);
       }
     }

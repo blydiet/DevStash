@@ -7,6 +7,8 @@ const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
     item: { create: vi.fn(), update: vi.fn() },
     itemTag: { deleteMany: vi.fn(), create: vi.fn() },
     tag: { upsert: vi.fn() },
+    itemCollection: { deleteMany: vi.fn(), createMany: vi.fn() },
+    collection: { findMany: vi.fn() },
   },
   prismaMock: {
     item: {
@@ -52,6 +54,7 @@ describe("updateItem", () => {
     url: null,
     language: null,
     tags: ["react", "hooks"],
+    collectionIds: [] as string[],
   };
 
   it("returns null without writing when the item isn't owned by the current user", async () => {
@@ -82,7 +85,7 @@ describe("updateItem", () => {
         updatedAt: new Date("2026-01-02"),
         type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
         tags: [{ tag: { name: "react" } }, { tag: { name: "hooks" } }],
-        collection: null,
+        collections: [],
       });
     txMock.tag.upsert
       .mockResolvedValueOnce({ id: "tag-react" })
@@ -110,6 +113,50 @@ describe("updateItem", () => {
       data: { itemId: "item-1", tagId: "tag-react" },
     });
     expect(result?.tags).toEqual(["react", "hooks"]);
+    expect(txMock.itemCollection.deleteMany).toHaveBeenCalledWith({ where: { itemId: "item-1" } });
+    expect(txMock.collection.findMany).not.toHaveBeenCalled();
+    expect(txMock.itemCollection.createMany).not.toHaveBeenCalled();
+  });
+
+  it("replaces collections, filtering out any ids not owned by the current user", async () => {
+    prismaMock.item.findFirst
+      .mockResolvedValueOnce({ id: "item-1" })
+      .mockResolvedValueOnce({
+        id: "item-1",
+        title: "Updated title",
+        description: null,
+        contentType: "text",
+        content: null,
+        fileUrl: null,
+        fileName: null,
+        fileSize: null,
+        url: null,
+        language: null,
+        isFavorite: false,
+        isPinned: false,
+        createdAt: new Date("2026-01-01"),
+        updatedAt: new Date("2026-01-02"),
+        type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
+        tags: [],
+        collections: [{ collection: { id: "col-1", name: "React Patterns" } }],
+      });
+    // Only col-1 belongs to the current user — col-2 (someone else's) is filtered out.
+    txMock.collection.findMany.mockResolvedValueOnce([{ id: "col-1" }]);
+
+    const result = await updateItem("item-1", {
+      ...input,
+      tags: [],
+      collectionIds: ["col-1", "col-2"],
+    });
+
+    expect(txMock.collection.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ["col-1", "col-2"] }, userId: "user-1" },
+      select: { id: true },
+    });
+    expect(txMock.itemCollection.createMany).toHaveBeenCalledWith({
+      data: [{ itemId: "item-1", collectionId: "col-1" }],
+    });
+    expect(result?.collections).toEqual([{ id: "col-1", name: "React Patterns" }]);
   });
 });
 
@@ -126,6 +173,7 @@ describe("createItem", () => {
     fileName: null,
     fileSize: null,
     tags: ["react", "hooks"],
+    collectionIds: [] as string[],
   };
   const createdRow = {
     id: "item-1",
@@ -175,7 +223,9 @@ describe("createItem", () => {
     expect(txMock.itemTag.create).toHaveBeenCalledWith({
       data: { itemId: "item-1", tagId: "tag-react" },
     });
-    expect(result).toEqual({ ...createdRow, type, tags: ["react", "hooks"], collection: null });
+    expect(result).toEqual({ ...createdRow, type, tags: ["react", "hooks"], collections: [] });
+    expect(txMock.collection.findMany).not.toHaveBeenCalled();
+    expect(txMock.itemCollection.createMany).not.toHaveBeenCalled();
   });
 
   it("creates the item with no tags when none are given", async () => {
@@ -186,6 +236,25 @@ describe("createItem", () => {
     expect(txMock.tag.upsert).not.toHaveBeenCalled();
     expect(txMock.itemTag.create).not.toHaveBeenCalled();
     expect(result.tags).toEqual([]);
+  });
+
+  it("links the item to only the collections owned by the current user", async () => {
+    txMock.item.create.mockResolvedValue(createdRow);
+    // Only col-1 belongs to the current user — col-2 (someone else's) is filtered out.
+    txMock.collection.findMany
+      .mockResolvedValueOnce([{ id: "col-1" }])
+      .mockResolvedValueOnce([{ id: "col-1", name: "React Patterns" }]);
+
+    const result = await createItem({ ...input, tags: [], collectionIds: ["col-1", "col-2"] });
+
+    expect(txMock.collection.findMany).toHaveBeenNthCalledWith(1, {
+      where: { id: { in: ["col-1", "col-2"] }, userId: "user-1" },
+      select: { id: true },
+    });
+    expect(txMock.itemCollection.createMany).toHaveBeenCalledWith({
+      data: [{ itemId: "item-1", collectionId: "col-1" }],
+    });
+    expect(result.collections).toEqual([{ id: "col-1", name: "React Patterns" }]);
   });
 
   it("sets contentType to file and stores file fields when a fileUrl is given", async () => {

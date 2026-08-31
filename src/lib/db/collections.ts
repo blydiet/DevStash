@@ -32,6 +32,20 @@ export interface CreateCollectionInput {
   description: string | null;
 }
 
+export interface CollectionOption {
+  id: string;
+  name: string;
+}
+
+export const getAllCollections = cache(async (): Promise<CollectionOption[]> => {
+  const userId = await getCurrentUserId();
+  return prisma.collection.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+});
+
 export async function createCollection(data: CreateCollectionInput): Promise<CollectionSummary> {
   const userId = await getCurrentUserId();
 
@@ -73,8 +87,12 @@ export const getRecentCollections = cache(
       isFavorite: true,
       items: {
         select: {
-          typeId: true,
-          type: { select: { id: true, name: true, icon: true, color: true } },
+          item: {
+            select: {
+              typeId: true,
+              type: { select: { id: true, name: true, icon: true, color: true } },
+            },
+          },
         },
       },
     },
@@ -82,7 +100,7 @@ export const getRecentCollections = cache(
 
   return collections.map((collection) => {
     const typeUsage = new Map<string, { type: CollectionType; count: number }>();
-    for (const item of collection.items) {
+    for (const { item } of collection.items) {
       const existing = typeUsage.get(item.typeId);
       if (existing) {
         existing.count += 1;

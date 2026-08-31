@@ -7,6 +7,7 @@ export interface EditForm {
   url: string;
   language: string;
   tags: string;
+  collectionIds: string[];
 }
 
 export function toEditForm(item: ItemDetail): EditForm {
@@ -17,6 +18,7 @@ export function toEditForm(item: ItemDetail): EditForm {
     url: item.url ?? "",
     language: item.language ?? "",
     tags: item.tags.join(", "),
+    collectionIds: item.collections.map((collection) => collection.id),
   };
 }
 

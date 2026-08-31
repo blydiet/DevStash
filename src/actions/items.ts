@@ -21,6 +21,7 @@ export async function createItem(data: {
   fileName: string | null;
   fileSize: number | null;
   tags: string[];
+  collectionIds: string[];
 }): Promise<CreateItemActionResult> {
   const session = await auth();
 
@@ -54,6 +55,7 @@ export async function updateItem(
     url: string | null;
     language: string | null;
     tags: string[];
+    collectionIds: string[];
   }
 ): Promise<UpdateItemActionResult> {
   const session = await auth();

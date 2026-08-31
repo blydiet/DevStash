@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { iconMap } from "@/lib/icon-map";
-import { fetchItemDetail } from "@/lib/swr-fetcher";
+import { fetchCollectionOptions, fetchItemDetail } from "@/lib/swr-fetcher";
 import { deleteItem, updateItem } from "@/actions/items";
 import { typeShowsContent, typeShowsLanguage, typeShowsUrl } from "@/lib/item-type-capabilities";
 import { toEditForm, type EditForm } from "@/lib/item-drawer-utils";
@@ -35,6 +35,10 @@ export function ItemDrawer({
     isLoading,
     mutate,
   } = useSWR(open && itemId ? `/api/items/${itemId}` : null, fetchItemDetail);
+  const { data: collections = [], error: collectionsError } = useSWR(
+    open ? "/api/collections" : null,
+    fetchCollectionOptions
+  );
 
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [form, setForm] = useState<EditForm | null>(null);
@@ -77,6 +81,7 @@ export function ItemDrawer({
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean),
+      collectionIds: form.collectionIds,
     });
     setIsSaving(false);
 
@@ -161,11 +166,17 @@ export function ItemDrawer({
 
             <div className="flex flex-col gap-6 p-6">
               {mode === "edit" && form ? (
-                <ItemDrawerEditForm item={item} form={form} setForm={setForm} />
+                <ItemDrawerEditForm
+                  item={item}
+                  form={form}
+                  setForm={setForm}
+                  collections={collections}
+                  collectionsHaveError={Boolean(collectionsError)}
+                />
               ) : (
                 <ItemDrawerViewContent item={item} />
               )}
-              <ItemDrawerMetadata item={item} />
+              <ItemDrawerMetadata item={item} showCollections={mode !== "edit"} />
             </div>
           </>
         )}

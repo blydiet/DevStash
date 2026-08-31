@@ -77,14 +77,16 @@ async function main() {
         items: {
           create: [
             {
-              userId: user.id,
-              typeId: typeIdByName.snippet,
-              title: "useDebounce Hook",
-              description: "Custom hook to debounce a rapidly changing value",
-              isFavorite: true,
-              contentType: "text",
-              language: "typescript",
-              content: `import { useEffect, useState } from "react";
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.snippet,
+                  title: "useDebounce Hook",
+                  description: "Custom hook to debounce a rapidly changing value",
+                  isFavorite: true,
+                  contentType: "text",
+                  language: "typescript",
+                  content: `import { useEffect, useState } from "react";
 
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -97,15 +99,19 @@ export function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 `,
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.snippet,
-              title: "Compound Component Pattern",
-              description: "Context-based compound component pattern for flexible composition",
-              contentType: "text",
-              language: "typescript",
-              content: `import { createContext, useContext, useState, type ReactNode } from "react";
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.snippet,
+                  title: "Compound Component Pattern",
+                  description: "Context-based compound component pattern for flexible composition",
+                  contentType: "text",
+                  language: "typescript",
+                  content: `import { createContext, useContext, useState, type ReactNode } from "react";
 
 interface TabsContextValue {
   activeTab: string;
@@ -127,15 +133,19 @@ export function useTabsContext() {
   return context;
 }
 `,
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.snippet,
-              title: "Array Utility Functions",
-              description: "Small collection of typed array helpers",
-              contentType: "text",
-              language: "typescript",
-              content: `export function unique<T>(items: T[]): T[] {
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.snippet,
+                  title: "Array Utility Functions",
+                  description: "Small collection of typed array helpers",
+                  contentType: "text",
+                  language: "typescript",
+                  content: `export function unique<T>(items: T[]): T[] {
   return Array.from(new Set(items));
 }
 
@@ -159,6 +169,8 @@ export function chunk<T>(items: T[], size: number): T[][] {
   );
 }
 `,
+                },
+              },
             },
           ],
         },
@@ -173,31 +185,43 @@ export function chunk<T>(items: T[], size: number): T[][] {
         items: {
           create: [
             {
-              userId: user.id,
-              typeId: typeIdByName.prompt,
-              title: "Code Review Prompt",
-              description: "Prompt template for requesting a thorough code review",
-              contentType: "text",
-              content:
-                "Review the following code for correctness, readability, and potential edge cases. Point out any bugs, suggest simplifications, and flag anything that deviates from the existing patterns in the codebase. Be specific about file and line references.\n\n```\n{code}\n```",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.prompt,
+                  title: "Code Review Prompt",
+                  description: "Prompt template for requesting a thorough code review",
+                  contentType: "text",
+                  content:
+                    "Review the following code for correctness, readability, and potential edge cases. Point out any bugs, suggest simplifications, and flag anything that deviates from the existing patterns in the codebase. Be specific about file and line references.\n\n```\n{code}\n```",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.prompt,
-              title: "Documentation Generator Prompt",
-              description: "Prompt template for generating docs from source code",
-              contentType: "text",
-              content:
-                "Generate concise documentation for the following function or module. Include a one-sentence summary, parameter descriptions, return value, and one usage example. Avoid restating what the code obviously does.\n\n```\n{code}\n```",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.prompt,
+                  title: "Documentation Generator Prompt",
+                  description: "Prompt template for generating docs from source code",
+                  contentType: "text",
+                  content:
+                    "Generate concise documentation for the following function or module. Include a one-sentence summary, parameter descriptions, return value, and one usage example. Avoid restating what the code obviously does.\n\n```\n{code}\n```",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.prompt,
-              title: "Refactoring Assistant Prompt",
-              description: "Prompt template for guided refactoring suggestions",
-              contentType: "text",
-              content:
-                "Suggest a refactor for the following code that improves readability and removes duplication, without changing its external behavior. Explain the reasoning behind each change before showing the revised code.\n\n```\n{code}\n```",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.prompt,
+                  title: "Refactoring Assistant Prompt",
+                  description: "Prompt template for guided refactoring suggestions",
+                  contentType: "text",
+                  content:
+                    "Suggest a refactor for the following code that improves readability and removes duplication, without changing its external behavior. Explain the reasoning behind each change before showing the revised code.\n\n```\n{code}\n```",
+                },
+              },
             },
           ],
         },
@@ -212,13 +236,15 @@ export function chunk<T>(items: T[], size: number): T[][] {
         items: {
           create: [
             {
-              userId: user.id,
-              typeId: typeIdByName.snippet,
-              title: "Docker Compose Config",
-              description: "Local dev stack: app container plus Postgres",
-              contentType: "text",
-              language: "yaml",
-              content: `services:
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.snippet,
+                  title: "Docker Compose Config",
+                  description: "Local dev stack: app container plus Postgres",
+                  contentType: "text",
+                  language: "yaml",
+                  content: `services:
   web:
     build: .
     ports:
@@ -237,31 +263,45 @@ export function chunk<T>(items: T[], size: number): T[][] {
 volumes:
   db-data:
 `,
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.command,
-              title: "Deploy to Production",
-              description: "Build and deploy the current branch straight to production",
-              contentType: "text",
-              language: "bash",
-              content: "npm run build && vercel --prod --yes",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.command,
+                  title: "Deploy to Production",
+                  description: "Build and deploy the current branch straight to production",
+                  contentType: "text",
+                  language: "bash",
+                  content: "npm run build && vercel --prod --yes",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.link,
-              title: "Docker Documentation",
-              description: "Official Docker documentation",
-              contentType: "text",
-              url: "https://docs.docker.com/",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.link,
+                  title: "Docker Documentation",
+                  description: "Official Docker documentation",
+                  contentType: "text",
+                  url: "https://docs.docker.com/",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.link,
-              title: "GitHub Actions Documentation",
-              description: "Official GitHub Actions documentation for CI/CD workflows",
-              contentType: "text",
-              url: "https://docs.github.com/en/actions",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.link,
+                  title: "GitHub Actions Documentation",
+                  description: "Official GitHub Actions documentation for CI/CD workflows",
+                  contentType: "text",
+                  url: "https://docs.github.com/en/actions",
+                },
+              },
             },
           ],
         },
@@ -277,40 +317,56 @@ volumes:
         items: {
           create: [
             {
-              userId: user.id,
-              typeId: typeIdByName.command,
-              title: "Undo Last Commit (Keep Changes)",
-              description: "Undo the last commit but keep the changes staged",
-              contentType: "text",
-              language: "bash",
-              content: "git reset --soft HEAD~1",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.command,
+                  title: "Undo Last Commit (Keep Changes)",
+                  description: "Undo the last commit but keep the changes staged",
+                  contentType: "text",
+                  language: "bash",
+                  content: "git reset --soft HEAD~1",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.command,
-              title: "Remove All Stopped Containers",
-              description: "Clean up stopped Docker containers",
-              contentType: "text",
-              language: "bash",
-              content: "docker container prune -f",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.command,
+                  title: "Remove All Stopped Containers",
+                  description: "Clean up stopped Docker containers",
+                  contentType: "text",
+                  language: "bash",
+                  content: "docker container prune -f",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.command,
-              title: "Find and Kill Process on Port",
-              description: "Find and kill whatever process is listening on port 3000",
-              contentType: "text",
-              language: "bash",
-              content: "lsof -ti:3000 | xargs kill -9",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.command,
+                  title: "Find and Kill Process on Port",
+                  description: "Find and kill whatever process is listening on port 3000",
+                  contentType: "text",
+                  language: "bash",
+                  content: "lsof -ti:3000 | xargs kill -9",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.command,
-              title: "Clean npm Cache",
-              description: "Clear the local npm cache when installs behave strangely",
-              contentType: "text",
-              language: "bash",
-              content: "npm cache clean --force",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.command,
+                  title: "Clean npm Cache",
+                  description: "Clear the local npm cache when installs behave strangely",
+                  contentType: "text",
+                  language: "bash",
+                  content: "npm cache clean --force",
+                },
+              },
             },
           ],
         },
@@ -325,36 +381,52 @@ volumes:
         items: {
           create: [
             {
-              userId: user.id,
-              typeId: typeIdByName.link,
-              title: "Tailwind CSS Docs",
-              description: "Official Tailwind CSS documentation and utility reference",
-              contentType: "text",
-              url: "https://tailwindcss.com/docs",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.link,
+                  title: "Tailwind CSS Docs",
+                  description: "Official Tailwind CSS documentation and utility reference",
+                  contentType: "text",
+                  url: "https://tailwindcss.com/docs",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.link,
-              title: "shadcn/ui",
-              description: "Copy-paste component library built on Radix UI and Tailwind",
-              contentType: "text",
-              url: "https://ui.shadcn.com",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.link,
+                  title: "shadcn/ui",
+                  description: "Copy-paste component library built on Radix UI and Tailwind",
+                  contentType: "text",
+                  url: "https://ui.shadcn.com",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.link,
-              title: "Material Design 3",
-              description: "Google's Material Design 3 system guidelines",
-              contentType: "text",
-              url: "https://m3.material.io",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.link,
+                  title: "Material Design 3",
+                  description: "Google's Material Design 3 system guidelines",
+                  contentType: "text",
+                  url: "https://m3.material.io",
+                },
+              },
             },
             {
-              userId: user.id,
-              typeId: typeIdByName.link,
-              title: "Lucide Icons",
-              description: "Open-source icon library used throughout this project",
-              contentType: "text",
-              url: "https://lucide.dev",
+              item: {
+                create: {
+                  userId: user.id,
+                  typeId: typeIdByName.link,
+                  title: "Lucide Icons",
+                  description: "Open-source icon library used throughout this project",
+                  contentType: "text",
+                  url: "https://lucide.dev",
+                },
+              },
             },
           ],
         },

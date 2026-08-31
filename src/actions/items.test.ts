@@ -35,6 +35,7 @@ const validData = {
   url: null,
   language: null,
   tags: ["react"],
+  collectionIds: [],
 };
 
 const validCreateData = {
@@ -48,6 +49,7 @@ const validCreateData = {
   fileName: null,
   fileSize: null,
   tags: ["react"],
+  collectionIds: [],
 };
 
 describe("createItem", () => {

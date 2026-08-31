@@ -67,7 +67,7 @@ describe("getItemDetail", () => {
       updatedAt: new Date("2026-01-02"),
       type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
       tags: [{ tag: { name: "react" } }],
-      collection: { id: "col-1", name: "React Patterns" },
+      collections: [{ collection: { id: "col-1", name: "React Patterns" } }],
     });
 
     const result = await getItemDetail("item-1");
@@ -76,7 +76,7 @@ describe("getItemDetail", () => {
       expect.objectContaining({ where: { id: "item-1", userId: "user-1" } })
     );
     expect(result?.tags).toEqual(["react"]);
-    expect(result?.collection).toEqual({ id: "col-1", name: "React Patterns" });
+    expect(result?.collections).toEqual([{ id: "col-1", name: "React Patterns" }]);
   });
 
   it("returns null when no item matches (not found, or belongs to another user)", async () => {

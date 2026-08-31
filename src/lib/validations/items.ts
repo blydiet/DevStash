@@ -7,6 +7,7 @@ export const updateItemSchema = z.object({
   url: z.union([z.url(), z.null()]),
   language: z.string().nullable(),
   tags: z.array(z.string().trim().min(1)),
+  collectionIds: z.array(z.string()),
 });
 
 export const createItemSchema = z
@@ -21,6 +22,7 @@ export const createItemSchema = z
     fileName: z.string().nullable().default(null),
     fileSize: z.number().int().positive().nullable().default(null),
     tags: z.array(z.string().trim().min(1)),
+    collectionIds: z.array(z.string()),
   })
   .refine((data) => data.type !== "link" || data.url !== null, {
     message: "URL is required",
