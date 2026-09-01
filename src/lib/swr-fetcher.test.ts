@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchCollectionOptions, fetchItemDetail } from "@/lib/swr-fetcher";
+import {
+  ApiError,
+  deleteCollectionMutation,
+  fetchCollectionOptions,
+  fetchItemDetail,
+  updateCollectionMutation,
+} from "@/lib/swr-fetcher";
 
 function jsonResponse(status: number, ok: boolean, body: unknown): Response {
   return {
@@ -90,5 +96,76 @@ describe("fetchCollectionOptions", () => {
     );
 
     await expect(fetchCollectionOptions("/api/collections")).rejects.toThrow("Not authenticated");
+  });
+});
+
+describe("updateCollectionMutation", () => {
+  const arg = { name: "Renamed", description: null };
+
+  it("returns data on success", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse(200, true, { success: true, data: { id: "col-1", name: "Renamed" } })
+    );
+
+    await expect(updateCollectionMutation("/api/collections/col-1", { arg })).resolves.toEqual({
+      id: "col-1",
+      name: "Renamed",
+    });
+  });
+
+  it("throws an ApiError on a 401 response", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(401, false, { success: false }));
+
+    await expect(updateCollectionMutation("/api/collections/col-1", { arg })).rejects.toThrow(ApiError);
+  });
+
+  it("throws the server's error message on a non-ok JSON response", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse(404, false, { success: false, error: "Collection not found" })
+    );
+
+    await expect(updateCollectionMutation("/api/collections/col-1", { arg })).rejects.toThrow(
+      "Collection not found"
+    );
+  });
+
+  it("falls back to a generic message when fetch itself rejects", async () => {
+    vi.mocked(fetch).mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(updateCollectionMutation("/api/collections/col-1", { arg })).rejects.toThrow(
+      "Failed to update collection"
+    );
+  });
+});
+
+describe("deleteCollectionMutation", () => {
+  it("resolves on success", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(200, true, { success: true }));
+
+    await expect(deleteCollectionMutation("/api/collections/col-1")).resolves.toBeUndefined();
+  });
+
+  it("throws an ApiError on a 401 response", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(401, false, { success: false }));
+
+    await expect(deleteCollectionMutation("/api/collections/col-1")).rejects.toThrow(ApiError);
+  });
+
+  it("throws the server's error message on a non-ok JSON response", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse(404, false, { success: false, error: "Collection not found" })
+    );
+
+    await expect(deleteCollectionMutation("/api/collections/col-1")).rejects.toThrow(
+      "Collection not found"
+    );
+  });
+
+  it("falls back to a generic message when fetch itself rejects", async () => {
+    vi.mocked(fetch).mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(deleteCollectionMutation("/api/collections/col-1")).rejects.toThrow(
+      "Failed to delete collection"
+    );
   });
 });

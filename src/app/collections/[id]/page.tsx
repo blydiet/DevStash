@@ -1,3 +1,4 @@
+import { CollectionDetailActions } from "@/components/dashboard/CollectionDetailActions";
 import { CollectionItemsGrid } from "@/components/dashboard/CollectionItemsGrid";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
@@ -22,11 +23,14 @@ export default async function CollectionDetailPage({
   return (
     <DashboardShell sidebar={<SidebarContainer />}>
       <div className="flex flex-col gap-8">
-        <div>
-          <h1 className="text-3xl font-bold">{collection ? collection.name : "Collection"}</h1>
-          {collection?.description && (
-            <p className="text-muted-foreground">{collection.description}</p>
-          )}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">{collection ? collection.name : "Collection"}</h1>
+            {collection?.description && (
+              <p className="text-muted-foreground">{collection.description}</p>
+            )}
+          </div>
+          {collection && <CollectionDetailActions collection={collection} />}
         </div>
 
         {error && (

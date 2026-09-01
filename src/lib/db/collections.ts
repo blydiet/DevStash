@@ -146,3 +146,33 @@ export const getCollectionById = cache(
     });
   },
 );
+
+export interface UpdateCollectionInput {
+  name: string;
+  description: string | null;
+}
+
+export async function updateCollection(
+  id: string,
+  data: UpdateCollectionInput,
+): Promise<CollectionDetail | null> {
+  const userId = await getCurrentUserId();
+
+  const { count } = await prisma.collection.updateMany({
+    where: { id, userId },
+    data: { name: data.name, description: data.description },
+  });
+
+  if (count === 0) return null;
+
+  return prisma.collection.findFirst({
+    where: { id, userId },
+    select: { id: true, name: true, description: true, isFavorite: true },
+  });
+}
+
+export async function deleteCollection(id: string): Promise<boolean> {
+  const userId = await getCurrentUserId();
+  const { count } = await prisma.collection.deleteMany({ where: { id, userId } });
+  return count > 0;
+}

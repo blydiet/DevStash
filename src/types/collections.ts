@@ -1,4 +1,4 @@
-import type { CollectionSummary, CollectionOption } from "@/lib/db/collections";
+import type { CollectionDetail, CollectionSummary, CollectionOption } from "@/lib/db/collections";
 
 export interface CreateCollectionResponse {
   success: boolean;
@@ -9,5 +9,16 @@ export interface CreateCollectionResponse {
 export interface ListCollectionsResponse {
   success: boolean;
   data?: CollectionOption[];
+  error?: string;
+}
+
+export interface UpdateCollectionResponse {
+  success: boolean;
+  data?: CollectionDetail;
+  error?: string;
+}
+
+export interface DeleteCollectionResponse {
+  success: boolean;
   error?: string;
 }

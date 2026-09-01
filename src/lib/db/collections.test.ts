@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createCollection,
+  deleteCollection,
   getAllCollections,
   getCollectionStats,
   getRecentCollections,
+  updateCollection,
 } from "@/lib/db/collections";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
@@ -12,7 +14,10 @@ const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
     collection: {
       count: vi.fn(),
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
+      updateMany: vi.fn(),
+      deleteMany: vi.fn(),
     },
   },
 }));
@@ -125,5 +130,64 @@ describe("createCollection", () => {
       borderColor: "#94a3b8",
       types: [],
     });
+  });
+});
+
+describe("updateCollection", () => {
+  it("updates a collection owned by the current user and returns its detail", async () => {
+    prismaMock.collection.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.collection.findFirst.mockResolvedValue({
+      id: "col-1",
+      name: "Renamed",
+      description: "New description",
+      isFavorite: false,
+    });
+
+    const result = await updateCollection("col-1", { name: "Renamed", description: "New description" });
+
+    expect(prismaMock.collection.updateMany).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+      data: { name: "Renamed", description: "New description" },
+    });
+    expect(prismaMock.collection.findFirst).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+      select: { id: true, name: true, description: true, isFavorite: true },
+    });
+    expect(result).toEqual({
+      id: "col-1",
+      name: "Renamed",
+      description: "New description",
+      isFavorite: false,
+    });
+  });
+
+  it("returns null without refetching when the collection is missing or not owned", async () => {
+    prismaMock.collection.updateMany.mockResolvedValue({ count: 0 });
+
+    const result = await updateCollection("col-2", { name: "Renamed", description: null });
+
+    expect(result).toBeNull();
+    expect(prismaMock.collection.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteCollection", () => {
+  it("deletes a collection scoped to the current user and returns true", async () => {
+    prismaMock.collection.deleteMany.mockResolvedValue({ count: 1 });
+
+    const result = await deleteCollection("col-1");
+
+    expect(prismaMock.collection.deleteMany).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+    });
+    expect(result).toBe(true);
+  });
+
+  it("returns false when the collection is missing or not owned", async () => {
+    prismaMock.collection.deleteMany.mockResolvedValue({ count: 0 });
+
+    const result = await deleteCollection("col-2");
+
+    expect(result).toBe(false);
   });
 });
