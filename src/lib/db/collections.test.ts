@@ -3,10 +3,12 @@ import {
   createCollection,
   deleteCollection,
   getAllCollections,
+  getCollectionsPage,
   getCollectionStats,
   getRecentCollections,
   updateCollection,
 } from "@/lib/db/collections";
+import { COLLECTIONS_PER_PAGE } from "@/lib/pagination";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
@@ -83,6 +85,101 @@ describe("getRecentCollections", () => {
     expect(result.itemCount).toBe(0);
     expect(result.borderColor).toBe("#94a3b8");
     expect(result.types).toEqual([]);
+  });
+});
+
+describe("getCollectionsPage", () => {
+  it("counts, then fetches the requested page ordered by updatedAt desc with id as a stable tiebreaker", async () => {
+    prismaMock.collection.count.mockResolvedValue(50);
+    prismaMock.collection.findMany.mockResolvedValue([]);
+
+    await getCollectionsPage(2);
+
+    expect(prismaMock.collection.count).toHaveBeenCalledWith({ where: { userId: "user-1" } });
+    expect(prismaMock.collection.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        skip: COLLECTIONS_PER_PAGE,
+        take: COLLECTIONS_PER_PAGE,
+      })
+    );
+  });
+
+  it("clamps a requested page beyond the last page down to the actual last page (not just page 1)", async () => {
+    // 50 collections at 21/page = 3 real pages; requesting page 9999 must land on page 3,
+    // not merely "not 9999" — a broken clamp that always returns 1 would also pass a
+    // looser assertion here.
+    prismaMock.collection.count.mockResolvedValue(50);
+    prismaMock.collection.findMany.mockResolvedValue([]);
+
+    const result = await getCollectionsPage(9999);
+
+    expect(result.currentPage).toBe(3);
+    expect(prismaMock.collection.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 2 * COLLECTIONS_PER_PAGE, take: COLLECTIONS_PER_PAGE })
+    );
+  });
+
+  it.each([0, -5])(
+    "clamps a requested page below 1 (%i) up to page 1 with skip: 0",
+    async (requestedPage) => {
+      prismaMock.collection.count.mockResolvedValue(50);
+      prismaMock.collection.findMany.mockResolvedValue([]);
+
+      const result = await getCollectionsPage(requestedPage);
+
+      expect(result.currentPage).toBe(1);
+      expect(prismaMock.collection.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: COLLECTIONS_PER_PAGE })
+      );
+    }
+  );
+
+  it("does not compute a negative skip when there are zero collections (Math.ceil(0/21) would be 0, not 1)", async () => {
+    prismaMock.collection.count.mockResolvedValue(0);
+    prismaMock.collection.findMany.mockResolvedValue([]);
+
+    const result = await getCollectionsPage(1);
+
+    expect(result.currentPage).toBe(1);
+    expect(prismaMock.collection.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 0, take: COLLECTIONS_PER_PAGE })
+    );
+  });
+
+  it("returns totalCount alongside collections mapped the same way as getRecentCollections", async () => {
+    prismaMock.collection.count.mockResolvedValue(3);
+    prismaMock.collection.findMany.mockResolvedValue([
+      {
+        id: "col-1",
+        name: "React Patterns",
+        description: null,
+        isFavorite: false,
+        items: [{ item: { typeId: "type-snippet", type: snippetType } }],
+      },
+    ]);
+
+    const result = await getCollectionsPage();
+
+    expect(result.totalCount).toBe(3);
+    expect(result.collections).toEqual([
+      {
+        id: "col-1",
+        name: "React Patterns",
+        description: null,
+        isFavorite: false,
+        itemCount: 1,
+        borderColor: snippetType.color,
+        types: [snippetType],
+      },
+    ]);
+  });
+
+  it("propagates a session failure instead of returning an empty page", async () => {
+    getCurrentUserIdMock.mockRejectedValue(new Error("Not authenticated"));
+
+    await expect(getCollectionsPage()).rejects.toThrow("Not authenticated");
+    expect(prismaMock.collection.count).not.toHaveBeenCalled();
   });
 });
 

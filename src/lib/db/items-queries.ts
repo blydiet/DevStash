@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/db/user";
+import {
+  clampPage,
+  DASHBOARD_RECENT_ITEMS_LIMIT,
+  getTotalPages,
+  ITEMS_PER_PAGE,
+} from "@/lib/pagination";
 
 export interface ItemTypeSummary {
   id: string;
@@ -88,7 +94,7 @@ export async function getPinnedItems(): Promise<ItemSummary[]> {
   return items.map(toItemSummary);
 }
 
-export async function getRecentItems(limit = 10): Promise<ItemSummary[]> {
+export async function getRecentItems(limit = DASHBOARD_RECENT_ITEMS_LIMIT): Promise<ItemSummary[]> {
   const userId = await getCurrentUserId();
   const items = await prisma.item.findMany({
     where: { userId },
@@ -100,26 +106,55 @@ export async function getRecentItems(limit = 10): Promise<ItemSummary[]> {
   return items.map(toItemSummary);
 }
 
-export async function getItemsByType(typeName: string): Promise<ItemSummary[]> {
-  const userId = await getCurrentUserId();
-  const items = await prisma.item.findMany({
-    where: { userId, type: { name: typeName } },
-    orderBy: { createdAt: "desc" },
-    include: { type: true, tags: { include: { tag: true } } },
-  });
-
-  return items.map(toItemSummary);
+export interface PaginatedItems {
+  items: ItemSummary[];
+  totalCount: number;
+  currentPage: number;
 }
 
-export async function getItemsByCollection(collectionId: string): Promise<ItemSummary[]> {
+// createdAt alone isn't a stable sort key: items created in the same millisecond
+// (bulk import, fast successive creates) have undefined relative order across
+// separate skip/take requests, letting an item land on two pages or on neither.
+// id is a stable tiebreaker.
+const PAGINATED_ITEM_ORDER = [{ createdAt: "desc" as const }, { id: "desc" as const }];
+
+export async function getItemsByType(typeName: string, requestedPage = 1): Promise<PaginatedItems> {
   const userId = await getCurrentUserId();
+  const where = { userId, type: { name: typeName } };
+
+  const totalCount = await prisma.item.count({ where });
+  const currentPage = clampPage(requestedPage, getTotalPages(totalCount, ITEMS_PER_PAGE));
+
   const items = await prisma.item.findMany({
-    where: { userId, collections: { some: { collectionId, collection: { userId } } } },
-    orderBy: { createdAt: "desc" },
+    where,
+    orderBy: PAGINATED_ITEM_ORDER,
+    skip: (currentPage - 1) * ITEMS_PER_PAGE,
+    take: ITEMS_PER_PAGE,
     include: { type: true, tags: { include: { tag: true } } },
   });
 
-  return items.map(toItemSummary);
+  return { items: items.map(toItemSummary), totalCount, currentPage };
+}
+
+export async function getItemsByCollection(
+  collectionId: string,
+  requestedPage = 1,
+): Promise<PaginatedItems> {
+  const userId = await getCurrentUserId();
+  const where = { userId, collections: { some: { collectionId, collection: { userId } } } };
+
+  const totalCount = await prisma.item.count({ where });
+  const currentPage = clampPage(requestedPage, getTotalPages(totalCount, ITEMS_PER_PAGE));
+
+  const items = await prisma.item.findMany({
+    where,
+    orderBy: PAGINATED_ITEM_ORDER,
+    skip: (currentPage - 1) * ITEMS_PER_PAGE,
+    take: ITEMS_PER_PAGE,
+    include: { type: true, tags: { include: { tag: true } } },
+  });
+
+  return { items: items.map(toItemSummary), totalCount, currentPage };
 }
 
 export interface SearchableItem {

@@ -1,8 +1,10 @@
 import { Fragment, type ReactNode } from "react";
 import { getItemsByCollection, type ItemSummary } from "@/lib/db/items-queries";
+import { getTotalPages, ITEMS_PER_PAGE } from "@/lib/pagination";
 import { FileListItem } from "./FileListItem";
 import { ImageCard } from "./ImageCard";
 import { ItemCard } from "./ItemCard";
+import { PaginationControls } from "./PaginationControls";
 
 function CardSection({
   items,
@@ -24,12 +26,23 @@ function CardSection({
   );
 }
 
-export async function CollectionItemsGrid({ collectionId }: { collectionId: string }) {
+export async function CollectionItemsGrid({
+  collectionId,
+  page = 1,
+}: {
+  collectionId: string;
+  page?: number;
+}) {
   let items: ItemSummary[] = [];
+  let totalCount = 0;
+  let currentPage = page;
   let error: string | null = null;
 
   try {
-    items = await getItemsByCollection(collectionId);
+    const result = await getItemsByCollection(collectionId, page);
+    items = result.items;
+    totalCount = result.totalCount;
+    currentPage = result.currentPage;
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to load items";
   }
@@ -47,6 +60,7 @@ export async function CollectionItemsGrid({ collectionId }: { collectionId: stri
   const otherItems = items.filter(
     (item) => item.type.name !== "image" && item.type.name !== "file",
   );
+  const totalPages = getTotalPages(totalCount, ITEMS_PER_PAGE);
 
   return (
     <div className="flex flex-col gap-8">
@@ -69,6 +83,12 @@ export async function CollectionItemsGrid({ collectionId }: { collectionId: stri
           ))}
         </div>
       )}
+
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath={`/collections/${collectionId}`}
+      />
     </div>
   );
 }

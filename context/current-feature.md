@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Pagination
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add pagination to `/items/[type]`, `/collections/[id]`, and `/collections` pages (spec's requirement line only named the first two, but `COLLECTIONS_PER_PAGE` implied `/collections` needed it too — confirmed with the user before implementing)
+- Pagination controls at the bottom with numbered page links and prev/next
+- Prev/next are disabled (greyed out) when not available (first/last page)
+- Dashboard listings (recent collections, recent items) stay capped at their existing limits, not paginated
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Source spec: `context/features/pagination-spec.md`
+- Constants: `ITEMS_PER_PAGE = 21`, `COLLECTIONS_PER_PAGE = 21`
+- Constants: `DASHBOARD_COLLECTIONS_LIMIT = 6`, `DASHBOARD_RECENT_ITEMS_LIMIT = 10`
+- Must not fetch all resources at once — each page should only fetch the amount it needs (Prisma `skip`/`take`, not fetch-all-then-slice)
 
 ## History
 

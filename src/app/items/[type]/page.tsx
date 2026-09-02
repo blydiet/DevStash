@@ -6,6 +6,7 @@ import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
 import type { ItemTypeSummary } from "@/lib/db/items-queries";
 import { ITEM_TYPES } from "@/lib/item-types";
+import { parsePageParam } from "@/lib/pagination";
 
 function formatTypeLabel(name: string) {
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}s`;
@@ -13,10 +14,14 @@ function formatTypeLabel(name: string) {
 
 export default async function ItemsByTypePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ type: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { type } = await params;
+  const { page } = await searchParams;
+  const currentPage = parsePageParam(page);
 
   let itemType: ItemTypeSummary | null = null;
   let error: string | null = null;
@@ -58,7 +63,7 @@ export default async function ItemsByTypePage({
           <p className="text-sm text-muted-foreground">No such item type.</p>
         )}
 
-        {itemType && <ItemsGrid typeName={itemType.name} />}
+        {itemType && <ItemsGrid typeName={itemType.name} page={currentPage} />}
       </div>
     </DashboardShell>
   );

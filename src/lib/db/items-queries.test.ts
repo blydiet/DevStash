@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getItemDetail, getPinnedItems, getSearchableItems } from "@/lib/db/items-queries";
+import {
+  getItemDetail,
+  getItemsByCollection,
+  getItemsByType,
+  getPinnedItems,
+  getSearchableItems,
+} from "@/lib/db/items-queries";
+import { ITEMS_PER_PAGE } from "@/lib/pagination";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
@@ -7,6 +14,7 @@ const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
     item: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -45,6 +53,170 @@ describe("getPinnedItems", () => {
     expect(result.tags).toEqual(["react", "hooks"]);
     expect(result.type.name).toBe("snippet");
     expect(result.fileUrl).toBeNull();
+  });
+});
+
+const PAGINATED_ITEM_ORDER = [{ createdAt: "desc" }, { id: "desc" }];
+
+describe("getItemsByType", () => {
+  it("counts, then fetches the requested page ordered by createdAt desc with id as a stable tiebreaker", async () => {
+    prismaMock.item.count.mockResolvedValue(50);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    await getItemsByType("snippet", 2);
+
+    expect(prismaMock.item.count).toHaveBeenCalledWith({
+      where: { userId: "user-1", type: { name: "snippet" } },
+    });
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: PAGINATED_ITEM_ORDER,
+        skip: ITEMS_PER_PAGE,
+        take: ITEMS_PER_PAGE,
+      })
+    );
+  });
+
+  it("clamps a requested page beyond the last page down to the actual last page (not just page 1)", async () => {
+    // 50 items at 21/page = 3 real pages; requesting page 9999 must land on page 3,
+    // not merely "not 9999" — a broken clamp that always returns 1 would also pass a
+    // looser assertion here.
+    prismaMock.item.count.mockResolvedValue(50);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    const result = await getItemsByType("snippet", 9999);
+
+    expect(result.currentPage).toBe(3);
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 2 * ITEMS_PER_PAGE, take: ITEMS_PER_PAGE })
+    );
+  });
+
+  it.each([0, -5])(
+    "clamps a requested page below 1 (%i) up to page 1 with skip: 0",
+    async (requestedPage) => {
+      prismaMock.item.count.mockResolvedValue(50);
+      prismaMock.item.findMany.mockResolvedValue([]);
+
+      const result = await getItemsByType("snippet", requestedPage);
+
+      expect(result.currentPage).toBe(1);
+      expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: ITEMS_PER_PAGE })
+      );
+    }
+  );
+
+  it("does not compute a negative skip when there are zero items (Math.ceil(0/21) would be 0, not 1)", async () => {
+    prismaMock.item.count.mockResolvedValue(0);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    const result = await getItemsByType("snippet", 1);
+
+    expect(result.currentPage).toBe(1);
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 0, take: ITEMS_PER_PAGE })
+    );
+  });
+
+  it("returns totalCount alongside the mapped items", async () => {
+    prismaMock.item.count.mockResolvedValue(3);
+    prismaMock.item.findMany.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "A",
+        description: null,
+        isFavorite: false,
+        isPinned: false,
+        createdAt: new Date("2026-01-01"),
+        type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
+        tags: [],
+        fileUrl: null,
+        fileName: null,
+        fileSize: null,
+      },
+    ]);
+
+    const result = await getItemsByType("snippet");
+
+    expect(result.totalCount).toBe(3);
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("propagates a session failure instead of returning an empty page", async () => {
+    getCurrentUserIdMock.mockRejectedValue(new Error("Not authenticated"));
+
+    await expect(getItemsByType("snippet")).rejects.toThrow("Not authenticated");
+    expect(prismaMock.item.count).not.toHaveBeenCalled();
+  });
+});
+
+describe("getItemsByCollection", () => {
+  it("scopes to the collection and current user, fetching the requested page ordered by createdAt desc with id as a stable tiebreaker", async () => {
+    prismaMock.item.count.mockResolvedValue(50);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    await getItemsByCollection("col-1", 2);
+
+    expect(prismaMock.item.count).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        collections: { some: { collectionId: "col-1", collection: { userId: "user-1" } } },
+      },
+    });
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: PAGINATED_ITEM_ORDER,
+        skip: ITEMS_PER_PAGE,
+        take: ITEMS_PER_PAGE,
+      })
+    );
+  });
+
+  it("clamps a requested page beyond the last page down to the actual last page (not just page 1)", async () => {
+    prismaMock.item.count.mockResolvedValue(50);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    const result = await getItemsByCollection("col-1", 9999);
+
+    expect(result.currentPage).toBe(3);
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 2 * ITEMS_PER_PAGE, take: ITEMS_PER_PAGE })
+    );
+  });
+
+  it.each([0, -5])(
+    "clamps a requested page below 1 (%i) up to page 1 with skip: 0",
+    async (requestedPage) => {
+      prismaMock.item.count.mockResolvedValue(50);
+      prismaMock.item.findMany.mockResolvedValue([]);
+
+      const result = await getItemsByCollection("col-1", requestedPage);
+
+      expect(result.currentPage).toBe(1);
+      expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: ITEMS_PER_PAGE })
+      );
+    }
+  );
+
+  it("does not compute a negative skip when there are zero items in the collection", async () => {
+    prismaMock.item.count.mockResolvedValue(0);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    const result = await getItemsByCollection("col-1", 1);
+
+    expect(result.currentPage).toBe(1);
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 0, take: ITEMS_PER_PAGE })
+    );
+  });
+
+  it("propagates a session failure instead of returning an empty page", async () => {
+    getCurrentUserIdMock.mockRejectedValue(new Error("Not authenticated"));
+
+    await expect(getItemsByCollection("col-1")).rejects.toThrow("Not authenticated");
+    expect(prismaMock.item.count).not.toHaveBeenCalled();
   });
 });
 

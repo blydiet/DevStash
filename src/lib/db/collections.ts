@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/db/user";
+import { clampPage, COLLECTIONS_PER_PAGE, DASHBOARD_COLLECTIONS_LIMIT, getTotalPages } from "@/lib/pagination";
 import {cache} from "react";
 
 
@@ -73,12 +74,16 @@ export async function getCollectionStats(): Promise<CollectionStats> {
 
   return { total, favorites };
 }
-async function fetchCollectionSummaries(take?: number): Promise<CollectionSummary[]> {
+async function fetchCollectionSummaries(take?: number, skip?: number): Promise<CollectionSummary[]> {
   const userId = await getCurrentUserId();
   const collections = await prisma.collection.findMany({
     where: { userId },
-    orderBy: { updatedAt: "desc" },
+    // id is a stable tiebreaker: two collections can share the same updatedAt
+    // (e.g. both untouched since creation), and skip/take pagination needs a
+    // consistent order across requests or an item can land on two pages or none.
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
     ...(take !== undefined ? { take } : {}),
+    ...(skip !== undefined ? { skip } : {}),
     select: {
       id: true,
       name: true,
@@ -123,8 +128,28 @@ async function fetchCollectionSummaries(take?: number): Promise<CollectionSummar
 }
 
 export const getRecentCollections = cache(
-  async (limit = 6): Promise<CollectionSummary[]> => fetchCollectionSummaries(limit),
+  async (limit = DASHBOARD_COLLECTIONS_LIMIT): Promise<CollectionSummary[]> =>
+    fetchCollectionSummaries(limit),
 );
+
+export interface CollectionsPage {
+  collections: CollectionSummary[];
+  totalCount: number;
+  currentPage: number;
+}
+
+export async function getCollectionsPage(requestedPage = 1): Promise<CollectionsPage> {
+  const userId = await getCurrentUserId();
+  const totalCount = await prisma.collection.count({ where: { userId } });
+  const currentPage = clampPage(requestedPage, getTotalPages(totalCount, COLLECTIONS_PER_PAGE));
+
+  const collections = await fetchCollectionSummaries(
+    COLLECTIONS_PER_PAGE,
+    (currentPage - 1) * COLLECTIONS_PER_PAGE,
+  );
+
+  return { collections, totalCount, currentPage };
+}
 
 export const getAllCollectionSummaries = cache(
   async (): Promise<CollectionSummary[]> => fetchCollectionSummaries(),

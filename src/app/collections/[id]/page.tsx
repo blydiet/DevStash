@@ -4,13 +4,18 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { getCollectionById, type CollectionDetail } from "@/lib/db/collections";
+import { parsePageParam } from "@/lib/pagination";
 
 export default async function CollectionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { id } = await params;
+  const { page } = await searchParams;
+  const currentPage = parsePageParam(page);
 
   let collection: CollectionDetail | null = null;
   let error: string | null = null;
@@ -42,7 +47,7 @@ export default async function CollectionDetailPage({
           <p className="text-sm text-muted-foreground">No such collection.</p>
         )}
 
-        {collection && <CollectionItemsGrid collectionId={collection.id} />}
+        {collection && <CollectionItemsGrid collectionId={collection.id} page={currentPage} />}
       </div>
     </DashboardShell>
   );
