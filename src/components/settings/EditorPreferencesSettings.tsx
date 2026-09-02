@@ -27,8 +27,8 @@ export function EditorPreferencesSettings() {
       <CardHeader>
         <CardTitle>Editor preferences</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        <div className="flex items-center justify-between gap-4">
+      <CardContent className="flex flex-col items-center">
+        <div className="grid grid-cols-[auto_140px] items-center gap-x-6 gap-y-5">
           <Label htmlFor="editor-font-size">Font size</Label>
           <Select
             value={String(preferences.fontSize)}
@@ -45,9 +45,7 @@ export function EditorPreferencesSettings() {
               ))}
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="flex items-center justify-between gap-4">
           <Label htmlFor="editor-tab-size">Tab size</Label>
           <Select
             value={String(preferences.tabSize)}
@@ -64,9 +62,7 @@ export function EditorPreferencesSettings() {
               ))}
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="flex items-center justify-between gap-4">
           <Label htmlFor="editor-theme">Theme</Label>
           <Select
             value={preferences.theme}
@@ -83,24 +79,24 @@ export function EditorPreferencesSettings() {
               ))}
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="flex items-center justify-between gap-4">
           <Label htmlFor="editor-word-wrap">Word wrap</Label>
-          <Switch
-            id="editor-word-wrap"
-            checked={preferences.wordWrap}
-            onCheckedChange={(checked) => updatePreference("wordWrap", checked)}
-          />
-        </div>
+          <div className="flex justify-end">
+            <Switch
+              id="editor-word-wrap"
+              checked={preferences.wordWrap}
+              onCheckedChange={(checked) => updatePreference("wordWrap", checked)}
+            />
+          </div>
 
-        <div className="flex items-center justify-between gap-4">
           <Label htmlFor="editor-minimap">Minimap</Label>
-          <Switch
-            id="editor-minimap"
-            checked={preferences.minimap}
-            onCheckedChange={(checked) => updatePreference("minimap", checked)}
-          />
+          <div className="flex justify-end">
+            <Switch
+              id="editor-minimap"
+              checked={preferences.minimap}
+              onCheckedChange={(checked) => updatePreference("minimap", checked)}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
