@@ -1,4 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { ProfileStats } from "@/components/profile/ProfileStats";
@@ -17,7 +18,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />}>
+    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
       <div className="flex flex-col gap-6 md: items-center  ">
         <div className="flex flex-col gap-1  md:items-start lg:mr-[490px] md:mr-[400px]">
           <h1 className="text-3xl font-bold">Profile</h1>

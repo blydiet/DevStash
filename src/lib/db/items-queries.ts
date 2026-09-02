@@ -122,6 +122,64 @@ export async function getItemsByCollection(collectionId: string): Promise<ItemSu
   return items.map(toItemSummary);
 }
 
+export interface SearchableItem {
+  id: string;
+  title: string;
+  type: ItemTypeSummary;
+  contentPreview: string | null;
+}
+
+const CONTENT_PREVIEW_LENGTH = 140;
+// Safety cap for the client-side search index — well above the free-tier 50-item
+// limit, but bounded so a high-volume Pro account can't force an unbounded fetch.
+const MAX_SEARCHABLE_ITEMS = 500;
+
+function toContentPreview(...candidates: (string | null)[]): string | null {
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+    if (trimmed) {
+      return trimmed.length > CONTENT_PREVIEW_LENGTH
+        ? `${trimmed.slice(0, CONTENT_PREVIEW_LENGTH)}…`
+        : trimmed;
+    }
+  }
+  return null;
+}
+
+export interface SearchableItemsResult {
+  items: SearchableItem[];
+  truncated: boolean;
+}
+
+export async function getSearchableItems(): Promise<SearchableItemsResult> {
+  const userId = await getCurrentUserId();
+  const items = await prisma.item.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: MAX_SEARCHABLE_ITEMS + 1,
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      description: true,
+      url: true,
+      type: { select: { id: true, name: true, icon: true, color: true } },
+    },
+  });
+
+  const truncated = items.length > MAX_SEARCHABLE_ITEMS;
+
+  return {
+    items: items.slice(0, MAX_SEARCHABLE_ITEMS).map((item) => ({
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      contentPreview: toContentPreview(item.content, item.description, item.url),
+    })),
+    truncated,
+  };
+}
+
 export async function getItemDetail(id: string): Promise<ItemDetail | null> {
   const userId = await getCurrentUserId();
   const item = await prisma.item.findFirst({

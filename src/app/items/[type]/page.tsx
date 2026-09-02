@@ -1,5 +1,6 @@
 import { AddTypeItemButton } from "@/components/dashboard/AddTypeItemButton";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { ItemsGrid } from "@/components/dashboard/ItemsGrid";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
@@ -31,7 +32,7 @@ export default async function ItemsByTypePage({
     : undefined;
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />}>
+    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
       <div className="flex flex-col gap-8">
         <div className="flex items-start justify-between gap-4">
           <div>

@@ -1,4 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { PinnedItems } from "@/components/dashboard/PinnedItems";
 import { RecentCollections } from "@/components/dashboard/RecentCollections";
 import { RecentItems } from "@/components/dashboard/RecentItems";
@@ -13,7 +14,7 @@ export default async function DashboardPage({
   const { notice } = await searchParams;
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />}>
+    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
       <div className="flex flex-col gap-8">
         {notice === "already-signed-in" && (
           <div className="rounded-lg border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground">

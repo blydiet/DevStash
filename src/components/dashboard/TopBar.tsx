@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { CreateCollectionDialog } from "./CreateCollectionDialog";
+import { useGlobalSearch } from "./GlobalSearchContext";
 
 export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const [createItemOpen, setCreateItemOpen] = useState(false);
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
+  const { setOpen: setSearchOpen } = useGlobalSearch();
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-6">
@@ -27,7 +29,12 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 
       <div className="relative mx-auto w-full max-w-md">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search items..." className="pl-9 pr-14" />
+        <Input
+          placeholder="Search items..."
+          className="cursor-pointer pl-9 pr-14"
+          readOnly
+          onClick={() => setSearchOpen(true)}
+        />
         <kbd className="absolute top-1/2 right-3 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
           ⌘K
         </kbd>

@@ -1,6 +1,7 @@
 import { CollectionDetailActions } from "@/components/dashboard/CollectionDetailActions";
 import { CollectionItemsGrid } from "@/components/dashboard/CollectionItemsGrid";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { getCollectionById, type CollectionDetail } from "@/lib/db/collections";
 
@@ -21,7 +22,7 @@ export default async function CollectionDetailPage({
   }
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />}>
+    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
       <div className="flex flex-col gap-8">
         <div className="flex items-start justify-between gap-4">
           <div>

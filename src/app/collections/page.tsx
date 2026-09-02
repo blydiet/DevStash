@@ -1,5 +1,6 @@
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { getAllCollectionSummaries, type CollectionSummary } from "@/lib/db/collections";
 
@@ -14,7 +15,7 @@ export default async function CollectionsPage() {
   }
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />}>
+    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
       <div className="flex flex-col gap-8">
         <div>
           <h1 className="text-3xl font-bold">Collections</h1>

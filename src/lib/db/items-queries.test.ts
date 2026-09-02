@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getItemDetail, getPinnedItems } from "@/lib/db/items-queries";
+import { getItemDetail, getPinnedItems, getSearchableItems } from "@/lib/db/items-queries";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
@@ -82,5 +82,86 @@ describe("getItemDetail", () => {
   it("returns null when no item matches (not found, or belongs to another user)", async () => {
     prismaMock.item.findFirst.mockResolvedValue(null);
     await expect(getItemDetail("item-1")).resolves.toBeNull();
+  });
+});
+
+describe("getSearchableItems", () => {
+  const type = { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" };
+
+  it("scopes the lookup to the current user", async () => {
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    await getSearchableItems();
+
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1" }, take: 501 })
+    );
+  });
+
+  it("prefers content, but falls through to description then url when content is empty or whitespace-only", async () => {
+    prismaMock.item.findMany.mockResolvedValue([
+      { id: "1", title: "A", content: "real content", description: "desc", url: null, type },
+      { id: "2", title: "B", content: "", description: "desc", url: null, type },
+      { id: "3", title: "C", content: "   ", description: "desc", url: null, type },
+      { id: "4", title: "D", content: null, description: null, url: "https://example.com", type },
+      { id: "5", title: "E", content: null, description: null, url: null, type },
+    ]);
+
+    const { items } = await getSearchableItems();
+
+    expect(items.map((item) => item.contentPreview)).toEqual([
+      "real content",
+      "desc",
+      "desc",
+      "https://example.com",
+      null,
+    ]);
+  });
+
+  it("truncates previews longer than 140 characters with an ellipsis", async () => {
+    const longContent = "a".repeat(150);
+    prismaMock.item.findMany.mockResolvedValue([
+      { id: "1", title: "A", content: longContent, description: null, url: null, type },
+    ]);
+
+    const { items } = await getSearchableItems();
+
+    expect(items[0].contentPreview).toBe(`${"a".repeat(140)}…`);
+  });
+
+  it("reports truncated: false when the item count is within the cap", async () => {
+    prismaMock.item.findMany.mockResolvedValue(
+      Array.from({ length: 500 }, (_, i) => ({
+        id: `${i}`,
+        title: `Item ${i}`,
+        content: null,
+        description: null,
+        url: null,
+        type,
+      }))
+    );
+
+    const { items, truncated } = await getSearchableItems();
+
+    expect(items).toHaveLength(500);
+    expect(truncated).toBe(false);
+  });
+
+  it("reports truncated: true and drops the extra item when the cap is exceeded", async () => {
+    prismaMock.item.findMany.mockResolvedValue(
+      Array.from({ length: 501 }, (_, i) => ({
+        id: `${i}`,
+        title: `Item ${i}`,
+        content: null,
+        description: null,
+        url: null,
+        type,
+      }))
+    );
+
+    const { items, truncated } = await getSearchableItems();
+
+    expect(items).toHaveLength(500);
+    expect(truncated).toBe(true);
   });
 });
