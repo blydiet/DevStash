@@ -2,11 +2,64 @@
 
 import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import type { OnMount } from "@monaco-editor/react";
+import type { BeforeMount, Monaco, OnMount } from "@monaco-editor/react";
 import { Check, Copy, Maximize2, Minimize2, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import VisuallyHidden from "@/components/VisuallyHidden/VisuallyHidden";
+import { useEditorPreferences } from "@/components/dashboard/EditorPreferencesContext";
+
+// Monaco only ships "vs" / "vs-dark" / "hc-black" out of the box — "monokai" and
+// "github-dark" are approximations of the well-known palettes, registered here since
+// there's no built-in equivalent to reference.
+const CUSTOM_THEMES: Record<string, Parameters<Monaco["editor"]["defineTheme"]>[1]> = {
+  monokai: {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: "75715E", fontStyle: "italic" },
+      { token: "keyword", foreground: "F92672" },
+      { token: "string", foreground: "E6DB74" },
+      { token: "number", foreground: "AE81FF" },
+      { token: "type", foreground: "66D9EF" },
+      { token: "function", foreground: "A6E22E" },
+      { token: "variable", foreground: "F8F8F2" },
+    ],
+    colors: {
+      "editor.background": "#272822",
+      "editor.foreground": "#F8F8F2",
+      "editorLineNumber.foreground": "#75715E",
+      "editor.selectionBackground": "#49483E",
+      "editor.lineHighlightBackground": "#3E3D32",
+    },
+  },
+  "github-dark": {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: "8B949E", fontStyle: "italic" },
+      { token: "keyword", foreground: "FF7B72" },
+      { token: "string", foreground: "A5D6FF" },
+      { token: "number", foreground: "79C0FF" },
+      { token: "type", foreground: "FFA657" },
+      { token: "function", foreground: "D2A8FF" },
+      { token: "variable", foreground: "C9D1D9" },
+    ],
+    colors: {
+      "editor.background": "#0D1117",
+      "editor.foreground": "#C9D1D9",
+      "editorLineNumber.foreground": "#8B949E",
+      "editor.selectionBackground": "#264F78",
+      "editor.lineHighlightBackground": "#161B22",
+    },
+  },
+};
+
+const handleBeforeMount: BeforeMount = (monaco) => {
+  for (const [name, theme] of Object.entries(CUSTOM_THEMES)) {
+    monaco.editor.defineTheme(name, theme);
+  }
+};
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -49,6 +102,7 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ value, onChange, language, readOnly = false }: CodeEditorProps) {
+  const { preferences } = useEditorPreferences();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -145,17 +199,19 @@ export function CodeEditor({ value, onChange, language, readOnly = false }: Code
           value={value}
           onChange={(v) => onChange?.(v ?? "")}
           onMount={handleMount}
-          theme="vs-dark"
+          beforeMount={handleBeforeMount}
+          theme={preferences.theme}
           options={{
             readOnly,
             domReadOnly: readOnly,
             automaticLayout: true,
-            minimap: { enabled: false },
-            fontSize: 13,
+            minimap: { enabled: preferences.minimap },
+            fontSize: preferences.fontSize,
+            tabSize: preferences.tabSize,
             scrollBeyondLastLine: false,
             padding: { top: 12, bottom: 12 },
             renderLineHighlight: readOnly ? "none" : "line",
-            wordWrap: "on",
+            wordWrap: preferences.wordWrap ? "on" : "off",
             scrollbar: {
               verticalScrollbarSize: 8,
               horizontalScrollbarSize: 8,

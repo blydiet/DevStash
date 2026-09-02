@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { AccountActions } from "@/components/profile/AccountActions";
+import { EditorPreferencesSettings } from "@/components/settings/EditorPreferencesSettings";
 import { getProfileUser } from "@/lib/db/user";
 import { changePassword, deleteAccount } from "@/actions/profile";
 
@@ -39,6 +40,8 @@ export default async function SettingsPage() {
             deleteAccountAction={deleteAccount}
           />
         )}
+
+        <EditorPreferencesSettings />
       </div>
     </DashboardShell>
   );

@@ -1,5 +1,6 @@
 import type { ItemDetail } from "@/lib/db/items-queries";
 import type { CollectionDetail, CollectionOption } from "@/lib/db/collections";
+import type { EditorPreferences } from "@/lib/editor-preferences";
 
 export class ApiError extends Error {
   status: number;
@@ -42,6 +43,23 @@ export async function fetchCollectionOptions(url: string): Promise<CollectionOpt
   }
 
   return body.data as CollectionOption[];
+}
+
+export async function fetchEditorPreferences(url: string): Promise<EditorPreferences> {
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Failed to load preferences");
+  }
+
+  const body = await res.json();
+
+  if (!body.success) {
+    throw new Error(body.error ?? "Failed to load preferences");
+  }
+
+  return body.data as EditorPreferences;
 }
 
 export async function updateCollectionMutation(

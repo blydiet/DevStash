@@ -17,6 +17,7 @@ model User {
   isPro                Boolean  @default(false)
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  editorPreferences    Json?
 
   accounts    Account[]
   sessions    Session[]
