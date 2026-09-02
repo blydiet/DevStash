@@ -4,7 +4,7 @@
 
 A centralized, AI-enhanced knowledge hub for developers — snippets, prompts, docs, commands, and more, in one searchable place.
 
-**Status:** 🟢 MVP in progress — auth, dashboard, items CRUD, tags, and file/image uploads are live; collection management, search, and free-tier limits are still open (see Roadmap)
+**Status:** 🟢 MVP in progress — auth, dashboard, items CRUD, tags, collections, search, and file/image uploads are live; free-tier limits are still open (see Roadmap)
 
 ---
 
@@ -336,8 +336,8 @@ git switch -c lesson-01-setup
 ### MVP
 
 - [x] Items CRUD
-- [ ] Collections
-- [ ] Search
+- [x] Collections
+- [x] Search
 - [x] Basic tags
 - [ ] Free tier limits
 
