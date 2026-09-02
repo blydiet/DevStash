@@ -73,71 +73,88 @@ export function AccountActions({
       <CardHeader>
         <CardTitle>Account actions</CardTitle>
       </CardHeader>
-      <CardContent className="flex  gap-3">
+      <CardContent className="flex flex-col gap-1">
         {hasPassword && (
-          <Dialog
-            open={changePasswordOpen}
-            onOpenChange={(open) => {
-              setChangePasswordOpen(open);
-              setError(null);
-            }}
-          >
-            <DialogTrigger render={<Button variant="outline" className="w-fit" />}>
-              Change password
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Change password</DialogTitle>
-                <DialogDescription>
-                  Enter your current password and choose a new one.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="currentPassword">Current password</Label>
-                  <Input id="currentPassword" name="currentPassword" type="password" required />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="newPassword">New password</Label>
-                  <Input id="newPassword" name="newPassword" type="password" required />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="confirmPassword">Confirm new password</Label>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" required />
-                </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : "Save password"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <p className="ml-[-150px]">
+            Forgot password ?
+          </p>
         )}
+        <div className="flex justify-center gap-3">
+          {hasPassword && (
+            <Dialog
+              open={changePasswordOpen}
+              onOpenChange={(open) => {
+                setChangePasswordOpen(open);
+                setError(null);
+              }}
+            >
+              <DialogTrigger render={<Button variant="outline" className="w-fit" />}>
+                Change password
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Change password</DialogTitle>
+                  <DialogDescription>
+                    Enter your current password and choose a new one.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="currentPassword">Current password</Label>
+                    <Input
+                      id="currentPassword"
+                      name="currentPassword"
+                      type="password"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="newPassword">New password</Label>
+                    <Input id="newPassword" name="newPassword" type="password" required />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="confirmPassword">Confirm new password</Label>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      required
+                    />
+                  </div>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  <DialogFooter>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Saving..." : "Save password"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
 
-        <AlertDialog>
-          <AlertDialogTrigger render={<Button variant="destructive" className="w-fit" />}>
-            Delete account
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This permanently deletes your account and all of your items, collections, and
-                tags. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <form action={deleteAccountAction}>
-                <AlertDialogAction type="submit" variant="destructive">
-                  Delete account
-                </AlertDialogAction>
-              </form>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          <AlertDialog>
+            <AlertDialogTrigger render={<Button variant="destructive" className="w-fit" />}>
+              Delete account
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes your account and all of your items, collections, and
+                  tags. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <form action={deleteAccountAction}>
+                  <AlertDialogAction type="submit" variant="destructive">
+                    Delete account
+                  </AlertDialogAction>
+                </form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </CardContent>
     </Card>
   );

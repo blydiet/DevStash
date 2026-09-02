@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Folder, Star, User } from "lucide-react";
+import { ChevronDown, ChevronRight, Folder, Settings, Star, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -180,6 +180,10 @@ export function Sidebar({
               <DropdownMenuItem render={<Link href="/profile" />}>
                 <User className="size-4" />
                 View Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/settings" />}>
+                <Settings className="size-4" />
+                Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem closeOnClick={false} className="p-0">

@@ -3,9 +3,7 @@ import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContai
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { ProfileStats } from "@/components/profile/ProfileStats";
-import { AccountActions } from "@/components/profile/AccountActions";
 import { getProfileUser } from "@/lib/db/user";
-import { changePassword, deleteAccount } from "@/actions/profile";
 
 export default async function ProfilePage() {
   let profileError: string | null = null;
@@ -33,11 +31,6 @@ export default async function ProfilePage() {
           <>
             <ProfileInfo user={profileUser} />
             <ProfileStats />
-            <AccountActions
-              hasPassword={profileUser.hasPassword}
-              changePasswordAction={changePassword}
-              deleteAccountAction={deleteAccount}
-            />
           </>
         )}
       </div>
