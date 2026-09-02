@@ -14,7 +14,11 @@ try {
 } catch {
   // .env.local is optional
 }
-loadEnvFile(".env");
+try {
+  loadEnvFile(".env");
+} catch {
+  // .env is optional (e.g. not present in deployed environments)
+}
 
 neonConfig.webSocketConstructor = ws;
 
