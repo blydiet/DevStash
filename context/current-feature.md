@@ -1,24 +1,20 @@
-# Current Feature: Pagination
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Not Started | In Progress | Complete -->
 
 ## Goals
 
-- Add pagination to `/items/[type]`, `/collections/[id]`, and `/collections` pages (spec's requirement line only named the first two, but `COLLECTIONS_PER_PAGE` implied `/collections` needed it too — confirmed with the user before implementing)
-- Pagination controls at the bottom with numbered page links and prev/next
-- Prev/next are disabled (greyed out) when not available (first/last page)
-- Dashboard listings (recent collections, recent items) stay capped at their existing limits, not paginated
+<!-- Bullet points of what success looks like -->
 
 ## Notes
 
-- Source spec: `context/features/pagination-spec.md`
-- Constants: `ITEMS_PER_PAGE = 21`, `COLLECTIONS_PER_PAGE = 21`
-- Constants: `DASHBOARD_COLLECTIONS_LIMIT = 6`, `DASHBOARD_RECENT_ITEMS_LIMIT = 10`
-- Must not fetch all resources at once — each page should only fetch the amount it needs (Prisma `skip`/`take`, not fetch-all-then-slice)
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
+
+- 2026-09-02: Pagination (per `context/features/pagination-spec.md`) implemented on branch `feature/pagination`. Resolved a spec ambiguity up front via explicit user confirmation: the spec defined `COLLECTIONS_PER_PAGE` but its "Add pagination to" line only named `/items/[type]` and `/collections/[id]` (both item-listing pages) — confirmed this was a spec typo and `COLLECTIONS_PER_PAGE` was meant for `/collections` (the all-collections listing, previously unpaginated); also confirmed `/collections/[id]`'s three type-sectioned grids (other/image/file) should paginate as one combined 21-item page split across sections, rather than each section paginating independently. Added `src/lib/pagination.ts`: `ITEMS_PER_PAGE`/`COLLECTIONS_PER_PAGE` (21) and `DASHBOARD_COLLECTIONS_LIMIT`/`DASHBOARD_RECENT_ITEMS_LIMIT` (6/10) constants, plus `parsePageParam`/`getTotalPages`/`clampPage`/`getPaginationRange` helpers. `getItemsByType`/`getItemsByCollection` (`items-queries.ts`) and a new `getCollectionsPage` (`collections.ts`) now count, clamp the requested page to the real last page, then fetch only that page via `skip`/`take` — deliberately left `getAllCollectionSummaries`/`getSearchableItems` (used by global search) as unpaginated full-fetches, unrelated to this feature. Added a stable `id` secondary sort to all three paginated queries alongside the existing `createdAt`/`updatedAt` ordering, since same-timestamp ties (bulk import, fast successive creates) would otherwise have undefined order across separate `skip`/`take` requests and could leak an item onto two pages or none. Added `PaginationControls.tsx` (numbered links + prev/next, installed shadcn's `pagination` primitive but built custom `next/link`-based boundary links instead of reusing its `PaginationLink`/`Previous`/`Next` exports, which hardcode a bare `<a>`) — disabled prev/next render as a non-interactive `<span>` with no `href`, not just dimmed styling. `getRecentCollections`/`getRecentItems` defaults now reference the dashboard-limit constants instead of magic numbers. An iterative review process (the user rejecting each test/implementation attempt with a specific gap) hardened the design well beyond the first pass: `clampPage` was rewritten to sanitize non-integer/NaN input itself rather than trust callers to pre-parse with `parsePageParam`; unit tests were strengthened so "clamps beyond the last page" assertions use a count that actually produces multiple pages (a broken clamp that always returns 1 would have passed the original, weaker version); added explicit test coverage for zero-count (avoiding `Math.ceil(0/21)` producing a negative skip), below-1 requested pages, explicit `orderBy` assertions (previously hidden inside `objectContaining`), and session-failure propagation (a rejected `getCurrentUserId()` must not silently resolve to an empty page). Final count: 223 tests, up from 178 before this feature. Verified live via Playwright against the real dev Neon DB: seeded 25 throwaway snippets, 25 throwaway collections, and one 25-item collection (via a temp script, deleted after) to push all three paginated surfaces past their 21-per-page threshold, confirmed correct page counts, prev/next disabling at both boundaries, and `?page=999` clamping to the real last page (not a blank page) on `/items/snippet`, `/collections`, and the test collection's detail page; deleted all test data afterward and confirmed the demo account's counts and pagination-free state were restored. `npm run test` (223/223), `npm run build`, `npm run lint` (only the pre-existing, unrelated `JWT` warning), and `tsc --noEmit` all pass. Committed as a single commit and merged into `main`; branch deleted.
 
 - 2026-07-15: Phase 1 (ShadCN setup, /dashboard route, top bar, sidebar/main placeholders) implemented and verified on branch `feature/dashboard-phase-1`. Committed and merged.
 - 2026-07-16: Phase 2 (collapsible sidebar with item-type links, favorite/all collections, user avatar footer, desktop collapse + mobile drawer toggle) implemented on branch `feature/dashboard-phase-2`. Verified in-browser (desktop collapse, section collapse, mobile drawer) with no console errors; `npm run build` and `npm run lint` both pass. Committed and merged; branch deleted (local + remote).
