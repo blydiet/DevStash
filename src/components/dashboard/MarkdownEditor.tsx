@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Check, Copy, Maximize2, Minimize2, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import VisuallyHidden from "@/components/VisuallyHidden/VisuallyHidden";
 
 const MIN_HEIGHT = 136;
@@ -81,7 +81,7 @@ export function MarkdownEditor({ id, value, onChange, readOnly = false }: Markdo
               onChange={(e) => onChange?.(e.target.value)}
               placeholder="Write markdown..."
               style={{ minHeight, maxHeight }}
-              className="field-sizing-content w-full resize-none bg-[#1e1e1e] px-3 py-2.5 font-mono text-xs text-neutral-200 outline-none placeholder:text-neutral-500"
+              className="field-sizing-content block w-full resize-none bg-[#1e1e1e] px-3 py-2.5 font-mono text-xs text-neutral-200 outline-none placeholder:text-neutral-500"
             />
           </TabsContent>
         )}
@@ -89,7 +89,7 @@ export function MarkdownEditor({ id, value, onChange, readOnly = false }: Markdo
         <TabsContent
           value="preview"
           className="m-0 overflow-y-auto px-3 py-2.5"
-          style={{ maxHeight }}
+          style={{ minHeight, maxHeight  }}
         >
           {value.trim() === "" ? (
             <p className="text-xs text-neutral-500">Nothing to preview.</p>
@@ -107,14 +107,13 @@ export function MarkdownEditor({ id, value, onChange, readOnly = false }: Markdo
 
   return (
     <Dialog open onOpenChange={setExpanded}>
-      <DialogContent className="rounded-[5px] p-7 sm:max-w-3xl" showCloseButton={false}>
+      <DialogContent
+        className="gap-0 overflow-hidden rounded-lg bg-transparent p-0 ring-0 sm:max-w-3xl"
+        showCloseButton={false}
+      >
         <VisuallyHidden>
           <DialogTitle>Content</DialogTitle>
         </VisuallyHidden>
-        <DialogClose className="absolute top-[3px] right-[3px] inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-          <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
-        </DialogClose>
         {editorPanel}
       </DialogContent>
     </Dialog>

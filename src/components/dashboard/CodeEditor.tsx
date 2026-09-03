@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import type { BeforeMount, Monaco, OnMount } from "@monaco-editor/react";
 import { Check, Copy, Maximize2, Minimize2, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import VisuallyHidden from "@/components/VisuallyHidden/VisuallyHidden";
 import { useEditorPreferences } from "@/components/dashboard/EditorPreferencesContext";
 
@@ -226,14 +226,13 @@ export function CodeEditor({ value, onChange, language, readOnly = false }: Code
 
   return (
     <Dialog open onOpenChange={setExpanded}>
-      <DialogContent className="rounded-[5px] p-7 sm:max-w-3xl" showCloseButton={false}>
+      <DialogContent
+        className="gap-0 overflow-hidden rounded-lg bg-transparent p-0 ring-0 sm:max-w-3xl"
+        showCloseButton={false}
+      >
         <VisuallyHidden>
           <DialogTitle>Content</DialogTitle>
         </VisuallyHidden>
-        <DialogClose className="absolute top-[3px] right-[3px] inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-          <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
-        </DialogClose>
         {editorPanel}
       </DialogContent>
     </Dialog>
