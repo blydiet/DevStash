@@ -1,10 +1,12 @@
 "use client";
 
-import { File, Pin, Star } from "lucide-react";
+import { File, Pin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/icon-map";
 import { useItemDrawer } from "./ItemDrawerContext";
+import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
+import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
 import type { ItemSummary } from "@/lib/db/items-queries";
 
 function formatDate(date: Date) {
@@ -17,6 +19,11 @@ function formatDate(date: Date) {
 export function ItemRow({ item }: { item: ItemSummary }) {
   const { openItem } = useItemDrawer();
   const Icon = iconMap[item.type.icon ?? ""] ?? File;
+  const {
+    isFavorite,
+    toggle: toggleFavorite,
+    isTogglingFavorite,
+  } = useToggleItemFavorite(item.id, item.isFavorite);
 
   return (
     <Card
@@ -35,9 +42,12 @@ export function ItemRow({ item }: { item: ItemSummary }) {
           <div className="flex items-center gap-1.5">
             <p className="truncate font-medium">{item.title}</p>
             {item.isPinned && <Pin className="size-3.5 shrink-0 text-muted-foreground" />}
-            {item.isFavorite && (
-              <Star className="size-3.5 shrink-0 fill-yellow-500 text-yellow-500" />
-            )}
+            <FavoriteToggleButton
+              isFavorite={isFavorite}
+              isPending={isTogglingFavorite}
+              onToggle={toggleFavorite}
+              className="size-6 shrink-0"
+            />
           </div>
           {item.description && (
             <p className="truncate text-sm text-muted-foreground">{item.description}</p>

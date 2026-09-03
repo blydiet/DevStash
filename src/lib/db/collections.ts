@@ -217,6 +217,30 @@ export async function updateCollection(
   });
 }
 
+export async function setCollectionFavorite(
+  id: string,
+  isFavorite: boolean,
+): Promise<CollectionDetail | null> {
+  const userId = await getCurrentUserId();
+
+  let count: number;
+  try {
+    ({ count } = await prisma.collection.updateMany({ where: { id, userId }, data: { isFavorite } }));
+  } catch (err) {
+    console.error(`Failed to update favorite for collection ${id}:`, err);
+    throw err;
+  }
+
+  if (count === 0) return null;
+
+  try {
+    return await getCollectionById(id);
+  } catch (err) {
+    console.error(`Failed to refetch collection ${id} after favoriting:`, err);
+    throw err;
+  }
+}
+
 export async function deleteCollection(id: string): Promise<boolean> {
   const userId = await getCurrentUserId();
   const { count } = await prisma.collection.deleteMany({ where: { id, userId } });

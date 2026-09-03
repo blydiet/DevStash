@@ -22,3 +22,8 @@ export interface DeleteCollectionResponse {
   success: boolean;
   error?: string;
 }
+
+export interface ToggleCollectionFavoriteResponse {
+  success: boolean;
+  error?: string;
+}

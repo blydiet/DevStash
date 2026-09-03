@@ -4,6 +4,7 @@ import {
   deleteCollectionMutation,
   fetchCollectionOptions,
   fetchItemDetail,
+  toggleCollectionFavoriteMutation,
   updateCollectionMutation,
 } from "@/lib/swr-fetcher";
 
@@ -135,6 +136,61 @@ describe("updateCollectionMutation", () => {
     await expect(updateCollectionMutation("/api/collections/col-1", { arg })).rejects.toThrow(
       "Failed to update collection"
     );
+  });
+});
+
+describe("toggleCollectionFavoriteMutation", () => {
+  const arg = { isFavorite: true };
+
+  it("PATCHes the favorite endpoint with the right headers/body and resolves on success", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(200, true, { success: true }));
+
+    await expect(
+      toggleCollectionFavoriteMutation("/api/collections/col-1/favorite", { arg })
+    ).resolves.toBeUndefined();
+
+    expect(fetch).toHaveBeenCalledWith("/api/collections/col-1/favorite", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(arg),
+    });
+  });
+
+  it("throws an ApiError with the expired-session message and 401 status on a 401 response", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(401, false, { success: false }));
+
+    await expect(
+      toggleCollectionFavoriteMutation("/api/collections/col-1/favorite", { arg })
+    ).rejects.toMatchObject({
+      message: "Your session has expired. Please sign in again.",
+      status: 401,
+    });
+  });
+
+  it("throws the server's error message on a non-ok JSON response", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse(404, false, { success: false, error: "Collection not found" })
+    );
+
+    await expect(
+      toggleCollectionFavoriteMutation("/api/collections/col-1/favorite", { arg })
+    ).rejects.toThrow("Collection not found");
+  });
+
+  it("falls back to a generic message when fetch itself rejects", async () => {
+    vi.mocked(fetch).mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(
+      toggleCollectionFavoriteMutation("/api/collections/col-1/favorite", { arg })
+    ).rejects.toThrow("Failed to update favorite");
+  });
+
+  it("falls back to a generic message when a non-ok response body isn't JSON", async () => {
+    vi.mocked(fetch).mockResolvedValue(nonJsonResponse(500, false));
+
+    await expect(
+      toggleCollectionFavoriteMutation("/api/collections/col-1/favorite", { arg })
+    ).rejects.toThrow("Failed to update favorite");
   });
 });
 

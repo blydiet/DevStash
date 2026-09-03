@@ -9,3 +9,7 @@ export const updateCollectionSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   description: z.string().nullable(),
 });
+
+export const toggleCollectionFavoriteSchema = z.object({
+  isFavorite: z.boolean(),
+});

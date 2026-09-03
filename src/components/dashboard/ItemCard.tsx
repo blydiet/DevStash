@@ -2,13 +2,15 @@
 
 import useSWRMutation from "swr/mutation";
 import { toast } from "sonner";
-import { Copy, File, Pin, Star } from "lucide-react";
+import { Copy, File, Pin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/icon-map";
 import { fetchItemDetail } from "@/lib/swr-fetcher";
 import { useItemDrawer } from "./ItemDrawerContext";
+import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
+import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
 import type { ItemSummary } from "@/lib/db/items-queries";
 
 function formatDate(date: Date) {
@@ -26,6 +28,11 @@ export function ItemCard({ item }: { item: ItemSummary }) {
     itemDetailUrl,
     (url: string) => fetchItemDetail(url),
   );
+  const {
+    isFavorite,
+    toggle: toggleFavorite,
+    isTogglingFavorite,
+  } = useToggleItemFavorite(item.id, item.isFavorite);
 
   async function handleCopy(e: React.MouseEvent) {
     e.stopPropagation();
@@ -61,9 +68,11 @@ export function ItemCard({ item }: { item: ItemSummary }) {
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {item.isPinned && <Pin className="size-3.5 text-muted-foreground" />}
-            {item.isFavorite && (
-              <Star className="size-3.5 fill-yellow-500 text-yellow-500" />
-            )}
+            <FavoriteToggleButton
+              isFavorite={isFavorite}
+              isPending={isTogglingFavorite}
+              onToggle={toggleFavorite}
+            />
           </div>
         </div>
         <div className="min-w-0">

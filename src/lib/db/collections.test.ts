@@ -7,6 +7,7 @@ import {
   getCollectionStats,
   getFavoriteCollections,
   getRecentCollections,
+  setCollectionFavorite,
   updateCollection,
 } from "@/lib/db/collections";
 import { COLLECTIONS_PER_PAGE } from "@/lib/pagination";
@@ -299,6 +300,79 @@ describe("updateCollection", () => {
 
     expect(result).toBeNull();
     expect(prismaMock.collection.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("setCollectionFavorite", () => {
+  it("updates and returns the refreshed detail on success", async () => {
+    prismaMock.collection.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.collection.findFirst.mockResolvedValue({
+      id: "col-1",
+      name: "React Patterns",
+      description: null,
+      isFavorite: true,
+    });
+
+    const result = await setCollectionFavorite("col-1", true);
+
+    expect(prismaMock.collection.updateMany).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+      data: { isFavorite: true },
+    });
+    expect(prismaMock.collection.findFirst).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+      select: { id: true, name: true, description: true, isFavorite: true },
+    });
+    expect(result).toEqual({
+      id: "col-1",
+      name: "React Patterns",
+      description: null,
+      isFavorite: true,
+    });
+  });
+
+  it("returns null without refetching when the collection isn't owned by the current user (or doesn't exist)", async () => {
+    prismaMock.collection.updateMany.mockResolvedValue({ count: 0 });
+
+    const result = await setCollectionFavorite("col-2", true);
+
+    expect(result).toBeNull();
+    expect(prismaMock.collection.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("logs and rethrows when the update fails, without ever reaching the refetch", async () => {
+    const error = new Error("db down");
+    prismaMock.collection.updateMany.mockRejectedValue(error);
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(setCollectionFavorite("col-1", true)).rejects.toThrow("db down");
+
+    expect(prismaMock.collection.findFirst).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("logs and rethrows a refetch failure even though the update itself succeeded", async () => {
+    prismaMock.collection.updateMany.mockResolvedValue({ count: 1 });
+    const refetchError = new Error("refresh failed");
+    prismaMock.collection.findFirst.mockRejectedValue(refetchError);
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(setCollectionFavorite("col-1", true)).rejects.toThrow("refresh failed");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Failed to refetch collection col-1 after favoriting:",
+      refetchError
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("returns null when the collection is gone by the time it refetches", async () => {
+    prismaMock.collection.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.collection.findFirst.mockResolvedValue(null);
+
+    await expect(setCollectionFavorite("col-1", true)).resolves.toBeNull();
   });
 });
 

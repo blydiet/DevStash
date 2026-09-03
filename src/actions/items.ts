@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
+  setItemFavorite as setItemFavoriteInDb,
   updateItem as updateItemInDb,
 } from "@/lib/db/items-mutations";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
@@ -41,7 +42,13 @@ export async function createItem(data: {
     return { success: false, error: "Invalid item type" };
   }
 
-  const item = await createItemInDb({ ...parsed.data, type });
+  let item;
+  try {
+    item = await createItemInDb({ ...parsed.data, type });
+  } catch (err) {
+    console.error("Failed to create item:", err);
+    return { success: false, error: "Failed to create item" };
+  }
 
   return { success: true, data: item };
 }
@@ -70,7 +77,38 @@ export async function updateItem(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const item = await updateItemInDb(itemId, parsed.data);
+  let item;
+  try {
+    item = await updateItemInDb(itemId, parsed.data);
+  } catch (err) {
+    console.error("Failed to update item:", err);
+    return { success: false, error: "Failed to update item" };
+  }
+
+  if (!item) {
+    return { success: false, error: "Item not found" };
+  }
+
+  return { success: true, data: item };
+}
+
+export async function toggleItemFavorite(
+  itemId: string,
+  isFavorite: boolean
+): Promise<UpdateItemActionResult> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  let item;
+  try {
+    item = await setItemFavoriteInDb(itemId, isFavorite);
+  } catch (err) {
+    console.error("Failed to update item favorite:", err);
+    return { success: false, error: "Failed to update favorite" };
+  }
 
   if (!item) {
     return { success: false, error: "Item not found" };
@@ -86,7 +124,13 @@ export async function deleteItem(itemId: string): Promise<DeleteItemActionResult
     return { success: false, error: "Not authenticated" };
   }
 
-  const deleted = await deleteItemInDb(itemId);
+  let deleted;
+  try {
+    deleted = await deleteItemInDb(itemId);
+  } catch (err) {
+    console.error("Failed to delete item:", err);
+    return { success: false, error: "Failed to delete item" };
+  }
 
   if (!deleted) {
     return { success: false, error: "Item not found" };
