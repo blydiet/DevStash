@@ -1,8 +1,10 @@
 "use client";
 
-import { ImageOff, Pin, Star } from "lucide-react";
+import { ImageOff, Pin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useItemDrawer } from "./ItemDrawerContext";
+import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
+import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
 import type { ItemSummary } from "@/lib/db/items-queries";
 
 function formatDate(date: Date) {
@@ -14,6 +16,11 @@ function formatDate(date: Date) {
 
 export function ImageCard({ item }: { item: ItemSummary }) {
   const { openItem } = useItemDrawer();
+  const {
+    isFavorite,
+    toggle: toggleFavorite,
+    isTogglingFavorite,
+  } = useToggleItemFavorite(item.id, item.isFavorite);
 
   return (
     <Card
@@ -38,9 +45,12 @@ export function ImageCard({ item }: { item: ItemSummary }) {
         )}
         <div className="absolute top-2 right-2 flex items-center gap-1.5">
           {item.isPinned && <Pin className="size-3.5 text-white drop-shadow" />}
-          {item.isFavorite && (
-            <Star className="size-3.5 fill-yellow-500 text-yellow-500 drop-shadow" />
-          )}
+          <FavoriteToggleButton
+            isFavorite={isFavorite}
+            isPending={isTogglingFavorite}
+            onToggle={toggleFavorite}
+            className="size-7 rounded-full bg-black/30 text-white hover:bg-black/50 hover:text-white"
+          />
         </div>
       </div>
       <CardContent className="flex flex-col gap-1 pb-4">

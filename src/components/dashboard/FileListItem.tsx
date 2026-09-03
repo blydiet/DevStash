@@ -1,9 +1,11 @@
 "use client";
 
-import { Download, Pin, Star } from "lucide-react";
+import { Download, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_FILE_ICON, EXTENSION_ICONS, formatFileSize, getExtension } from "@/lib/file-constraints";
 import { useItemDrawer } from "./ItemDrawerContext";
+import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
+import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
 import type { ItemSummary } from "@/lib/db/items-queries";
 
 function formatDate(date: Date) {
@@ -17,6 +19,11 @@ function formatDate(date: Date) {
 export function FileListItem({ item }: { item: ItemSummary }) {
   const { openItem } = useItemDrawer();
   const Icon = EXTENSION_ICONS[getExtension(item.fileName ?? item.title)] ?? DEFAULT_FILE_ICON;
+  const {
+    isFavorite,
+    toggle: toggleFavorite,
+    isTogglingFavorite,
+  } = useToggleItemFavorite(item.id, item.isFavorite);
 
   return (
     <div
@@ -35,7 +42,12 @@ export function FileListItem({ item }: { item: ItemSummary }) {
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:hidden">
           {item.isPinned && <Pin className="size-3.5 text-muted-foreground" />}
-          {item.isFavorite && <Star className="size-3.5 fill-yellow-500 text-yellow-500" />}
+          <FavoriteToggleButton
+            isFavorite={isFavorite}
+            isPending={isTogglingFavorite}
+            onToggle={toggleFavorite}
+            className="size-6"
+          />
         </div>
       </div>
 
@@ -46,7 +58,12 @@ export function FileListItem({ item }: { item: ItemSummary }) {
         </div>
         <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
           {item.isPinned && <Pin className="size-3.5 text-muted-foreground" />}
-          {item.isFavorite && <Star className="size-3.5 fill-yellow-500 text-yellow-500" />}
+          <FavoriteToggleButton
+            isFavorite={isFavorite}
+            isPending={isTogglingFavorite}
+            onToggle={toggleFavorite}
+            className="size-6"
+          />
         </div>
         <Button
           variant="ghost"

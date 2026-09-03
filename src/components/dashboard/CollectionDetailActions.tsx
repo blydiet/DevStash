@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { EditCollectionDialog } from "@/components/dashboard/EditCollectionDialog";
 import { deleteCollectionMutation } from "@/lib/swr-fetcher";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { useToggleCollectionFavorite } from "@/hooks/use-toggle-collection-favorite";
 import type { CollectionDetail } from "@/lib/db/collections";
 
 export function CollectionDetailActions({ collection }: { collection: CollectionDetail }) {
@@ -30,6 +31,11 @@ export function CollectionDetailActions({ collection }: { collection: Collection
     `/api/collections/${collection.id}`,
     deleteCollectionMutation,
   );
+  const {
+    isFavorite,
+    toggle: toggleFavorite,
+    isTogglingFavorite,
+  } = useToggleCollectionFavorite(collection.id, collection.isFavorite);
 
   async function handleDelete() {
     try {
@@ -46,8 +52,14 @@ export function CollectionDetailActions({ collection }: { collection: Collection
   return (
     <>
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="sm" className={collection.isFavorite ? "text-yellow-500" : ""}>
-          <Star className={collection.isFavorite ? "fill-yellow-500" : ""} />
+        <Button
+          variant="ghost"
+          size="sm"
+          className={isFavorite ? "text-yellow-500" : ""}
+          disabled={isTogglingFavorite}
+          onClick={toggleFavorite}
+        >
+          <Star className={isFavorite ? "fill-yellow-500" : ""} />
           <span className="hidden sm:inline">Favorite</span>
         </Button>
         <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>

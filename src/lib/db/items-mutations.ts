@@ -159,6 +159,27 @@ export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
   };
 }
 
+export async function setItemFavorite(id: string, isFavorite: boolean): Promise<ItemDetail | null> {
+  const userId = await getCurrentUserId();
+
+  let count: number;
+  try {
+    ({ count } = await prisma.item.updateMany({ where: { id, userId }, data: { isFavorite } }));
+  } catch (err) {
+    console.error(`Failed to update favorite for item ${id}:`, err);
+    throw err;
+  }
+
+  if (count === 0) return null;
+
+  try {
+    return await getItemDetail(id);
+  } catch (err) {
+    console.error(`Failed to refetch item ${id} after favoriting:`, err);
+    throw err;
+  }
+}
+
 export async function deleteItem(id: string): Promise<boolean> {
   const userId = await getCurrentUserId();
 

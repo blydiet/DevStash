@@ -20,11 +20,13 @@ interface ItemDrawerActionBarProps {
   mode: "view" | "edit";
   isSaving: boolean;
   isDeleting: boolean;
+  isTogglingFavorite: boolean;
   canSave: boolean;
   onStartEdit: () => void;
   onCancelEdit: () => void;
   onSave: () => void;
   onDelete: () => void;
+  onToggleFavorite: () => void;
 }
 
 export function ItemDrawerActionBar({
@@ -32,11 +34,13 @@ export function ItemDrawerActionBar({
   mode,
   isSaving,
   isDeleting,
+  isTogglingFavorite,
   canSave,
   onStartEdit,
   onCancelEdit,
   onSave,
   onDelete,
+  onToggleFavorite,
 }: ItemDrawerActionBarProps) {
   if (mode === "edit") {
     return (
@@ -53,7 +57,13 @@ export function ItemDrawerActionBar({
 
   return (
     <div className="flex items-center gap-1 border-b border-border p-4">
-      <Button variant="ghost" size="sm" className={item.isFavorite ? "text-yellow-500" : ""}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={item.isFavorite ? "text-yellow-500" : ""}
+        disabled={isTogglingFavorite}
+        onClick={onToggleFavorite}
+      >
         <Star className={item.isFavorite ? "fill-yellow-500" : ""} />
         <span className="hidden sm:inline">Favorite</span>
       </Button>

@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { EditCollectionDialog } from "@/components/dashboard/EditCollectionDialog";
 import { deleteCollectionMutation } from "@/lib/swr-fetcher";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { useToggleCollectionFavorite } from "@/hooks/use-toggle-collection-favorite";
 
 interface CollectionActionsMenuProps {
   collection: { id: string; name: string; description: string | null; isFavorite: boolean };
@@ -39,6 +40,11 @@ export function CollectionActionsMenu({ collection }: CollectionActionsMenuProps
     `/api/collections/${collection.id}`,
     deleteCollectionMutation,
   );
+  const {
+    isFavorite,
+    toggle: toggleFavorite,
+    isTogglingFavorite,
+  } = useToggleCollectionFavorite(collection.id, collection.isFavorite);
 
   async function handleDelete() {
     try {
@@ -66,8 +72,8 @@ export function CollectionActionsMenu({ collection }: CollectionActionsMenuProps
             <Pencil />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Star className={collection.isFavorite ? "fill-yellow-500 text-yellow-500" : ""} />
+          <DropdownMenuItem disabled={isTogglingFavorite} onClick={toggleFavorite}>
+            <Star className={isFavorite ? "fill-yellow-500 text-yellow-500" : ""} />
             Favorite
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>

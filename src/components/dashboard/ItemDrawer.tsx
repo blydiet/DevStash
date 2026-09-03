@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { iconMap } from "@/lib/icon-map";
 import { fetchCollectionOptions, fetchItemDetail } from "@/lib/swr-fetcher";
-import { deleteItem, updateItem } from "@/actions/items";
+import { deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
 import { typeShowsContent, typeShowsLanguage, typeShowsUrl } from "@/lib/item-type-capabilities";
 import { toEditForm, type EditForm } from "@/lib/item-drawer-utils";
 import { ItemDrawerSkeleton } from "@/components/dashboard/ItemDrawerSkeleton";
@@ -44,6 +44,7 @@ export function ItemDrawer({
   const [form, setForm] = useState<EditForm | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
   const resetKey = open ? itemId : null;
   const [lastResetKey, setLastResetKey] = useState(resetKey);
@@ -70,48 +71,85 @@ export function ItemDrawer({
     if (!item || !form) return;
 
     setIsSaving(true);
-    const result = await updateItem(item.id, {
-      title: form.title,
-      description: form.description.trim() === "" ? null : form.description,
-      content: typeShowsContent(item.type.name) && form.content.trim() !== "" ? form.content : null,
-      url: typeShowsUrl(item.type.name) && form.url.trim() !== "" ? form.url : null,
-      language:
-        typeShowsLanguage(item.type.name) && form.language.trim() !== "" ? form.language : null,
-      tags: form.tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      collectionIds: form.collectionIds,
-    });
-    setIsSaving(false);
+    try {
+      const result = await updateItem(item.id, {
+        title: form.title,
+        description: form.description.trim() === "" ? null : form.description,
+        content: typeShowsContent(item.type.name) && form.content.trim() !== "" ? form.content : null,
+        url: typeShowsUrl(item.type.name) && form.url.trim() !== "" ? form.url : null,
+        language:
+          typeShowsLanguage(item.type.name) && form.language.trim() !== "" ? form.language : null,
+        tags: form.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        collectionIds: form.collectionIds,
+      });
 
-    if (!result.success || !result.data) {
-      toast.error(result.error ?? "Failed to update item");
-      return;
+      if (!result.success || !result.data) {
+        toast.error(result.error ?? "Failed to update item");
+        return;
+      }
+
+      mutate(result.data, { revalidate: false });
+      setMode("view");
+      setForm(null);
+      toast.success("Item updated");
+      router.refresh();
+    } catch {
+      toast.error("Failed to update item");
+    } finally {
+      setIsSaving(false);
     }
-
-    mutate(result.data, { revalidate: false });
-    setMode("view");
-    setForm(null);
-    toast.success("Item updated");
-    router.refresh();
   }
 
   async function handleDelete() {
     if (!item) return;
 
     setIsDeleting(true);
-    const result = await deleteItem(item.id);
-    setIsDeleting(false);
+    try {
+      const result = await deleteItem(item.id);
 
-    if (!result.success) {
-      toast.error(result.error ?? "Failed to delete item");
-      return;
+      if (!result.success) {
+        toast.error(result.error ?? "Failed to delete item");
+        return;
+      }
+
+      onOpenChange(false);
+      toast.success("Item deleted");
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete item");
+    } finally {
+      setIsDeleting(false);
     }
+  }
 
-    onOpenChange(false);
-    toast.success("Item deleted");
-    router.refresh();
+  async function handleToggleFavorite() {
+    if (!item || isTogglingFavorite) return;
+
+    const previous = item;
+    const next = !item.isFavorite;
+    mutate({ ...item, isFavorite: next }, { revalidate: false });
+
+    setIsTogglingFavorite(true);
+    try {
+      const result = await toggleItemFavorite(item.id, next);
+
+      if (!result.success || !result.data) {
+        mutate(previous, { revalidate: false });
+        toast.error(result.error ?? "Failed to update favorite");
+        return;
+      }
+
+      mutate(result.data, { revalidate: false });
+      router.refresh();
+    } catch {
+      mutate(previous, { revalidate: false });
+      toast.error("Failed to update favorite");
+    } finally {
+      setIsTogglingFavorite(false);
+    }
   }
 
   return (
@@ -157,11 +195,13 @@ export function ItemDrawer({
               mode={mode}
               isSaving={isSaving}
               isDeleting={isDeleting}
+              isTogglingFavorite={isTogglingFavorite}
               canSave={Boolean(form?.title.trim())}
               onStartEdit={startEdit}
               onCancelEdit={cancelEdit}
               onSave={saveEdit}
               onDelete={handleDelete}
+              onToggleFavorite={handleToggleFavorite}
             />
 
             <div className="flex flex-col gap-6 p-6">

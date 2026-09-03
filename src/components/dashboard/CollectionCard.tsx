@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Folder, Star } from "lucide-react";
+import { Folder } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/icon-map";
 import { CollectionActionsMenu } from "@/components/dashboard/CollectionActionsMenu";
+import { CollectionFavoriteButton } from "@/components/dashboard/CollectionFavoriteButton";
 import type { CollectionSummary } from "@/lib/db/collections";
 
 export function CollectionCard({ collection }: { collection: CollectionSummary }) {
@@ -20,9 +21,13 @@ export function CollectionCard({ collection }: { collection: CollectionSummary }
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 font-medium">
             {collection.name}
-            {collection.isFavorite && (
-              <Star className="size-4 fill-yellow-500 text-yellow-500" />
-            )}
+            <div className="relative z-10">
+              <CollectionFavoriteButton
+                collectionId={collection.id}
+                isFavorite={collection.isFavorite}
+                className="size-6"
+              />
+            </div>
           </div>
           <div className="relative z-10">
             <CollectionActionsMenu collection={collection} />

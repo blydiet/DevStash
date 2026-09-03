@@ -1,14 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createItem, deleteItem, updateItem } from "@/actions/items";
+import { createItem, deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
 
-const { authMock, createItemInDbMock, getItemTypeByNameMock, updateItemInDbMock, deleteItemInDbMock } =
-  vi.hoisted(() => ({
-    authMock: vi.fn(),
-    createItemInDbMock: vi.fn(),
-    getItemTypeByNameMock: vi.fn(),
-    updateItemInDbMock: vi.fn(),
-    deleteItemInDbMock: vi.fn(),
-  }));
+const {
+  authMock,
+  createItemInDbMock,
+  getItemTypeByNameMock,
+  updateItemInDbMock,
+  deleteItemInDbMock,
+  setItemFavoriteInDbMock,
+} = vi.hoisted(() => ({
+  authMock: vi.fn(),
+  createItemInDbMock: vi.fn(),
+  getItemTypeByNameMock: vi.fn(),
+  updateItemInDbMock: vi.fn(),
+  deleteItemInDbMock: vi.fn(),
+  setItemFavoriteInDbMock: vi.fn(),
+}));
 
 vi.mock("@/auth", () => ({
   auth: authMock,
@@ -18,6 +25,7 @@ vi.mock("@/lib/db/items-mutations", () => ({
   createItem: createItemInDbMock,
   updateItem: updateItemInDbMock,
   deleteItem: deleteItemInDbMock,
+  setItemFavorite: setItemFavoriteInDbMock,
 }));
 
 vi.mock("@/lib/db/item-metadata", () => ({
@@ -112,6 +120,23 @@ describe("createItem", () => {
     expect(result).toEqual({ success: true, data: created });
   });
 
+  it("reports a generic failure instead of throwing when the DB layer throws", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    const type = { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" };
+    getItemTypeByNameMock.mockResolvedValue(type);
+    createItemInDbMock.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await createItem(validCreateData);
+
+    expect(getItemTypeByNameMock).toHaveBeenCalledWith(validCreateData.type);
+    expect(createItemInDbMock).toHaveBeenCalledWith({ ...validCreateData, type });
+    expect(result).toEqual({ success: false, error: "Failed to create item" });
+    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to create item:", expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it("creates an image item that has a fileUrl", async () => {
     authMock.mockResolvedValue({ user: { id: "user-1" } });
     const type = { id: "type-image", name: "image", icon: "Image", color: "#ec4899" };
@@ -182,6 +207,66 @@ describe("updateItem", () => {
     expect(updateItemInDbMock).toHaveBeenCalledWith("item-1", validData);
     expect(result).toEqual({ success: true, data: updated });
   });
+
+  it("reports a generic failure instead of throwing when the DB layer throws", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    updateItemInDbMock.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await updateItem("item-1", validData);
+
+    expect(updateItemInDbMock).toHaveBeenCalledWith("item-1", validData);
+    expect(result).toEqual({ success: false, error: "Failed to update item" });
+    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to update item:", expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("toggleItemFavorite", () => {
+  it("rejects when there is no session", async () => {
+    authMock.mockResolvedValue(null);
+
+    const result = await toggleItemFavorite("item-1", true);
+
+    expect(result).toEqual({ success: false, error: "Not authenticated" });
+    expect(setItemFavoriteInDbMock).not.toHaveBeenCalled();
+  });
+
+  it("reports item-not-found when the query function returns null (wrong owner or missing)", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    setItemFavoriteInDbMock.mockResolvedValue(null);
+
+    const result = await toggleItemFavorite("item-1", true);
+
+    expect(setItemFavoriteInDbMock).toHaveBeenCalledWith("item-1", true);
+    expect(result).toEqual({ success: false, error: "Item not found" });
+  });
+
+  it("returns the updated item on success", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    const updated = { id: "item-1", isFavorite: true };
+    setItemFavoriteInDbMock.mockResolvedValue(updated);
+
+    const result = await toggleItemFavorite("item-1", true);
+
+    expect(setItemFavoriteInDbMock).toHaveBeenCalledWith("item-1", true);
+    expect(result).toEqual({ success: true, data: updated });
+  });
+
+  it("reports a generic failure instead of throwing when the DB layer throws", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    setItemFavoriteInDbMock.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await toggleItemFavorite("item-1", true);
+
+    expect(setItemFavoriteInDbMock).toHaveBeenCalledWith("item-1", true);
+    expect(result).toEqual({ success: false, error: "Failed to update favorite" });
+    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to update item favorite:", expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
+  });
 });
 
 describe("deleteItem", () => {
@@ -211,5 +296,19 @@ describe("deleteItem", () => {
 
     expect(deleteItemInDbMock).toHaveBeenCalledWith("item-1");
     expect(result).toEqual({ success: true });
+  });
+
+  it("reports a generic failure instead of throwing when the DB layer throws", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    deleteItemInDbMock.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await deleteItem("item-1");
+
+    expect(deleteItemInDbMock).toHaveBeenCalledWith("item-1");
+    expect(result).toEqual({ success: false, error: "Failed to delete item" });
+    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to delete item:", expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
   });
 });
