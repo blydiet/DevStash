@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  getFavoriteItems,
   getItemDetail,
   getItemsByCollection,
   getItemsByType,
@@ -53,6 +54,52 @@ describe("getPinnedItems", () => {
     expect(result.tags).toEqual(["react", "hooks"]);
     expect(result.type.name).toBe("snippet");
     expect(result.fileUrl).toBeNull();
+  });
+});
+
+describe("getFavoriteItems", () => {
+  it("scopes to the current user's favorited items, sorted by updatedAt desc (most recently favorited), selecting id/title/createdAt/type", async () => {
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    await getFavoriteItems();
+
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", isFavorite: true },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
+        type: { select: { id: true, name: true, icon: true, color: true } },
+      },
+    });
+  });
+
+  it("maps the type relation and createdAt onto each favorite item", async () => {
+    prismaMock.item.findMany.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "useDebounce Hook",
+        createdAt: new Date("2026-01-02"),
+        type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
+      },
+    ]);
+
+    const [result] = await getFavoriteItems();
+
+    expect(result).toEqual({
+      id: "item-1",
+      title: "useDebounce Hook",
+      createdAt: new Date("2026-01-02"),
+      type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
+    });
+  });
+
+  it("propagates a session failure instead of returning an empty list", async () => {
+    getCurrentUserIdMock.mockRejectedValue(new Error("Not authenticated"));
+
+    await expect(getFavoriteItems()).rejects.toThrow("Not authenticated");
+    expect(prismaMock.item.findMany).not.toHaveBeenCalled();
   });
 });
 

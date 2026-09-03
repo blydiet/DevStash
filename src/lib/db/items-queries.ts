@@ -106,6 +106,34 @@ export async function getRecentItems(limit = DASHBOARD_RECENT_ITEMS_LIMIT): Prom
   return items.map(toItemSummary);
 }
 
+export interface FavoriteItem {
+  id: string;
+  title: string;
+  createdAt: Date;
+  type: ItemTypeSummary;
+}
+
+export async function getFavoriteItems(): Promise<FavoriteItem[]> {
+  const userId = await getCurrentUserId();
+  const items = await prisma.item.findMany({
+    where: { userId, isFavorite: true },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      type: { select: { id: true, name: true, icon: true, color: true } },
+    },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    createdAt: item.createdAt,
+    type: item.type,
+  }));
+}
+
 export interface PaginatedItems {
   items: ItemSummary[];
   totalCount: number;

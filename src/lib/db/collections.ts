@@ -155,6 +155,27 @@ export const getAllCollectionSummaries = cache(
   async (): Promise<CollectionSummary[]> => fetchCollectionSummaries(),
 );
 
+export interface FavoriteCollection {
+  id: string;
+  name: string;
+  createdAt: Date;
+}
+
+export async function getFavoriteCollections(): Promise<FavoriteCollection[]> {
+  const userId = await getCurrentUserId();
+  const collections = await prisma.collection.findMany({
+    where: { userId, isFavorite: true },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, name: true, createdAt: true },
+  });
+
+  return collections.map((collection) => ({
+    id: collection.id,
+    name: collection.name,
+    createdAt: collection.createdAt,
+  }));
+}
+
 export interface CollectionDetail {
   id: string;
   name: string;

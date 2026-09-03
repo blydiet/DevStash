@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FolderPlus, Layers, PanelLeft, Plus, Search } from "lucide-react";
+import { FolderPlus, Layers, PanelLeft, Plus, Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateItemDialog } from "./CreateItemDialog";
@@ -25,6 +25,16 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 
       <Button variant="ghost" size="icon" aria-label="Toggle sidebar" onClick={onToggleSidebar}>
         <PanelLeft className="size-4" />
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Favorites"
+        nativeButton={false}
+        render={<Link href="/favorites" />}
+      >
+        <Star className="size-4" />
       </Button>
 
       <div className="relative mx-auto w-full max-w-md">

@@ -5,6 +5,7 @@ import {
   getAllCollections,
   getCollectionsPage,
   getCollectionStats,
+  getFavoriteCollections,
   getRecentCollections,
   updateCollection,
 } from "@/lib/db/collections";
@@ -180,6 +181,39 @@ describe("getCollectionsPage", () => {
 
     await expect(getCollectionsPage()).rejects.toThrow("Not authenticated");
     expect(prismaMock.collection.count).not.toHaveBeenCalled();
+  });
+});
+
+describe("getFavoriteCollections", () => {
+  it("scopes to the current user's favorited collections, sorted by updatedAt desc (most recently favorited), selecting id/name/createdAt", async () => {
+    prismaMock.collection.findMany.mockResolvedValue([]);
+
+    await getFavoriteCollections();
+
+    expect(prismaMock.collection.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", isFavorite: true },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true, name: true, createdAt: true },
+    });
+  });
+
+  it("maps id/name/createdAt for each favorite collection", async () => {
+    prismaMock.collection.findMany.mockResolvedValue([
+      { id: "col-1", name: "React Patterns", createdAt: new Date("2026-01-02") },
+    ]);
+
+    const result = await getFavoriteCollections();
+
+    expect(result).toEqual([
+      { id: "col-1", name: "React Patterns", createdAt: new Date("2026-01-02") },
+    ]);
+  });
+
+  it("propagates a session failure instead of returning an empty list", async () => {
+    getCurrentUserIdMock.mockRejectedValue(new Error("Not authenticated"));
+
+    await expect(getFavoriteCollections()).rejects.toThrow("Not authenticated");
+    expect(prismaMock.collection.findMany).not.toHaveBeenCalled();
   });
 });
 
