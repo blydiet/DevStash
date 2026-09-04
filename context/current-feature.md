@@ -1,27 +1,16 @@
-# Current Feature: Homepage
+# Current Feature
 
 ## Status
 
-Complete
+<!-- Not Started | In Progress | Complete -->
 
 ## Goals
 
-- Replace the placeholder `src/app/page.tsx` with the real marketing homepage built from the `prototypes/homepage/` mockup
-- `/` is public; redirect signed-in visitors to `/dashboard` (matching the `/sign-in`/`/register` pattern), and keep it independent of `DashboardShell`/`Sidebar`
-- Split into server components (static sections) and client components (nav scroll opacity, chaos-icon animation, billing toggle, scroll-reveal) per `src/components/homepage/`
-- Rebuilt with Tailwind v4 + ShadCN conventions matching the rest of the project — no plain CSS/vanilla JS files
-- Use the app's real `ITEM_TYPES` colors (`src/lib/item-types.ts`) everywhere the mockup used a per-type accent, not the mockup's own hardcoded hex values
-- Icons via `lucide-react`; the 4 brand logos (Notion/GitHub/Discord/Sublime Text) self-hosted as SVGs under `public/logos/` instead of a CDN
-- Mockup's Space Grotesk + JetBrains Mono fonts self-hosted via `next/font/local`, scoped to this route only — the dashboard keeps Geist
-- Every button/link resolves to a real destination (see Navigation Map in the spec); drop the mockup's dead Company/Legal footer links in favor of Sign in/Register
+<!-- Bullet points of what success looks like -->
 
 ## Notes
 
-Full spec: `context/features/homepage-spec.md`.
-
-- Component/type table (server vs. client, per section), animation porting approach (spring helper + ref-driven rAF loop, `prefers-reduced-motion` respected), and the full navigation map are all in the spec — refer to it directly during implementation rather than duplicating here.
-- Pro pricing card's "Get started" goes to `/register` for now (Stripe checkout not built yet) — explicitly out of scope, not a gap to fix.
-- Out of scope: Stripe checkout wiring, About/Contact/Privacy/Terms pages, any change to `/dashboard`.
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
 
@@ -87,4 +76,4 @@ Full spec: `context/features/homepage-spec.md`.
 
   Verified live via Playwright as an unauthenticated visitor (and separately confirmed the authenticated-redirect by hitting `/` with an existing demo-user session and landing on `/dashboard`) at 1440px and 375px: hero chaos-icon animation, arrow pulse (rotates 90° on mobile via `hp-arrow`), mini-dashboard preview, features bento grid, AI section code mock and tag chips, pricing billing toggle ($8/mo ↔ $6/mo + "billed annually at $72/yr"), CTA, and footer (dynamic copyright year) all render correctly; all "Get started" instances (6 across the page) and "Sign in" correctly resolve to `/register`/`/sign-in`; `#features`/`#pricing` in-page anchors scroll correctly; nav's scrolled background confirmed opaque+blurred post-fix; no console errors.
 
-  A `/feature review` pass caught that the History's original "no new files fall under the `src/actions/`/`src/lib/` Vitest scope" claim was wrong — `src/lib/homepage/spring.ts` and `chaos-physics.ts` are literally under `src/lib/`, and `spring.ts`'s `Spring` class (`step()`/`atRest()`) is pure, DOM-free physics math with real branching logic (an epsilon threshold check), squarely inside this project's existing testing convention, unlike `makeSpringInteraction`/`springReveal`/`createChaosAnimation`'s DOM-listener/rAF glue code (left untested, matching the precedent set by `rate-limit.ts`'s Redis branch and `getRecentItems`/`getItemsByType`'s near-duplicates). Added `src/lib/homepage/spring.test.ts` (10 tests: constructor defaults, the exact single-step mass-spring-damper arithmetic worked out by hand, damping's effect only showing up from the second step onward since it depends on velocity which starts at 0, and `atRest()`'s epsilon threshold including a custom-epsilon case and a multi-step convergence case) — 305/305 total, up from 295. `npm run test`, `npm run build`, `npm run lint` (only the pre-existing, unrelated `JWT`/`XIcon` warnings plus one new, accepted `<img>`-vs-`next/image` advisory on the 4 tiny self-hosted logo SVGs), and `tsc --noEmit` all pass. Ready to commit and merge.
+  A `/feature review` pass caught that the History's original "no new files fall under the `src/actions/`/`src/lib/` Vitest scope" claim was wrong — `src/lib/homepage/spring.ts` and `chaos-physics.ts` are literally under `src/lib/`, and `spring.ts`'s `Spring` class (`step()`/`atRest()`) is pure, DOM-free physics math with real branching logic (an epsilon threshold check), squarely inside this project's existing testing convention, unlike `makeSpringInteraction`/`springReveal`/`createChaosAnimation`'s DOM-listener/rAF glue code (left untested, matching the precedent set by `rate-limit.ts`'s Redis branch and `getRecentItems`/`getItemsByType`'s near-duplicates). Added `src/lib/homepage/spring.test.ts` (10 tests: constructor defaults, the exact single-step mass-spring-damper arithmetic worked out by hand, damping's effect only showing up from the second step onward since it depends on velocity which starts at 0, and `atRest()`'s epsilon threshold including a custom-epsilon case and a multi-step convergence case) — 305/305 total, up from 295. `npm run test`, `npm run build`, `npm run lint` (only the pre-existing, unrelated `JWT`/`XIcon` warnings plus one new, accepted `<img>`-vs-`next/image` advisory on the 4 tiny self-hosted logo SVGs), and `tsc --noEmit` all pass. Committed as a single commit and merged into `main`; branch deleted (never pushed to origin, so no remote cleanup needed).
