@@ -143,8 +143,12 @@ export interface PaginatedItems {
 // createdAt alone isn't a stable sort key: items created in the same millisecond
 // (bulk import, fast successive creates) have undefined relative order across
 // separate skip/take requests, letting an item land on two pages or on neither.
-// id is a stable tiebreaker.
-const PAGINATED_ITEM_ORDER = [{ createdAt: "desc" as const }, { id: "desc" as const }];
+// id is a stable tiebreaker. isPinned sorts pinned items to the top of the listing.
+export const PAGINATED_ITEM_ORDER = [
+  { isPinned: "desc" as const },
+  { createdAt: "desc" as const },
+  { id: "desc" as const },
+];
 
 export async function getItemsByType(typeName: string, requestedPage = 1): Promise<PaginatedItems> {
   const userId = await getCurrentUserId();

@@ -180,6 +180,27 @@ export async function setItemFavorite(id: string, isFavorite: boolean): Promise<
   }
 }
 
+export async function setItemPinned(id: string, isPinned: boolean): Promise<ItemDetail | null> {
+  const userId = await getCurrentUserId();
+
+  let count: number;
+  try {
+    ({ count } = await prisma.item.updateMany({ where: { id, userId }, data: { isPinned } }));
+  } catch (err) {
+    console.error(`Failed to update pin for item ${id}:`, err);
+    throw err;
+  }
+
+  if (count === 0) return null;
+
+  try {
+    return await getItemDetail(id);
+  } catch (err) {
+    console.error(`Failed to refetch item ${id} after pinning:`, err);
+    throw err;
+  }
+}
+
 export async function deleteItem(id: string): Promise<boolean> {
   const userId = await getCurrentUserId();
 

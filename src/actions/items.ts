@@ -5,6 +5,7 @@ import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
   setItemFavorite as setItemFavoriteInDb,
+  setItemPinned as setItemPinnedInDb,
   updateItem as updateItemInDb,
 } from "@/lib/db/items-mutations";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
@@ -108,6 +109,28 @@ export async function toggleItemFavorite(
   } catch (err) {
     console.error("Failed to update item favorite:", err);
     return { success: false, error: "Failed to update favorite" };
+  }
+
+  if (!item) {
+    return { success: false, error: "Item not found" };
+  }
+
+  return { success: true, data: item };
+}
+
+export async function toggleItemPin(itemId: string, isPinned: boolean): Promise<UpdateItemActionResult> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  let item;
+  try {
+    item = await setItemPinnedInDb(itemId, isPinned);
+  } catch (err) {
+    console.error(`Failed to update item pin for item ${itemId}:`, err);
+    return { success: false, error: "Failed to update pin" };
   }
 
   if (!item) {

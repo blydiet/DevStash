@@ -6,6 +6,7 @@ import {
   getItemsByType,
   getPinnedItems,
   getSearchableItems,
+  PAGINATED_ITEM_ORDER,
 } from "@/lib/db/items-queries";
 import { ITEMS_PER_PAGE } from "@/lib/pagination";
 
@@ -103,24 +104,35 @@ describe("getFavoriteItems", () => {
   });
 });
 
-const PAGINATED_ITEM_ORDER = [{ createdAt: "desc" }, { id: "desc" }];
-
 describe("getItemsByType", () => {
-  it("counts, then fetches the requested page ordered by createdAt desc with id as a stable tiebreaker", async () => {
+  it("counts, then fetches the requested page scoped to the same where, ordered pinned-first then createdAt desc with id as a stable tiebreaker, assembling the result from both calls", async () => {
     prismaMock.item.count.mockResolvedValue(50);
     prismaMock.item.findMany.mockResolvedValue([]);
 
-    await getItemsByType("snippet", 2);
+    const result = await getItemsByType("snippet", 2);
 
-    expect(prismaMock.item.count).toHaveBeenCalledWith({
-      where: { userId: "user-1", type: { name: "snippet" } },
-    });
+    const expectedWhere = { userId: "user-1", type: { name: "snippet" } };
+    expect(prismaMock.item.count).toHaveBeenCalledWith({ where: expectedWhere });
     expect(prismaMock.item.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: expectedWhere,
         orderBy: PAGINATED_ITEM_ORDER,
         skip: ITEMS_PER_PAGE,
         take: ITEMS_PER_PAGE,
       })
+    );
+    expect(result).toEqual({ items: [], totalCount: 50, currentPage: 2 });
+  });
+
+  it("requests skip: 0 for a directly-requested page 1 (not just via clamping)", async () => {
+    prismaMock.item.count.mockResolvedValue(50);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    const result = await getItemsByType("snippet", 1);
+
+    expect(result.currentPage).toBe(1);
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 0, take: ITEMS_PER_PAGE })
     );
   });
 
@@ -199,24 +211,37 @@ describe("getItemsByType", () => {
 });
 
 describe("getItemsByCollection", () => {
-  it("scopes to the collection and current user, fetching the requested page ordered by createdAt desc with id as a stable tiebreaker", async () => {
+  it("scopes to the collection and current user, fetching the requested page scoped to the same where, ordered pinned-first then createdAt desc with id as a stable tiebreaker, assembling the result from both calls", async () => {
     prismaMock.item.count.mockResolvedValue(50);
     prismaMock.item.findMany.mockResolvedValue([]);
 
-    await getItemsByCollection("col-1", 2);
+    const result = await getItemsByCollection("col-1", 2);
 
-    expect(prismaMock.item.count).toHaveBeenCalledWith({
-      where: {
-        userId: "user-1",
-        collections: { some: { collectionId: "col-1", collection: { userId: "user-1" } } },
-      },
-    });
+    const expectedWhere = {
+      userId: "user-1",
+      collections: { some: { collectionId: "col-1", collection: { userId: "user-1" } } },
+    };
+    expect(prismaMock.item.count).toHaveBeenCalledWith({ where: expectedWhere });
     expect(prismaMock.item.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: expectedWhere,
         orderBy: PAGINATED_ITEM_ORDER,
         skip: ITEMS_PER_PAGE,
         take: ITEMS_PER_PAGE,
       })
+    );
+    expect(result).toEqual({ items: [], totalCount: 50, currentPage: 2 });
+  });
+
+  it("requests skip: 0 for a directly-requested page 1 (not just via clamping)", async () => {
+    prismaMock.item.count.mockResolvedValue(50);
+    prismaMock.item.findMany.mockResolvedValue([]);
+
+    const result = await getItemsByCollection("col-1", 1);
+
+    expect(result.currentPage).toBe(1);
+    expect(prismaMock.item.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 0, take: ITEMS_PER_PAGE })
     );
   });
 

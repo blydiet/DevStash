@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { iconMap } from "@/lib/icon-map";
 import { fetchCollectionOptions, fetchItemDetail } from "@/lib/swr-fetcher";
-import { deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
+import { deleteItem, toggleItemFavorite, toggleItemPin, updateItem } from "@/actions/items";
 import { typeShowsContent, typeShowsLanguage, typeShowsUrl } from "@/lib/item-type-capabilities";
 import { toEditForm, type EditForm } from "@/lib/item-drawer-utils";
 import { ItemDrawerSkeleton } from "@/components/dashboard/ItemDrawerSkeleton";
@@ -45,6 +45,7 @@ export function ItemDrawer({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [isTogglingPin, setIsTogglingPin] = useState(false);
 
   const resetKey = open ? itemId : null;
   const [lastResetKey, setLastResetKey] = useState(resetKey);
@@ -128,16 +129,19 @@ export function ItemDrawer({
   async function handleToggleFavorite() {
     if (!item || isTogglingFavorite) return;
 
-    const previous = item;
     const next = !item.isFavorite;
-    mutate({ ...item, isFavorite: next }, { revalidate: false });
+    mutate((current) => (current ? { ...current, isFavorite: next } : current), {
+      revalidate: false,
+    });
 
     setIsTogglingFavorite(true);
     try {
       const result = await toggleItemFavorite(item.id, next);
 
       if (!result.success || !result.data) {
-        mutate(previous, { revalidate: false });
+        mutate((current) => (current ? { ...current, isFavorite: !next } : current), {
+          revalidate: false,
+        });
         toast.error(result.error ?? "Failed to update favorite");
         return;
       }
@@ -145,10 +149,45 @@ export function ItemDrawer({
       mutate(result.data, { revalidate: false });
       router.refresh();
     } catch {
-      mutate(previous, { revalidate: false });
+      mutate((current) => (current ? { ...current, isFavorite: !next } : current), {
+        revalidate: false,
+      });
       toast.error("Failed to update favorite");
     } finally {
       setIsTogglingFavorite(false);
+    }
+  }
+
+  async function handleTogglePin() {
+    if (!item || isTogglingPin) return;
+
+    const next = !item.isPinned;
+    mutate((current) => (current ? { ...current, isPinned: next } : current), {
+      revalidate: false,
+    });
+
+    setIsTogglingPin(true);
+    try {
+      const result = await toggleItemPin(item.id, next);
+
+      if (!result.success || !result.data) {
+        mutate((current) => (current ? { ...current, isPinned: !next } : current), {
+          revalidate: false,
+        });
+        toast.error(result.error ?? "Failed to update pin");
+        return;
+      }
+
+      mutate(result.data, { revalidate: false });
+      toast.success(next ? "Item pinned" : "Item unpinned");
+      router.refresh();
+    } catch {
+      mutate((current) => (current ? { ...current, isPinned: !next } : current), {
+        revalidate: false,
+      });
+      toast.error("Failed to update pin");
+    } finally {
+      setIsTogglingPin(false);
     }
   }
 
@@ -196,12 +235,14 @@ export function ItemDrawer({
               isSaving={isSaving}
               isDeleting={isDeleting}
               isTogglingFavorite={isTogglingFavorite}
+              isTogglingPin={isTogglingPin}
               canSave={Boolean(form?.title.trim())}
               onStartEdit={startEdit}
               onCancelEdit={cancelEdit}
               onSave={saveEdit}
               onDelete={handleDelete}
               onToggleFavorite={handleToggleFavorite}
+              onTogglePin={handleTogglePin}
             />
 
             <div className="flex flex-col gap-6 p-6">

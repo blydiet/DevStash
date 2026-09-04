@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createItem, deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
+import {
+  createItem,
+  deleteItem,
+  toggleItemFavorite,
+  toggleItemPin,
+  updateItem,
+} from "@/actions/items";
 
 const {
   authMock,
@@ -8,6 +14,7 @@ const {
   updateItemInDbMock,
   deleteItemInDbMock,
   setItemFavoriteInDbMock,
+  setItemPinnedInDbMock,
 } = vi.hoisted(() => ({
   authMock: vi.fn(),
   createItemInDbMock: vi.fn(),
@@ -15,6 +22,7 @@ const {
   updateItemInDbMock: vi.fn(),
   deleteItemInDbMock: vi.fn(),
   setItemFavoriteInDbMock: vi.fn(),
+  setItemPinnedInDbMock: vi.fn(),
 }));
 
 vi.mock("@/auth", () => ({
@@ -26,6 +34,7 @@ vi.mock("@/lib/db/items-mutations", () => ({
   updateItem: updateItemInDbMock,
   deleteItem: deleteItemInDbMock,
   setItemFavorite: setItemFavoriteInDbMock,
+  setItemPinned: setItemPinnedInDbMock,
 }));
 
 vi.mock("@/lib/db/item-metadata", () => ({
@@ -264,6 +273,55 @@ describe("toggleItemFavorite", () => {
     expect(setItemFavoriteInDbMock).toHaveBeenCalledWith("item-1", true);
     expect(result).toEqual({ success: false, error: "Failed to update favorite" });
     expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to update item favorite:", expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("toggleItemPin", () => {
+  it("rejects when there is no session", async () => {
+    authMock.mockResolvedValue(null);
+
+    const result = await toggleItemPin("item-1", true);
+
+    expect(result).toEqual({ success: false, error: "Not authenticated" });
+    expect(setItemPinnedInDbMock).not.toHaveBeenCalled();
+  });
+
+  it("reports item-not-found when the query function returns null (wrong owner or missing)", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    setItemPinnedInDbMock.mockResolvedValue(null);
+
+    const result = await toggleItemPin("item-1", true);
+
+    expect(setItemPinnedInDbMock).toHaveBeenCalledWith("item-1", true);
+    expect(result).toEqual({ success: false, error: "Item not found" });
+  });
+
+  it("returns the updated item on success", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    const updated = { id: "item-1", isPinned: true };
+    setItemPinnedInDbMock.mockResolvedValue(updated);
+
+    const result = await toggleItemPin("item-1", true);
+
+    expect(setItemPinnedInDbMock).toHaveBeenCalledWith("item-1", true);
+    expect(result).toEqual({ success: true, data: updated });
+  });
+
+  it("reports a generic failure instead of throwing when the DB layer throws", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    setItemPinnedInDbMock.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await toggleItemPin("item-1", true);
+
+    expect(setItemPinnedInDbMock).toHaveBeenCalledWith("item-1", true);
+    expect(result).toEqual({ success: false, error: "Failed to update pin" });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Failed to update item pin for item item-1:",
+      expect.any(Error)
+    );
 
     consoleErrorSpy.mockRestore();
   });

@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createItem, deleteItem, setItemFavorite, updateItem } from "@/lib/db/items-mutations";
+import {
+  createItem,
+  deleteItem,
+  setItemFavorite,
+  setItemPinned,
+  updateItem,
+} from "@/lib/db/items-mutations";
 
 const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
@@ -392,6 +398,91 @@ describe("setItemFavorite", () => {
     prismaMock.item.findFirst.mockResolvedValue(null);
 
     await expect(setItemFavorite("item-1", true)).resolves.toBeNull();
+  });
+});
+
+describe("setItemPinned", () => {
+  it("returns null without refetching when the item isn't owned by the current user (or doesn't exist)", async () => {
+    prismaMock.item.updateMany.mockResolvedValue({ count: 0 });
+
+    const result = await setItemPinned("item-1", true);
+
+    expect(prismaMock.item.updateMany).toHaveBeenCalledWith({
+      where: { id: "item-1", userId: "user-1" },
+      data: { isPinned: true },
+    });
+    expect(result).toBeNull();
+    expect(prismaMock.item.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("updates and returns the refreshed item detail on success", async () => {
+    prismaMock.item.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.item.findFirst.mockResolvedValue({
+      id: "item-1",
+      title: "Existing",
+      description: null,
+      contentType: "text",
+      content: null,
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+      url: null,
+      language: null,
+      isFavorite: false,
+      isPinned: true,
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+      type: { id: "type-1", name: "snippet", icon: "Code", color: "#f97316" },
+      tags: [],
+      collections: [],
+    });
+
+    const result = await setItemPinned("item-1", true);
+
+    expect(prismaMock.item.findFirst).toHaveBeenCalledWith({
+      where: { id: "item-1", userId: "user-1" },
+      select: itemDetailSelect,
+    });
+    expect(result?.isPinned).toBe(true);
+  });
+
+  it("logs and rethrows when the update fails, without ever reaching the refetch", async () => {
+    const error = new Error("db down");
+    prismaMock.item.updateMany.mockRejectedValue(error);
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(setItemPinned("item-1", true)).rejects.toThrow("db down");
+
+    expect(prismaMock.item.updateMany).toHaveBeenCalledWith({
+      where: { id: "item-1", userId: "user-1" },
+      data: { isPinned: true },
+    });
+    expect(prismaMock.item.findFirst).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("logs and rethrows a refetch failure even though the update itself succeeded", async () => {
+    prismaMock.item.updateMany.mockResolvedValue({ count: 1 });
+    const refetchError = new Error("refresh failed");
+    prismaMock.item.findFirst.mockRejectedValue(refetchError);
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(setItemPinned("item-1", true)).rejects.toThrow("refresh failed");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Failed to refetch item item-1 after pinning:",
+      refetchError
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("returns null when the item is gone by the time it refetches (deleted between the update and the refresh)", async () => {
+    prismaMock.item.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.item.findFirst.mockResolvedValue(null);
+
+    await expect(setItemPinned("item-1", true)).resolves.toBeNull();
   });
 });
 

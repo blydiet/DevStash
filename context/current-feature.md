@@ -1,16 +1,23 @@
-# Current Feature
+# Current Feature: Pinned Items
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Create a `toggleItemPin` server action
+- Make the existing Pin button in `ItemDrawer` clickable (currently exists but has no `onClick`)
+- Optimistic UI updates for instant feedback
+- Toast notification on success/error
+- Pinned items sort to top of listings
+- Items only — collections are out of scope
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Follow the existing Favorite Button pattern (toggle action, optimistic hook, toast) established in `feature/favorite-toggle`
+- The Pin icon on `ItemCard` remains a static indicator, not a toggle — only the drawer's Pin button becomes interactive
+- Pinned items sort to top wherever items are listed (dashboard's Pinned Items section already exists; "sort to top of listings" likely also applies to `/items/[type]` and `/collections/[id]`, worth confirming scope at `start`
 
 ## History
 
