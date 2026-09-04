@@ -1,16 +1,23 @@
-# Current Feature
+# Current Feature: Favorites Page Sorting
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add client-side sorting controls to `/favorites` (`FavoritesList.tsx`)
+- Support sorting by: Name, Date, and Item Type
+- Sorting applies to the Items section; Collections have no item type, so their sort control is limited to Name/Date (or a separate decision made during implementation)
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- `FavoritesList.tsx` is a `"use client"` component already receiving `items: FavoriteItem[]` and `collections: FavoriteCollection[]` as props from the server (`getFavoriteItems`/`getFavoriteCollections`, both ordered by `updatedAt desc` server-side) — sorting should be done client-side over these already-fetched arrays, no new server/DB work needed
+- "Date" should likely sort by `createdAt` (the field currently displayed in each row via `formatDate`), not the server's `updatedAt` ordering
+- "Item Type" sorts by `item.type.name`
+- Decided (explicit user choice via AskUserQuestion before implementation): sorting applies to the Items section only — Collections keeps its current server order (updatedAt desc), no sort control added there since collections have no item type
+- Decided: sort UI is a `Select` (Name/Date/Type) next to an asc/desc toggle button
+- Decided: default sort on load is Date, newest first — matches the existing server-side order so the page looks unchanged until the user picks a different sort
 
 ## History
 
