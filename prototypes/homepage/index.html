@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevStash: Store Smarter. Build Faster.</title>
+  <meta name="description" content="One searchable, AI-enhanced hub for every snippet, prompt, command, and link you keep losing track of." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8L12 3 3 8v8l9 5 9-5V8Z'/%3E%3Cpath d='M3 8l9 5 9-5M12 13v8'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+</head>
+<body>
+
+  <!-- Scroll sentinel: observed by an IntersectionObserver so the nav can react to scroll position without a scroll listener -->
+  <div id="top-sentinel"></div>
+
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <span class="nav-logo-mark" aria-hidden="true"><i class="ph ph-package"></i></span>
+        DevStash
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="#" class="btn btn-ghost">Sign in</a>
+        <a href="#pricing" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-copy reveal">
+          <h1 class="hero-headline">Stop losing your <em>developer knowledge</em></h1>
+          <p class="hero-subtext">Snippets, prompts, commands, and links scattered across a dozen tools. DevStash gives it all one home.</p>
+          <div class="hero-ctas">
+            <a href="#pricing" class="btn btn-primary btn-lg">Get started</a>
+            <a href="#features" class="btn btn-secondary btn-lg">See how it works</a>
+          </div>
+        </div>
+
+        <div class="hero-visual reveal" id="hero-visual">
+          <div class="chaos-box" id="chaos-box">
+            <span class="visual-label">Your knowledge today</span>
+            <div class="chaos-stage" id="chaos-stage" aria-hidden="true">
+              <!-- icons injected by script.js -->
+            </div>
+          </div>
+
+          <div class="transform-arrow" aria-hidden="true">
+            <i class="ph ph-arrow-right"></i>
+          </div>
+
+          <div class="order-box">
+            <span class="visual-label">With DevStash</span>
+            <div class="mini-dashboard" aria-hidden="true">
+              <div class="mini-sidebar">
+                <span class="mini-sidebar-item mini-sidebar-item--active"><i class="mini-dot" style="--dot: var(--type-snippet)"></i>Snippets</span>
+                <span class="mini-sidebar-item"><i class="mini-dot" style="--dot: var(--type-prompt)"></i>Prompts</span>
+                <span class="mini-sidebar-item"><i class="mini-dot" style="--dot: var(--type-command)"></i>Commands</span>
+                <span class="mini-sidebar-item"><i class="mini-dot" style="--dot: var(--type-note)"></i>Notes</span>
+              </div>
+              <div class="mini-grid">
+                <span class="mini-card" style="--accent: var(--type-snippet)">useDebounce Hook</span>
+                <span class="mini-card" style="--accent: var(--type-prompt)">Explain this regex</span>
+                <span class="mini-card" style="--accent: var(--type-url)">Tailwind CSS Docs</span>
+                <span class="mini-card" style="--accent: var(--type-command)">docker compose up</span>
+                <span class="mini-card" style="--accent: var(--type-note)">Sprint retro notes</span>
+                <span class="mini-card" style="--accent: var(--type-image)">Dashboard mockup.png</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="features" id="features">
+      <div class="section-inner">
+        <h2 class="section-headline reveal">Everything you save, one place you'll actually check</h2>
+
+        <div class="feature-grid">
+          <article class="feature-card feature-card--wide reveal" style="--accent: var(--type-snippet)">
+            <div class="feature-icon"><i class="ph ph-code"></i></div>
+            <h3>Code snippets</h3>
+            <p>Syntax-highlighted, tagged, and searchable across every language you touch.</p>
+          </article>
+
+          <article class="feature-card reveal" style="--accent: var(--type-prompt)">
+            <div class="feature-icon"><i class="ph ph-sparkle"></i></div>
+            <h3>AI prompts</h3>
+            <p>Keep the prompts that actually work, instead of hunting through chat history.</p>
+          </article>
+
+          <article class="feature-card reveal" style="--accent: var(--type-url)">
+            <div class="feature-icon"><i class="ph ph-magnifying-glass"></i></div>
+            <h3>Instant search</h3>
+            <p>Full-text across content, tags, titles, and type. Find it before you finish typing.</p>
+          </article>
+
+          <article class="feature-card reveal" style="--accent: var(--type-command)">
+            <div class="feature-icon"><i class="ph ph-terminal"></i></div>
+            <h3>Commands</h3>
+            <p>Every shell one-liner you'd otherwise dig out of history, one search away.</p>
+          </article>
+
+          <article class="feature-card reveal" style="--accent: var(--type-file)">
+            <div class="feature-icon"><i class="ph ph-file-text"></i></div>
+            <h3>Files &amp; docs</h3>
+            <p>Templates, boilerplates, and reference docs stored right beside the code that uses them.</p>
+          </article>
+
+          <article class="feature-card feature-card--full reveal" style="--accent: var(--type-note)">
+            <div class="feature-icon"><i class="ph ph-squares-four"></i></div>
+            <h3>Collections</h3>
+            <p>Group snippets, links, and notes for one project into a single shelf, whatever type each one is.</p>
+            <div class="type-dots" aria-hidden="true">
+              <span style="--dot: var(--type-snippet)"></span>
+              <span style="--dot: var(--type-prompt)"></span>
+              <span style="--dot: var(--type-command)"></span>
+              <span style="--dot: var(--type-note)"></span>
+              <span style="--dot: var(--type-file)"></span>
+              <span style="--dot: var(--type-image)"></span>
+              <span style="--dot: var(--type-url)"></span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AI SECTION ============ -->
+    <section class="ai-section">
+      <div class="section-inner ai-grid">
+        <div class="ai-copy reveal">
+          <span class="pro-badge">Pro feature</span>
+          <h2 class="section-headline">Let AI do the filing</h2>
+          <p class="ai-lead">Save something and gpt-5-nano quietly organizes it behind the scenes.</p>
+          <ul class="ai-checklist">
+            <li><i class="ph ph-check-circle"></i> Auto-tagging on save</li>
+            <li><i class="ph ph-check-circle"></i> One-line AI summaries</li>
+            <li><i class="ph ph-check-circle"></i> Explain any snippet, instantly</li>
+            <li><i class="ph ph-check-circle"></i> Prompt optimization built in</li>
+          </ul>
+        </div>
+
+        <div class="ai-visual reveal">
+          <div class="editor-mock">
+            <div class="editor-titlebar">
+              <span class="editor-dot" style="--dot-color:#ff5f56"></span>
+              <span class="editor-dot" style="--dot-color:#ffbd2e"></span>
+              <span class="editor-dot" style="--dot-color:#27c93f"></span>
+              <span class="editor-filename">use-debounce.ts</span>
+            </div>
+            <pre class="editor-body"><code><span class="tok-kw">export function</span> <span class="tok-fn">useDebounce</span><span class="tok-punct">&lt;</span><span class="tok-type">T</span><span class="tok-punct">&gt;(</span><span class="tok-param">value</span><span class="tok-punct">:</span> <span class="tok-type">T</span><span class="tok-punct">,</span> <span class="tok-param">delay</span><span class="tok-punct">:</span> <span class="tok-type">number</span><span class="tok-punct">) {</span>
+  <span class="tok-kw">const</span> [<span class="tok-param">debounced</span><span class="tok-punct">,</span> <span class="tok-param">setDebounced</span>] <span class="tok-punct">=</span> <span class="tok-fn">useState</span><span class="tok-punct">(</span><span class="tok-param">value</span><span class="tok-punct">);</span>
+
+  <span class="tok-fn">useEffect</span><span class="tok-punct">(() =&gt; {</span>
+    <span class="tok-kw">const</span> <span class="tok-param">id</span> <span class="tok-punct">=</span> <span class="tok-fn">setTimeout</span><span class="tok-punct">(() =&gt;</span> <span class="tok-fn">setDebounced</span><span class="tok-punct">(</span><span class="tok-param">value</span><span class="tok-punct">),</span> <span class="tok-param">delay</span><span class="tok-punct">);</span>
+    <span class="tok-kw">return</span> <span class="tok-punct">() =&gt;</span> <span class="tok-fn">clearTimeout</span><span class="tok-punct">(</span><span class="tok-param">id</span><span class="tok-punct">);</span>
+  <span class="tok-punct">}, [</span><span class="tok-param">value</span><span class="tok-punct">,</span> <span class="tok-param">delay</span><span class="tok-punct">]);</span>
+
+  <span class="tok-kw">return</span> <span class="tok-param">debounced</span><span class="tok-punct">;</span>
+<span class="tok-punct">}</span></code></pre>
+            <div class="editor-tags" id="editor-tags" aria-label="AI generated tags">
+              <span class="editor-tags-label">AI generated tags</span>
+              <span class="tag-chip tag-chip--in" style="--accent: var(--type-snippet); animation-delay: 0.1s">react</span>
+              <span class="tag-chip tag-chip--in" style="--accent: var(--type-command); animation-delay: 0.3s">hooks</span>
+              <span class="tag-chip tag-chip--in" style="--accent: var(--type-note); animation-delay: 0.5s">debounce</span>
+              <span class="tag-chip tag-chip--in" style="--accent: var(--type-url); animation-delay: 0.7s">typescript</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRICING ============ -->
+    <section class="pricing" id="pricing">
+      <div class="section-inner">
+        <h2 class="section-headline reveal">Free to start, cheap to stay</h2>
+
+        <div class="billing-toggle reveal">
+          <span class="billing-label" id="label-monthly">Monthly</span>
+          <button class="toggle-switch" id="billing-toggle" role="switch" aria-checked="false" aria-label="Toggle yearly billing">
+            <span class="toggle-knob"></span>
+          </button>
+          <span class="billing-label" id="label-yearly">Yearly <span class="save-chip">save 25%</span></span>
+        </div>
+
+        <div class="pricing-grid">
+          <div class="price-card reveal">
+            <h3>Free</h3>
+            <p class="price"><span class="price-amount">$0</span></p>
+            <p class="price-note">forever</p>
+            <ul class="price-features">
+              <li><i class="ph ph-check"></i> 50 items</li>
+              <li><i class="ph ph-check"></i> 3 collections</li>
+              <li><i class="ph ph-check"></i> Basic search</li>
+              <li><i class="ph ph-check"></i> Image uploads</li>
+            </ul>
+            <a href="#" class="btn btn-secondary btn-block">Get started</a>
+          </div>
+
+          <div class="price-card price-card--highlight reveal">
+            <span class="popular-badge">Most popular</span>
+            <h3>Pro</h3>
+            <p class="price">
+              <span class="price-amount" data-monthly="$8" data-yearly="$6">$8</span><span class="price-period">/mo</span>
+            </p>
+            <p class="price-note" id="pro-price-note">billed monthly</p>
+            <ul class="price-features">
+              <li><i class="ph ph-check"></i> Unlimited items</li>
+              <li><i class="ph ph-check"></i> Unlimited collections</li>
+              <li><i class="ph ph-check"></i> File uploads</li>
+              <li><i class="ph ph-check"></i> Custom item types</li>
+              <li><i class="ph ph-check"></i> AI features</li>
+              <li><i class="ph ph-check"></i> Export</li>
+            </ul>
+            <a href="#" class="btn btn-primary btn-block">Get started</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="cta reveal">
+      <div class="section-inner cta-inner">
+        <h2 class="cta-headline">Ready to organize your knowledge?</h2>
+        <a href="#pricing" class="btn btn-primary btn-lg">Get started</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="section-inner footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <span class="nav-logo-mark" aria-hidden="true"><i class="ph ph-package"></i></span>
+          DevStash
+        </a>
+        <p>Store smarter. Build faster.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="footer-year"></span> DevStash. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

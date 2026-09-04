@@ -1,16 +1,30 @@
-# Current Feature
+# Current Feature: DevStash Homepage Mockup
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Standalone marketing homepage prototype at `prototypes/homepage/` (`index.html`, `styles.css`, `script.js`) — separate from the Next.js app
+- Dark-theme hero with a "chaos to order" visual: animated chaos container (8 floating/bouncing icons repelled by cursor) → pulsing arrow → simplified dashboard preview (sidebar + colored item cards)
+- Fixed nav (logo, Features/Pricing links, Sign In/Get Started), gradient hero headline + subheadline + CTAs
+- Features grid (6 cards: Snippets, Prompts, Search, Commands, Files & Docs, Collections), each tinted with its item-type accent color
+- AI section (Pro badge + capability checklist vs. code editor "AI Generated Tags" mockup)
+- Pricing section (Free vs. Pro, Pro highlighted "Most Popular", monthly/yearly toggle)
+- Final CTA section + footer (logo, link columns, copyright with current year)
+- Scroll-triggered fade-ins and a navbar that opacifies on scroll
+- Responsive: chaos/arrow/dashboard stack vertically on mobile, arrow rotates 90° to point down, grids collapse to single column
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Full spec: @context/features/homepage-mockup-spec.md
+- Item type accent colors: Snippet `#3b82f6`, Prompt `#f59e0b`, Command `#06b6d4`, Note `#22c55e`, File `#64748b`, Image `#ec4899`, URL `#6366f1`
+- Chaos icons represent: Notion, GitHub, Slack, VS Code, browser tabs, terminal, text file, bookmark
+- Chaos animation is vanilla JS (requestAnimationFrame): drift, wall-bounce, subtle rotate/scale pulse, repel from mouse
+- This is a static plain HTML/CSS/JS prototype, not a Next.js route — coding-standards.md's React/Next.js/Tailwind-v4 rules don't apply here
+
+**Implementation status (2026-09-04):** built on branch `feature/homepage-mockup`, run through the `design-taste-frontend` skill. `prototypes/homepage/{index.html,styles.css,script.js}` plus self-hosted `fonts/` (Space Grotesk + JetBrains Mono, downloaded as woff2 so the page has no runtime font dependency). Real icons throughout via Phosphor Icons (CDN) instead of hand-drawn SVGs; brand logos (Notion, GitHub) via Simple Icons CDN. Slack and VS Code were swapped for Discord and Sublime Text in the chaos icons — Simple Icons no longer serves `slack`/`visualstudiocode` slugs (confirmed 404 against both the CDN and their own slugs.md; likely removed at the brands' request), so the two nearest equivalents (team chat, code editor) were substituted to preserve the four represented tool categories. Features grid ships as a 6-cell bento (wide + 1, then 1+1+1, then a full-width Collections capstone with a 7-dot item-type strip) rather than 3 equal cards, to avoid the generic "three identical cards" pattern and an empty grid cell. Introduced a separate `--accent-solid`/`--accent-solid-hover` pair (darker than the `--accent` used for text/links/badges on the dark background) specifically for white-text button/badge fills after the original single blue measured under 4.5:1 contrast for body-size white text (WCAG AA) — both button and link/text uses now pass. Verified live via Playwright at 1440px and 375px: chaos icons animate and repel from the cursor, scroll reveal fires correctly on real scroll (a manual `scrollTo` teleport test produced a false negative from IntersectionObserver's delivery timing, not a real bug — confirmed by scrolling via the keyboard instead), nav opacity toggles past the sentinel, pricing toggle updates the Pro price/note ($8/mo ↔ $6/mo billed $72/yr), and no console errors. Fixed a real mobile bug reported after initial verification: `.editor-mock`'s unwrapped `<pre>` code lines forced its CSS grid item (`.ai-visual`, in `.ai-grid`) past its content-based default `min-width: auto`, blowing the whole page out to 535px wide inside a 375px viewport instead of scrolling the code horizontally inside `.editor-body`'s existing `overflow-x: auto` — fixed with `min-width: 0` on the `.ai-grid` children, confirmed via `document.documentElement.scrollWidth` matching `clientWidth` (375 = 375) before/after and a live screenshot. Not yet reviewed against `/feature review` or committed.
 
 ## History
 
