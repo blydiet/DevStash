@@ -15,15 +15,21 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { setOpen: setSearchOpen } = useGlobalSearch();
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-6">
-      <Link href="/dashboard" className="flex items-center gap-2">
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border px-3 sm:gap-4 sm:px-6">
+      <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
           <Layers className="size-4 text-primary-foreground" />
         </div>
-        <span className="text-lg font-semibold">DevStash</span>
+        <span className="hidden text-lg font-semibold sm:inline">DevStash</span>
       </Link>
 
-      <Button variant="ghost" size="icon" aria-label="Toggle sidebar" onClick={onToggleSidebar}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Toggle sidebar"
+        className="shrink-0"
+        onClick={onToggleSidebar}
+      >
         <PanelLeft className="size-4" />
       </Button>
 
@@ -31,33 +37,40 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
         variant="ghost"
         size="icon"
         aria-label="Favorites"
+        className="shrink-0"
         nativeButton={false}
         render={<Link href="/favorites" />}
       >
         <Star className="size-4" />
       </Button>
 
-      <div className="relative mx-auto w-full max-w-md">
+      <div className="relative min-w-0 flex-1 sm:mx-auto sm:max-w-md sm:flex-initial">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search items..."
-          className="cursor-pointer pl-9 pr-14"
+          className="cursor-pointer pl-9 pr-9 sm:pr-14"
           readOnly
           onClick={() => setSearchOpen(true)}
         />
-        <kbd className="absolute top-1/2 right-3 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+        <kbd className="absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground sm:block">
           ⌘K
         </kbd>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="outline" onClick={() => setCreateCollectionOpen(true)}>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="New Collection"
+          className="sm:w-auto sm:px-4"
+          onClick={() => setCreateCollectionOpen(true)}
+        >
           <FolderPlus className="size-4" />
-          New Collection
+          <span className="hidden sm:inline">New Collection</span>
         </Button>
-        <Button onClick={() => setCreateItemOpen(true)}>
+        <Button size="icon" aria-label="New Item" className="sm:w-auto sm:px-4" onClick={() => setCreateItemOpen(true)}>
           <Plus className="size-4" />
-          New Item
+          <span className="hidden sm:inline">New Item</span>
         </Button>
       </div>
 

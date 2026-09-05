@@ -31,19 +31,19 @@ export async function StatsCards() {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 min-[375px]:grid-cols-2 lg:grid-cols-4">
       {stats.map(({ label, value, icon: Icon, color }) => (
-        <Card key={label}>
-          <CardContent className="flex items-center gap-3">
+        <Card key={label} className="justify-center">
+          <CardContent className="flex items-start gap-3">
             <div
               className="flex size-9 shrink-0 items-center justify-center rounded-lg"
               style={{ backgroundColor: `${color}1a` }}
             >
               <Icon className="size-4" style={{ color }} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-2xl font-bold leading-none">{value}</p>
-              <p className="text-sm text-muted-foreground">{label}</p>
+              <p className="text-sm break-words text-muted-foreground">{label}</p>
             </div>
           </CardContent>
         </Card>
