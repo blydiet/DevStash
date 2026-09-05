@@ -81,10 +81,12 @@ export function ItemDrawerActionBar({
         <Pin className={item.isPinned ? "fill-primary" : ""} />
         <span className="hidden sm:inline">Pin</span>
       </Button>
-      <Button variant="ghost" size="sm">
-        <Copy />
-        <span className="hidden sm:inline">Copy</span>
-      </Button>
+      {item.contentType !== "file" && (
+        <Button variant="ghost" size="sm">
+          <Copy />
+          <span className="hidden sm:inline">Copy</span>
+        </Button>
+      )}
       {item.contentType === "file" && item.fileUrl && (
         <Button
           variant="ghost"
