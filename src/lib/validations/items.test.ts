@@ -79,7 +79,7 @@ describe("updateItemSchema", () => {
       content: null,
       url: null,
       language: null,
-      tags: ["react"],
+      tags: ["react", "hooks"],
       collectionIds: [],
     });
     expect(result.success).toBe(true);
@@ -92,7 +92,110 @@ describe("updateItemSchema", () => {
       content: null,
       url: "not-a-url",
       language: null,
-      tags: [],
+      tags: ["react"],
+      collectionIds: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an empty (or whitespace-only) title", () => {
+    const result = updateItemSchema.safeParse({
+      title: "   ",
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: ["react"],
+      collectionIds: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an empty-string tag", () => {
+    const result = updateItemSchema.safeParse({
+      title: "Updated",
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: ["react", "  "],
+      collectionIds: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts duplicate tag names (deduped downstream by the DB layer, not rejected here)", () => {
+    const result = updateItemSchema.safeParse({
+      title: "Updated",
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: ["react", "react"],
+      collectionIds: [],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("defaults fileUrl/fileName/fileSize to null when omitted", () => {
+    const result = updateItemSchema.safeParse({
+      title: "Updated",
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      tags: ["react"],
+      collectionIds: [],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.fileUrl).toBeNull();
+      expect(result.data.fileName).toBeNull();
+      expect(result.data.fileSize).toBeNull();
+    }
+  });
+
+  it("accepts an update replacing the file (fileUrl and fileName both present)", () => {
+    const result = updateItemSchema.safeParse({
+      title: "Updated",
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      fileUrl: "https://public.example/user-1/new-photo.png",
+      fileName: "new-photo.png",
+      fileSize: 2048,
+      tags: ["react"],
+      collectionIds: [],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a fileUrl with no fileName", () => {
+    const result = updateItemSchema.safeParse({
+      title: "Updated",
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      fileUrl: "https://public.example/user-1/new-photo.png",
+      fileName: null,
+      tags: ["react"],
+      collectionIds: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a fileName with no fileUrl", () => {
+    const result = updateItemSchema.safeParse({
+      title: "Updated",
+      description: null,
+      content: null,
+      url: null,
+      language: null,
+      fileUrl: null,
+      fileName: "orphaned-name.png",
+      tags: ["react"],
       collectionIds: [],
     });
     expect(result.success).toBe(false);

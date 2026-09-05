@@ -62,6 +62,9 @@ export async function updateItem(
     content: string | null;
     url: string | null;
     language: string | null;
+    fileUrl: string | null;
+    fileName: string | null;
+    fileSize: number | null;
     tags: string[];
     collectionIds: string[];
   }
@@ -78,19 +81,27 @@ export async function updateItem(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  let item;
+  let result;
   try {
-    item = await updateItemInDb(itemId, parsed.data);
+    result = await updateItemInDb(itemId, parsed.data);
   } catch (err) {
     console.error("Failed to update item:", err);
     return { success: false, error: "Failed to update item" };
   }
 
-  if (!item) {
+  if (!result) {
     return { success: false, error: "Item not found" };
   }
 
-  return { success: true, data: item };
+  const dropped = result.droppedCollectionIds.length;
+
+  return {
+    success: true,
+    data: result.item,
+    ...(dropped > 0 && {
+      warning: `${dropped} collection${dropped === 1 ? "" : "s"} could not be applied`,
+    }),
+  };
 }
 
 export async function toggleItemFavorite(

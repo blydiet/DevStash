@@ -51,6 +51,9 @@ const validData = {
   content: null,
   url: null,
   language: null,
+  fileUrl: null,
+  fileName: null,
+  fileSize: null,
   tags: ["react"],
   collectionIds: [],
 };
@@ -209,12 +212,43 @@ describe("updateItem", () => {
   it("returns the updated item on success", async () => {
     authMock.mockResolvedValue({ user: { id: "user-1" } });
     const updated = { id: "item-1", title: "Updated title" };
-    updateItemInDbMock.mockResolvedValue(updated);
+    updateItemInDbMock.mockResolvedValue({ item: updated, droppedCollectionIds: [] });
 
     const result = await updateItem("item-1", validData);
 
     expect(updateItemInDbMock).toHaveBeenCalledWith("item-1", validData);
     expect(result).toEqual({ success: true, data: updated });
+  });
+
+  it("adds a warning when some collectionIds were dropped as not owned by the user", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    const updated = { id: "item-1", title: "Updated title" };
+    updateItemInDbMock.mockResolvedValue({ item: updated, droppedCollectionIds: ["col-2"] });
+
+    const result = await updateItem("item-1", { ...validData, collectionIds: ["col-1", "col-2"] });
+
+    expect(result).toEqual({
+      success: true,
+      data: updated,
+      warning: "1 collection could not be applied",
+    });
+  });
+
+  it("pluralizes the warning when more than one collectionId was dropped", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    const updated = { id: "item-1", title: "Updated title" };
+    updateItemInDbMock.mockResolvedValue({
+      item: updated,
+      droppedCollectionIds: ["col-2", "col-3"],
+    });
+
+    const result = await updateItem("item-1", validData);
+
+    expect(result).toEqual({
+      success: true,
+      data: updated,
+      warning: "2 collections could not be applied",
+    });
   });
 
   it("reports a generic failure instead of throwing when the DB layer throws", async () => {

@@ -11,7 +11,12 @@ import { Input } from "@/components/ui/input";
 import { iconMap } from "@/lib/icon-map";
 import { fetchCollectionOptions, fetchItemDetail } from "@/lib/swr-fetcher";
 import { deleteItem, toggleItemFavorite, toggleItemPin, updateItem } from "@/actions/items";
-import { typeShowsContent, typeShowsLanguage, typeShowsUrl } from "@/lib/item-type-capabilities";
+import {
+  typeShowsContent,
+  typeShowsFileUpload,
+  typeShowsLanguage,
+  typeShowsUrl,
+} from "@/lib/item-type-capabilities";
 import { toEditForm, type EditForm } from "@/lib/item-drawer-utils";
 import { ItemDrawerSkeleton } from "@/components/dashboard/ItemDrawerSkeleton";
 import { ItemDrawerActionBar } from "@/components/dashboard/ItemDrawerActionBar";
@@ -80,6 +85,9 @@ export function ItemDrawer({
         url: typeShowsUrl(item.type.name) && form.url.trim() !== "" ? form.url : null,
         language:
           typeShowsLanguage(item.type.name) && form.language.trim() !== "" ? form.language : null,
+        fileUrl: form.file?.fileUrl ?? null,
+        fileName: form.file?.fileName ?? null,
+        fileSize: form.file?.fileSize ?? null,
         tags: form.tags
           .split(",")
           .map((tag) => tag.trim())
@@ -96,6 +104,7 @@ export function ItemDrawer({
       setMode("view");
       setForm(null);
       toast.success("Item updated");
+      if (result.warning) toast.warning(result.warning);
       router.refresh();
     } catch {
       toast.error("Failed to update item");
@@ -236,7 +245,10 @@ export function ItemDrawer({
               isDeleting={isDeleting}
               isTogglingFavorite={isTogglingFavorite}
               isTogglingPin={isTogglingPin}
-              canSave={Boolean(form?.title.trim())}
+              canSave={Boolean(
+                form?.title.trim() &&
+                  (!typeShowsFileUpload(item.type.name) || form.file)
+              )}
               onStartEdit={startEdit}
               onCancelEdit={cancelEdit}
               onSave={saveEdit}

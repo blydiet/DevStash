@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
+import { FileUpload } from "@/components/dashboard/FileUpload";
 import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
 import {
   typeShowsCodeEditor,
   typeShowsContent,
+  typeShowsFileUpload,
   typeShowsLanguage,
   typeShowsMarkdownEditor,
   typeShowsUrl,
@@ -37,6 +39,7 @@ export function ItemDrawerEditForm({
   const showsUrl = typeShowsUrl(item.type.name);
   const showsCodeEditor = typeShowsCodeEditor(item.type.name);
   const showsMarkdownEditor = typeShowsMarkdownEditor(item.type.name);
+  const showsFileUpload = typeShowsFileUpload(item.type.name);
 
   return (
     <>
@@ -86,6 +89,19 @@ export function ItemDrawerEditForm({
             value={form.url}
             onChange={(e) => setForm({ ...form, url: e.target.value })}
             placeholder="https://example.com"
+          />
+        </div>
+      )}
+
+      {showsFileUpload && (
+        <div>
+          <h3 className="pb-2 text-sm font-medium text-muted-foreground">
+            {item.type.name === "image" ? "Image" : "File"}
+          </h3>
+          <FileUpload
+            kind={item.type.name as "file" | "image"}
+            value={form.file}
+            onChange={(file) => setForm({ ...form, file })}
           />
         </div>
       )}

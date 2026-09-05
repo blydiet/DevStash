@@ -27,44 +27,81 @@ export interface UpdateItemInput {
   content: string | null;
   url: string | null;
   language: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileSize: number | null;
   tags: string[];
   collectionIds: string[];
 }
 
-export async function updateItem(id: string, data: UpdateItemInput): Promise<ItemDetail | null> {
+export interface UpdateItemResult {
+  item: ItemDetail;
+  // Requested collectionIds that were dropped because the current user doesn't
+  // own them (same IDOR-prevention filtering as getOwnedCollectionIds/createItem) —
+  // surfaced so the caller can tell the update only partially applied, rather than
+  // failing silently.
+  droppedCollectionIds: string[];
+}
+
+export async function updateItem(id: string, data: UpdateItemInput): Promise<UpdateItemResult | null> {
   const userId = await getCurrentUserId();
 
-  const existing = await prisma.item.findFirst({ where: { id, userId }, select: { id: true } });
+  // Read-only — sources the previous file's R2 key for cleanup if this update
+  // replaces it. The atomic updateMany below is the sole authorization/write decision.
+  const previous = await prisma.item.findFirst({ where: { id, userId }, select: { fileUrl: true } });
 
-  if (!existing) return null;
-
-  await prisma.$transaction(async (tx) => {
-    await tx.item.update({
-      where: { id },
+  let count: number;
+  try {
+    ({ count } = await prisma.item.updateMany({
+      where: { id, userId },
       data: {
         title: data.title,
         description: data.description,
         content: data.content,
         url: data.url,
         language: data.language,
+        fileUrl: data.fileUrl,
+        fileName: data.fileName,
+        fileSize: data.fileSize,
       },
-    });
+    }));
+  } catch (err) {
+    console.error(`Failed to update item ${id}:`, err);
+    throw err;
+  }
 
+  if (count === 0) return null;
+
+  let droppedCollectionIds: string[] = [];
+
+  await prisma.$transaction(async (tx) => {
     await tx.itemTag.deleteMany({ where: { itemId: id } });
 
-    for (const name of data.tags) {
-      const tag = await tx.tag.upsert({
-        where: { userId_name: { userId, name } },
-        update: {},
-        create: { userId, name },
-      });
+    // Dedupe: duplicate names would otherwise upsert the same tag twice and then
+    // try to createMany two identical {itemId, tagId} join rows, violating
+    // ItemTag's composite primary key.
+    const uniqueTagNames = [...new Set(data.tags)];
 
-      await tx.itemTag.create({ data: { itemId: id, tagId: tag.id } });
+    const tags = await Promise.all(
+      uniqueTagNames.map((name) =>
+        tx.tag.upsert({
+          where: { userId_name: { userId, name } },
+          update: {},
+          create: { userId, name },
+        })
+      )
+    );
+
+    if (tags.length > 0) {
+      await tx.itemTag.createMany({
+        data: tags.map((tag) => ({ itemId: id, tagId: tag.id })),
+      });
     }
 
     await tx.itemCollection.deleteMany({ where: { itemId: id } });
 
     const ownedCollectionIds = await getOwnedCollectionIds(tx, userId, data.collectionIds);
+    droppedCollectionIds = data.collectionIds.filter((cid) => !ownedCollectionIds.includes(cid));
 
     if (ownedCollectionIds.length > 0) {
       await tx.itemCollection.createMany({
@@ -73,7 +110,25 @@ export async function updateItem(id: string, data: UpdateItemInput): Promise<Ite
     }
   });
 
-  return getItemDetail(id);
+  if (previous?.fileUrl && previous.fileUrl !== data.fileUrl) {
+    try {
+      await deleteFromR2(extractKeyFromUrl(previous.fileUrl));
+    } catch (err) {
+      console.error(`Failed to delete replaced R2 object for item ${id}:`, err);
+    }
+  }
+
+  let item: ItemDetail | null;
+  try {
+    item = await getItemDetail(id);
+  } catch (err) {
+    console.error(`Failed to refetch item ${id} after updating:`, err);
+    throw err;
+  }
+
+  if (!item) return null;
+
+  return { item, droppedCollectionIds };
 }
 
 export interface CreateItemInput {
