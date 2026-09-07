@@ -62,7 +62,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
           variant="outline"
           size="icon"
           aria-label="New Collection"
-          className="sm:w-auto sm:px-4"
+          className="sm:w-auto sm:gap-[4px] sm:px-4"
           onClick={() => setCreateCollectionOpen(true)}
         >
           <FolderPlus className="size-4" />
