@@ -7,7 +7,7 @@ import { auth } from "@/auth";
 export default async function ForgotPasswordPage() {
   const session = await auth();
   if (session?.user) {
-    redirect(`/dashboard?notice=already-signed-in`);
+    redirect("/dashboard");
   }
 
   return (

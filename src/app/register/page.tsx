@@ -9,7 +9,7 @@ import "@/app/homepage.css";
 export default async function RegisterPage() {
   const session = await auth();
   if (session?.user) {
-    redirect(`/dashboard?notice=already-signed-in`);
+    redirect("/dashboard");
   }
 
   return (
