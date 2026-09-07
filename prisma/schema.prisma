@@ -8,16 +8,18 @@ datasource db {
 }
 
 model User {
-  id                   String   @id @default(cuid())
-  name                 String?
-  email                String   @unique
-  emailVerified        DateTime?
-  image                String?
-  password             String?
-  isPro                Boolean  @default(false)
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
-  editorPreferences    Json?
+  id                     String    @id @default(cuid())
+  name                   String?
+  email                  String    @unique
+  emailVerified          DateTime?
+  image                  String?
+  password               String?
+  isPro                  Boolean   @default(false)
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  editorPreferences      Json?
 
   accounts    Account[]
   sessions    Session[]

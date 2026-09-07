@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getItemTypeByName, getItemTypes } from "@/lib/db/item-metadata";
+import { getItemStats, getItemTypeByName, getItemTypes } from "@/lib/db/item-metadata";
 
 const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
@@ -7,6 +7,9 @@ const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
     itemType: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
+    },
+    item: {
+      count: vi.fn(),
     },
   },
 }));
@@ -43,6 +46,18 @@ describe("getItemTypeByName", () => {
       name: "note",
       icon: "StickyNote",
       color: "#22c55e",
+    });
+  });
+});
+
+describe("getItemStats", () => {
+  it("returns total and favorite counts scoped to the current user", async () => {
+    prismaMock.item.count.mockResolvedValueOnce(18).mockResolvedValueOnce(3);
+
+    await expect(getItemStats()).resolves.toEqual({ total: 18, favorites: 3 });
+    expect(prismaMock.item.count).toHaveBeenNthCalledWith(1, { where: { userId: "user-1" } });
+    expect(prismaMock.item.count).toHaveBeenNthCalledWith(2, {
+      where: { userId: "user-1", isFavorite: true },
     });
   });
 });

@@ -88,10 +88,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user?.id) {
         token.id = user.id;
       }
+
+      // Re-sync on every call (not just sign-in) so a Stripe webhook's isPro
+      // update is picked up on the user's next request, not just next login —
+      // see docs/stripe-integration-plan.md. This callback runs on every
+      // auth() call, so a DB failure here must not throw and break session
+      // validation sitewide — fall back to the token's last known value.
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { isPro: true },
+          });
+          token.isPro = dbUser?.isPro ?? false;
+        } catch (err) {
+          console.error("Failed to refresh isPro status:", err);
+          token.isPro = token.isPro ?? false;
+        }
+      }
+
       return token;
     },
     session({ session, token }) {
@@ -102,6 +121,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: token.name ?? null,
           email: token.email ?? "",
           image: token.picture ?? null,
+          isPro: token.isPro ?? false,
         },
       };
     },
