@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FolderPlus, Layers, PanelLeft, Plus, Search, Star } from "lucide-react";
+import { FolderPlus, Package, PanelLeft, Plus, Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateItemDialog } from "./CreateItemDialog";
@@ -17,9 +17,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border px-3 sm:gap-4 sm:px-6">
       <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
-          <Layers className="size-4 text-primary-foreground" />
-        </div>
+        <Package className="size-5 text-primary" />
         <span className="hidden text-lg font-semibold sm:inline">DevStash</span>
       </Link>
 

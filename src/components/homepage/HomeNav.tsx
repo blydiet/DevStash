@@ -5,7 +5,10 @@ import Link from "next/link";
 import { Package } from "lucide-react";
 import { HomeButton } from "@/components/homepage/HomeButton";
 
-export function HomeNav() {
+export function HomeNav({
+  showSignIn = true,
+  showGetStarted = true,
+}: { showSignIn?: boolean; showGetStarted?: boolean } = {}) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -58,17 +61,21 @@ export function HomeNav() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
-            <HomeButton href="/sign-in" variant="ghost" className="hidden md:inline-flex">
-              Sign in
-            </HomeButton>
-            <HomeButton
-              href="/register"
-              variant="primary"
-              size="sm"
-              className="md:px-[22px] md:py-[11px] md:text-[0.9375rem]"
-            >
-              Get started
-            </HomeButton>
+            {showSignIn && (
+              <HomeButton href="/sign-in" variant="ghost" className="hidden md:inline-flex">
+                Sign in
+              </HomeButton>
+            )}
+            {showGetStarted && (
+              <HomeButton
+                href="/register"
+                variant="primary"
+                size="sm"
+                className="md:px-[22px] md:py-[11px] md:text-[0.9375rem]"
+              >
+                Get started
+              </HomeButton>
+            )}
           </div>
         </div>
       </header>

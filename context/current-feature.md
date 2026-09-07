@@ -1,16 +1,21 @@
-# Current Feature
+# Current Feature: Homepage Nav on Auth Pages + Dashboard Logo Swap
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add the homepage's top nav (`HomeNav`, from `src/components/homepage/HomeNav.tsx`) to the `/sign-in` and `/register` pages.
+- Replace the dashboard `TopBar`'s current logo (the `Layers` icon inside a `bg-primary` rounded box) with the same logo icon used in the homepage nav (`Package` from `lucide-react`) — delete the old logo entirely rather than keeping both.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- `HomeNav` is a `"use client"` component, `position: fixed` at the top (68px tall), and depends on CSS custom properties (`--hp-accent`, etc.) that are scoped under a `.homepage` class in `src/app/homepage.css`, plus homepage-only fonts from `src/app/fonts/homepage-fonts.ts` — both are currently only loaded on `/` (`src/app/page.tsx`). Adding `HomeNav` to `/sign-in`/`/register` will need those same CSS vars/fonts available there (e.g. wrapping the nav in a `.homepage`-scoped wrapper with the font variable classes) or it will render unstyled.
+- `/sign-in` and `/register` currently vertically center their card with `min-h-screen items-center justify-center`; since `HomeNav` is fixed at the top, it may visually overlap the centered card on short viewports — may need top padding/offset added.
+- `HomeNav`'s "Sign in" / "Get started" links will point back to the page you may already be on (e.g. a "Sign in" button showing on `/sign-in` itself) — acceptable unless it looks wrong in practice.
+- Dashboard `TopBar.tsx`'s current logo block (to be deleted): `<Layers>` icon in a `size-8 rounded-lg bg-primary` box, next to "DevStash" text.
+- Homepage nav's logo (the one to reuse, referred to as "the folder icon"): a bare `Package` icon (no background box), colored via `--hp-accent`, next to "DevStash" text. Since the dashboard doesn't have `--hp-accent` in scope, the icon color should use one of the dashboard's own existing tokens (e.g. `text-primary`) instead.
 
 ## History
 
