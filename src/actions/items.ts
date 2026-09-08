@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/items-mutations";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
 import { createItemSchema, updateItemSchema } from "@/lib/validations/items";
+import { isProOnlyItemType, ItemLimitExceededError } from "@/lib/subscription-limits";
 import type { CreateItemActionResult, DeleteItemActionResult, UpdateItemActionResult } from "@/types/items";
 
 export async function createItem(data: {
@@ -37,6 +38,10 @@ export async function createItem(data: {
     return { success: false, error: parsed.error.issues[0].message };
   }
 
+  if (isProOnlyItemType(parsed.data.type) && !session.user.isPro) {
+    return { success: false, error: "Upgrade to Pro to create file and image items." };
+  }
+
   const type = await getItemTypeByName(parsed.data.type);
 
   if (!type) {
@@ -45,8 +50,14 @@ export async function createItem(data: {
 
   let item;
   try {
-    item = await createItemInDb({ ...parsed.data, type });
+    item = await createItemInDb({ ...parsed.data, type, isPro: session.user.isPro });
   } catch (err) {
+    if (err instanceof ItemLimitExceededError) {
+      return {
+        success: false,
+        error: "Free plan is limited to 50 items. Upgrade to Pro for unlimited items.",
+      };
+    }
     console.error("Failed to create item:", err);
     return { success: false, error: "Failed to create item" };
   }

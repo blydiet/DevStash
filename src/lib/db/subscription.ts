@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/db/user";
+import { getItemStats } from "@/lib/db/item-metadata";
+import { getCollectionStats } from "@/lib/db/collections";
+import { FREE_TIER_COLLECTION_LIMIT, FREE_TIER_ITEM_LIMIT } from "@/lib/subscription-limits";
 
 // Thrown when the session's user id no longer has a matching User row — the
 // session can outlive the row (JWT sessions are stateless, so a stale tab can
@@ -54,6 +57,15 @@ export async function getOrCreateStripeCustomerId(
 
   if (user.stripeCustomerId) return user.stripeCustomerId;
 
+  // Residual, accepted limitation: two concurrent first-time checkouts can
+  // both reach here and both successfully call createCustomer before either
+  // persists — the updateMany guard below prevents DB corruption (both calls
+  // converge on one winning id), but the loser's Stripe customer object is
+  // still created and now has nothing pointing at it. Low severity (an
+  // orphaned Stripe customer has no side effects beyond Dashboard clutter) —
+  // closing it fully would need a lock held across the Stripe API call
+  // itself (e.g. a Postgres advisory lock keyed by userId), which isn't
+  // worth the added complexity for a harmless orphan.
   try {
     const customerId = await createCustomer(email, userId);
 
@@ -80,4 +92,24 @@ export async function getOrCreateStripeCustomerId(
     console.error(`Failed to create/persist Stripe customer for user ${userId}:`, err);
     throw err;
   }
+}
+
+// Advisory only, not the enforcement mechanism: this reads the count
+// separately from any write, so it's usable for e.g. a "you're near your
+// limit" UI hint, but createItem/createCollection enforce the real cap
+// atomically (in the same transaction as the insert) rather than calling
+// this first — see items-mutations.ts/collections.ts. Lives here rather than
+// the pure src/lib/subscription-limits.ts because it touches the DB (via
+// getItemStats), matching this codebase's src/lib/* (pure) vs
+// src/lib/db/* (DB-touching) split.
+export async function isAtItemLimit(isPro: boolean): Promise<boolean> {
+  if (isPro) return false;
+  const { total } = await getItemStats();
+  return total >= FREE_TIER_ITEM_LIMIT;
+}
+
+export async function isAtCollectionLimit(isPro: boolean): Promise<boolean> {
+  if (isPro) return false;
+  const { total } = await getCollectionStats();
+  return total >= FREE_TIER_COLLECTION_LIMIT;
 }

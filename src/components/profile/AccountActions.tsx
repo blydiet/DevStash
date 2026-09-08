@@ -88,7 +88,7 @@ export function AccountActions({
                 setError(null);
               }}
             >
-              <DialogTrigger render={<Button variant="outline" className="w-fit" />}>
+              <DialogTrigger render={<Button variant="outline" className="w-fit rounded-[5px]" />}>
                 Change password
               </DialogTrigger>
               <DialogContent>
@@ -133,7 +133,7 @@ export function AccountActions({
           )}
 
           <AlertDialog>
-            <AlertDialogTrigger render={<Button variant="destructive" className="w-fit" />}>
+            <AlertDialogTrigger render={<Button variant="destructive" className="w-fit rounded-[5px]" />}>
               Delete account
             </AlertDialogTrigger>
             <AlertDialogContent>

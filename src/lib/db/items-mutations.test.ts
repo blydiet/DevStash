@@ -6,11 +6,20 @@ import {
   setItemPinned,
   updateItem,
 } from "@/lib/db/items-mutations";
+import { ItemLimitExceededError } from "@/lib/subscription-limits";
+import { Prisma } from "@/generated/prisma/client";
+
+function p2034() {
+  return new Prisma.PrismaClientKnownRequestError("Transaction failed due to a write conflict or a deadlock", {
+    code: "P2034",
+    clientVersion: "test",
+  });
+}
 
 const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
   txMock: {
-    item: { create: vi.fn() },
+    item: { create: vi.fn(), count: vi.fn() },
     itemTag: { deleteMany: vi.fn(), create: vi.fn(), createMany: vi.fn() },
     tag: { upsert: vi.fn() },
     itemCollection: { deleteMany: vi.fn(), createMany: vi.fn() },
@@ -392,6 +401,7 @@ describe("createItem", () => {
     fileSize: null,
     tags: ["react", "hooks"],
     collectionIds: [] as string[],
+    isPro: true,
   };
   const createdRow = {
     id: "item-1",
@@ -504,6 +514,72 @@ describe("createItem", () => {
         fileSize: 1024,
       }),
     });
+  });
+
+  it("runs the transaction under Serializable isolation", async () => {
+    txMock.item.create.mockResolvedValue(createdRow);
+
+    await createItem({ ...input, tags: [] });
+
+    expect(prismaMock.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: "Serializable",
+    });
+  });
+
+  it("retries via withSerializableRetry when Prisma reports a real P2034 write conflict, succeeding on the second attempt", async () => {
+    prismaMock.$transaction
+      .mockRejectedValueOnce(p2034())
+      .mockImplementationOnce(async (cb: (tx: typeof txMock) => unknown) => cb(txMock));
+    txMock.item.create.mockResolvedValue(createdRow);
+
+    const result = await createItem({ ...input, tags: [] });
+
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ ...createdRow, type, tags: [], collections: [] });
+  });
+
+  it("gives up and rethrows after exhausting all retries on a persistent P2034 write conflict", async () => {
+    prismaMock.$transaction.mockRejectedValue(p2034());
+
+    await expect(createItem({ ...input, tags: [] })).rejects.toMatchObject({ code: "P2034" });
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(5);
+  });
+
+  it("does not count existing items for a Pro user, and creates unconditionally", async () => {
+    txMock.item.create.mockResolvedValue(createdRow);
+
+    await createItem({ ...input, tags: [], isPro: true });
+
+    expect(txMock.item.count).not.toHaveBeenCalled();
+    expect(txMock.item.create).toHaveBeenCalled();
+  });
+
+  it("counts existing items for a free user and creates when under the limit", async () => {
+    txMock.item.count.mockResolvedValue(49);
+    txMock.item.create.mockResolvedValue(createdRow);
+
+    await createItem({ ...input, tags: [], isPro: false });
+
+    expect(txMock.item.count).toHaveBeenCalledWith({ where: { userId: "user-1" } });
+    expect(txMock.item.create).toHaveBeenCalled();
+  });
+
+  it("throws ItemLimitExceededError for a free user at the limit, without creating the item", async () => {
+    txMock.item.count.mockResolvedValue(50);
+
+    await expect(createItem({ ...input, tags: [], isPro: false })).rejects.toThrow(
+      ItemLimitExceededError
+    );
+    expect(txMock.item.create).not.toHaveBeenCalled();
+  });
+
+  it("throws ItemLimitExceededError for a free user over the limit, without creating the item", async () => {
+    txMock.item.count.mockResolvedValue(51);
+
+    await expect(createItem({ ...input, tags: [], isPro: false })).rejects.toThrow(
+      ItemLimitExceededError
+    );
+    expect(txMock.item.create).not.toHaveBeenCalled();
   });
 });
 

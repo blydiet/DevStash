@@ -3,6 +3,8 @@ import type { Prisma } from "@/generated/prisma/client";
 import { getCurrentUserId } from "@/lib/db/user";
 import { getItemDetail, type ItemDetail, type ItemTypeSummary } from "@/lib/db/items-queries";
 import { deleteFromR2, extractKeyFromUrl } from "@/lib/r2";
+import { FREE_TIER_ITEM_LIMIT, ItemLimitExceededError } from "@/lib/subscription-limits";
+import { withSerializableRetry } from "@/lib/db/with-serializable-retry";
 
 // Filters to only the collection ids the user actually owns, so a client can't
 // splice an item into another user's collection by passing an arbitrary id.
@@ -143,55 +145,73 @@ export interface CreateItemInput {
   fileSize: number | null;
   tags: string[];
   collectionIds: string[];
+  isPro: boolean;
 }
 
 export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
   const userId = await getCurrentUserId();
 
-  const created = await prisma.$transaction(async (tx) => {
-    const item = await tx.item.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        content: data.content,
-        url: data.url,
-        language: data.language,
-        fileUrl: data.fileUrl,
-        fileName: data.fileName,
-        fileSize: data.fileSize,
-        contentType: data.fileUrl ? "file" : "text",
-        userId,
-        typeId: data.type.id,
+  const created = await withSerializableRetry(() =>
+    prisma.$transaction(
+      async (tx) => {
+        // Counted inside the same transaction as the insert below, under
+        // SERIALIZABLE isolation, so two concurrent creates can't both read
+        // "under the limit" before either is persisted — Postgres aborts one
+        // of two conflicting serializable transactions with a serialization
+        // error, which withSerializableRetry retries.
+        if (!data.isPro) {
+          const itemCount = await tx.item.count({ where: { userId } });
+          if (itemCount >= FREE_TIER_ITEM_LIMIT) {
+            throw new ItemLimitExceededError();
+          }
+        }
+
+        const item = await tx.item.create({
+          data: {
+            title: data.title,
+            description: data.description,
+            content: data.content,
+            url: data.url,
+            language: data.language,
+            fileUrl: data.fileUrl,
+            fileName: data.fileName,
+            fileSize: data.fileSize,
+            contentType: data.fileUrl ? "file" : "text",
+            userId,
+            typeId: data.type.id,
+          },
+        });
+
+        for (const name of data.tags) {
+          const tag = await tx.tag.upsert({
+            where: { userId_name: { userId, name } },
+            update: {},
+            create: { userId, name },
+          });
+
+          await tx.itemTag.create({ data: { itemId: item.id, tagId: tag.id } });
+        }
+
+        const ownedCollectionIds = await getOwnedCollectionIds(tx, userId, data.collectionIds);
+
+        if (ownedCollectionIds.length === 0) {
+          return { item, collections: [] };
+        }
+
+        await tx.itemCollection.createMany({
+          data: ownedCollectionIds.map((collectionId) => ({ itemId: item.id, collectionId })),
+        });
+
+        const collections = await tx.collection.findMany({
+          where: { id: { in: ownedCollectionIds } },
+          select: { id: true, name: true },
+        });
+
+        return { item, collections };
       },
-    });
-
-    for (const name of data.tags) {
-      const tag = await tx.tag.upsert({
-        where: { userId_name: { userId, name } },
-        update: {},
-        create: { userId, name },
-      });
-
-      await tx.itemTag.create({ data: { itemId: item.id, tagId: tag.id } });
-    }
-
-    const ownedCollectionIds = await getOwnedCollectionIds(tx, userId, data.collectionIds);
-
-    if (ownedCollectionIds.length === 0) {
-      return { item, collections: [] };
-    }
-
-    await tx.itemCollection.createMany({
-      data: ownedCollectionIds.map((collectionId) => ({ itemId: item.id, collectionId })),
-    });
-
-    const collections = await tx.collection.findMany({
-      where: { id: { in: ownedCollectionIds } },
-      select: { id: true, name: true },
-    });
-
-    return { item, collections };
-  });
+      { isolationLevel: "Serializable" }
+    )
+  );
 
   return {
     id: created.item.id,

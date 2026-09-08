@@ -11,9 +11,21 @@ import {
   updateCollection,
 } from "@/lib/db/collections";
 import { COLLECTIONS_PER_PAGE } from "@/lib/pagination";
+import { CollectionLimitExceededError } from "@/lib/subscription-limits";
+import { Prisma } from "@/generated/prisma/client";
 
-const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
+function p2034() {
+  return new Prisma.PrismaClientKnownRequestError("Transaction failed due to a write conflict or a deadlock", {
+    code: "P2034",
+    clientVersion: "test",
+  });
+}
+
+const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
+  txMock: {
+    collection: { count: vi.fn(), create: vi.fn() },
+  },
   prismaMock: {
     collection: {
       count: vi.fn(),
@@ -23,6 +35,7 @@ const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
       updateMany: vi.fn(),
       deleteMany: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -37,6 +50,7 @@ vi.mock("@/lib/prisma", () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   getCurrentUserIdMock.mockResolvedValue("user-1");
+  prismaMock.$transaction.mockImplementation(async (cb: (tx: typeof txMock) => unknown) => cb(txMock));
 });
 
 const snippetType = { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" };
@@ -241,16 +255,20 @@ describe("getAllCollections", () => {
 
 describe("createCollection", () => {
   it("creates a collection scoped to the current user and returns a summary", async () => {
-    prismaMock.collection.create.mockResolvedValue({
+    txMock.collection.create.mockResolvedValue({
       id: "col-3",
       name: "Python Snippets",
       description: "Useful scripts",
       isFavorite: false,
     });
 
-    const result = await createCollection({ name: "Python Snippets", description: "Useful scripts" });
+    const result = await createCollection({
+      name: "Python Snippets",
+      description: "Useful scripts",
+      isPro: true,
+    });
 
-    expect(prismaMock.collection.create).toHaveBeenCalledWith({
+    expect(txMock.collection.create).toHaveBeenCalledWith({
       data: { name: "Python Snippets", description: "Useful scripts", userId: "user-1" },
     });
     expect(result).toEqual({
@@ -262,6 +280,102 @@ describe("createCollection", () => {
       borderColor: "#94a3b8",
       types: [],
     });
+  });
+
+  it("runs the transaction under Serializable isolation", async () => {
+    txMock.collection.create.mockResolvedValue({
+      id: "col-3",
+      name: "Python Snippets",
+      description: null,
+      isFavorite: false,
+    });
+
+    await createCollection({ name: "Python Snippets", description: null, isPro: true });
+
+    expect(prismaMock.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: "Serializable",
+    });
+  });
+
+  it("retries via withSerializableRetry when Prisma reports a real P2034 write conflict, succeeding on the second attempt", async () => {
+    prismaMock.$transaction
+      .mockRejectedValueOnce(p2034())
+      .mockImplementationOnce(async (cb: (tx: typeof txMock) => unknown) => cb(txMock));
+    txMock.collection.create.mockResolvedValue({
+      id: "col-3",
+      name: "Python Snippets",
+      description: null,
+      isFavorite: false,
+    });
+
+    const result = await createCollection({ name: "Python Snippets", description: null, isPro: true });
+
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({
+      id: "col-3",
+      name: "Python Snippets",
+      description: null,
+      isFavorite: false,
+      itemCount: 0,
+      borderColor: "#94a3b8",
+      types: [],
+    });
+  });
+
+  it("gives up and rethrows after exhausting all retries on a persistent P2034 write conflict", async () => {
+    prismaMock.$transaction.mockRejectedValue(p2034());
+
+    await expect(
+      createCollection({ name: "Python Snippets", description: null, isPro: true })
+    ).rejects.toMatchObject({ code: "P2034" });
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(5);
+  });
+
+  it("does not count existing collections for a Pro user, and creates unconditionally", async () => {
+    txMock.collection.create.mockResolvedValue({
+      id: "col-3",
+      name: "Python Snippets",
+      description: null,
+      isFavorite: false,
+    });
+
+    await createCollection({ name: "Python Snippets", description: null, isPro: true });
+
+    expect(txMock.collection.count).not.toHaveBeenCalled();
+    expect(txMock.collection.create).toHaveBeenCalled();
+  });
+
+  it("counts existing collections for a free user and creates when under the limit", async () => {
+    txMock.collection.count.mockResolvedValue(2);
+    txMock.collection.create.mockResolvedValue({
+      id: "col-3",
+      name: "Python Snippets",
+      description: null,
+      isFavorite: false,
+    });
+
+    await createCollection({ name: "Python Snippets", description: null, isPro: false });
+
+    expect(txMock.collection.count).toHaveBeenCalledWith({ where: { userId: "user-1" } });
+    expect(txMock.collection.create).toHaveBeenCalled();
+  });
+
+  it("throws CollectionLimitExceededError for a free user at the limit, without creating the collection", async () => {
+    txMock.collection.count.mockResolvedValue(3);
+
+    await expect(
+      createCollection({ name: "Python Snippets", description: null, isPro: false })
+    ).rejects.toThrow(CollectionLimitExceededError);
+    expect(txMock.collection.create).not.toHaveBeenCalled();
+  });
+
+  it("throws CollectionLimitExceededError for a free user over the limit, without creating the collection", async () => {
+    txMock.collection.count.mockResolvedValue(4);
+
+    await expect(
+      createCollection({ name: "Python Snippets", description: null, isPro: false })
+    ).rejects.toThrow(CollectionLimitExceededError);
+    expect(txMock.collection.create).not.toHaveBeenCalled();
   });
 });
 

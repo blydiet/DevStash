@@ -1,6 +1,3 @@
-import { getItemStats } from "@/lib/db/item-metadata";
-import { getCollectionStats } from "@/lib/db/collections";
-
 export const FREE_TIER_ITEM_LIMIT = 50;
 export const FREE_TIER_COLLECTION_LIMIT = 3;
 
@@ -12,21 +9,22 @@ export function isProOnlyItemType(typeName: string): boolean {
   return (PRO_ONLY_ITEM_TYPES as readonly string[]).includes(typeName);
 }
 
-// These are advisory checks, not atomic guarantees: the count read here and
-// the eventual insert at the call site (createItem/createCollection) aren't
-// in the same transaction, so two concurrent creates can both pass the check
-// before either is persisted, landing a free user one or two items/
-// collections over the cap. Acceptable for a soft monetization limit (not a
-// security boundary); closing the gap fully would require making the count
-// check and the write atomic at the call site, which is out of scope here.
-export async function isAtItemLimit(isPro: boolean): Promise<boolean> {
-  if (isPro) return false;
-  const { total } = await getItemStats();
-  return total >= FREE_TIER_ITEM_LIMIT;
+// Thrown by items-mutations.ts's createItem when the atomic, in-transaction
+// count check (SERIALIZABLE isolation, closing the race isAtItemLimit alone
+// can't) rejects a free user's item. The action layer catches this by type
+// to surface the upgrade-prompt message.
+export class ItemLimitExceededError extends Error {
+  constructor() {
+    super(`Free plan is limited to ${FREE_TIER_ITEM_LIMIT} items`);
+    this.name = "ItemLimitExceededError";
+  }
 }
 
-export async function isAtCollectionLimit(isPro: boolean): Promise<boolean> {
-  if (isPro) return false;
-  const { total } = await getCollectionStats();
-  return total >= FREE_TIER_COLLECTION_LIMIT;
+// Same shape as ItemLimitExceededError, thrown by collections.ts's
+// createCollection.
+export class CollectionLimitExceededError extends Error {
+  constructor() {
+    super(`Free plan is limited to ${FREE_TIER_COLLECTION_LIMIT} collections`);
+    this.name = "CollectionLimitExceededError";
+  }
 }

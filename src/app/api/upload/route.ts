@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { validateFile, sanitizeFileName, type UploadKind } from "@/lib/file-constraints";
 import { buildObjectKey, buildPublicUrl, uploadToR2 } from "@/lib/r2";
 import { checkRateLimit, rateLimitMessage, retryAfterSeconds } from "@/lib/rate-limit";
+import { isProOnlyItemType } from "@/lib/subscription-limits";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -32,6 +33,13 @@ export async function POST(request: Request) {
 
   if (validationError) {
     return NextResponse.json({ success: false, error: validationError }, { status: 400 });
+  }
+
+  if (isProOnlyItemType(kind) && !session.user.isPro) {
+    return NextResponse.json(
+      { success: false, error: `Upgrade to Pro to upload ${kind}s.` },
+      { status: 403 }
+    );
   }
 
   const sanitizedName = sanitizeFileName(file.name);

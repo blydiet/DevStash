@@ -6,6 +6,7 @@ import {
   toggleItemPin,
   updateItem,
 } from "@/actions/items";
+import { ItemLimitExceededError } from "@/lib/subscription-limits";
 
 const {
   authMock,
@@ -83,7 +84,7 @@ describe("createItem", () => {
   });
 
   it("rejects an empty title via schema validation before touching the DB", async () => {
-    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: true } });
 
     const result = await createItem({ ...validCreateData, title: "  " });
 
@@ -92,7 +93,7 @@ describe("createItem", () => {
   });
 
   it("rejects a link item with no URL via schema validation", async () => {
-    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: true } });
 
     const result = await createItem({ ...validCreateData, type: "link", url: null });
 
@@ -101,7 +102,7 @@ describe("createItem", () => {
   });
 
   it("rejects an image item with no fileUrl via schema validation", async () => {
-    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: true } });
 
     const result = await createItem({ ...validCreateData, type: "image", fileUrl: null });
 
@@ -109,8 +110,61 @@ describe("createItem", () => {
     expect(createItemInDbMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a free user creating a Pro-only item type (image), before touching the DB", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: false } });
+
+    const result = await createItem({
+      ...validCreateData,
+      type: "image",
+      content: null,
+      fileUrl: "https://public.example/user-1/abc-photo.png",
+      fileName: "photo.png",
+      fileSize: 1024,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Upgrade to Pro to create file and image items.",
+    });
+    expect(getItemTypeByNameMock).not.toHaveBeenCalled();
+    expect(createItemInDbMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a free user creating a Pro-only item type (file), before touching the DB", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: false } });
+
+    const result = await createItem({
+      ...validCreateData,
+      type: "file",
+      content: null,
+      fileUrl: "https://public.example/user-1/doc.pdf",
+      fileName: "doc.pdf",
+      fileSize: 2048,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Upgrade to Pro to create file and image items.",
+    });
+    expect(createItemInDbMock).not.toHaveBeenCalled();
+  });
+
+  it("maps ItemLimitExceededError from the DB layer to the upgrade-prompt message", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: false } });
+    const type = { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" };
+    getItemTypeByNameMock.mockResolvedValue(type);
+    createItemInDbMock.mockRejectedValue(new ItemLimitExceededError());
+
+    const result = await createItem(validCreateData);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Free plan is limited to 50 items. Upgrade to Pro for unlimited items.",
+    });
+  });
+
   it("reports an error when the type doesn't resolve to a system item type", async () => {
-    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: true } });
     getItemTypeByNameMock.mockResolvedValue(null);
 
     const result = await createItem(validCreateData);
@@ -120,7 +174,7 @@ describe("createItem", () => {
   });
 
   it("returns the created item on success", async () => {
-    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: true } });
     const type = { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" };
     getItemTypeByNameMock.mockResolvedValue(type);
     const created = { id: "item-1", title: "New Snippet" };
@@ -128,12 +182,12 @@ describe("createItem", () => {
 
     const result = await createItem(validCreateData);
 
-    expect(createItemInDbMock).toHaveBeenCalledWith({ ...validCreateData, type });
+    expect(createItemInDbMock).toHaveBeenCalledWith({ ...validCreateData, type, isPro: true });
     expect(result).toEqual({ success: true, data: created });
   });
 
-  it("reports a generic failure instead of throwing when the DB layer throws", async () => {
-    authMock.mockResolvedValue({ user: { id: "user-1" } });
+  it("reports a generic failure instead of throwing when the DB layer throws a non-limit error", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: true } });
     const type = { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" };
     getItemTypeByNameMock.mockResolvedValue(type);
     createItemInDbMock.mockRejectedValue(new Error("db down"));
@@ -142,15 +196,15 @@ describe("createItem", () => {
     const result = await createItem(validCreateData);
 
     expect(getItemTypeByNameMock).toHaveBeenCalledWith(validCreateData.type);
-    expect(createItemInDbMock).toHaveBeenCalledWith({ ...validCreateData, type });
+    expect(createItemInDbMock).toHaveBeenCalledWith({ ...validCreateData, type, isPro: true });
     expect(result).toEqual({ success: false, error: "Failed to create item" });
     expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to create item:", expect.any(Error));
 
     consoleErrorSpy.mockRestore();
   });
 
-  it("creates an image item that has a fileUrl", async () => {
-    authMock.mockResolvedValue({ user: { id: "user-1" } });
+  it("creates an image item that has a fileUrl (Pro user, Pro-only type)", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1", isPro: true } });
     const type = { id: "type-image", name: "image", icon: "Image", color: "#ec4899" };
     getItemTypeByNameMock.mockResolvedValue(type);
     const created = { id: "item-1", title: "Photo" };
@@ -167,7 +221,7 @@ describe("createItem", () => {
 
     const result = await createItem(data);
 
-    expect(createItemInDbMock).toHaveBeenCalledWith({ ...data, type });
+    expect(createItemInDbMock).toHaveBeenCalledWith({ ...data, type, isPro: true });
     expect(result).toEqual({ success: true, data: created });
   });
 });

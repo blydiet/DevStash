@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/db/user";
 import { clampPage, COLLECTIONS_PER_PAGE, DASHBOARD_COLLECTIONS_LIMIT, getTotalPages } from "@/lib/pagination";
+import { CollectionLimitExceededError, FREE_TIER_COLLECTION_LIMIT } from "@/lib/subscription-limits";
+import { withSerializableRetry } from "@/lib/db/with-serializable-retry";
 import {cache} from "react";
 
 
@@ -31,6 +33,7 @@ export interface CollectionStats {
 export interface CreateCollectionInput {
   name: string;
   description: string | null;
+  isPro: boolean;
 }
 
 export interface CollectionOption {
@@ -50,9 +53,28 @@ export const getAllCollections = cache(async (): Promise<CollectionOption[]> => 
 export async function createCollection(data: CreateCollectionInput): Promise<CollectionSummary> {
   const userId = await getCurrentUserId();
 
-  const collection = await prisma.collection.create({
-    data: { name: data.name, description: data.description, userId },
-  });
+  const collection = await withSerializableRetry(() =>
+    prisma.$transaction(
+      async (tx) => {
+        // Counted inside the same transaction as the insert below, under
+        // SERIALIZABLE isolation — same atomic-limit-check shape as
+        // items-mutations.ts's createItem, closing the identical
+        // count-then-insert race for collections. withSerializableRetry
+        // retries the (rare) genuine write-conflict case.
+        if (!data.isPro) {
+          const collectionCount = await tx.collection.count({ where: { userId } });
+          if (collectionCount >= FREE_TIER_COLLECTION_LIMIT) {
+            throw new CollectionLimitExceededError();
+          }
+        }
+
+        return tx.collection.create({
+          data: { name: data.name, description: data.description, userId },
+        });
+      },
+      { isolationLevel: "Serializable" }
+    )
+  );
 
   return {
     id: collection.id,

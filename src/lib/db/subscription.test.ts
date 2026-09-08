@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AccountNotFoundError, getBillingInfo, getOrCreateStripeCustomerId } from "@/lib/db/subscription";
+import {
+  AccountNotFoundError,
+  getBillingInfo,
+  getOrCreateStripeCustomerId,
+  isAtCollectionLimit,
+  isAtItemLimit,
+} from "@/lib/db/subscription";
+import { FREE_TIER_COLLECTION_LIMIT, FREE_TIER_ITEM_LIMIT } from "@/lib/subscription-limits";
 
-const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
+const { getCurrentUserIdMock, prismaMock, getItemStatsMock, getCollectionStatsMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
   prismaMock: {
     user: {
@@ -10,6 +17,8 @@ const { getCurrentUserIdMock, prismaMock } = vi.hoisted(() => ({
       updateMany: vi.fn(),
     },
   },
+  getItemStatsMock: vi.fn(),
+  getCollectionStatsMock: vi.fn(),
 }));
 
 vi.mock("@/lib/db/user", () => ({
@@ -18,6 +27,14 @@ vi.mock("@/lib/db/user", () => ({
 
 vi.mock("@/lib/prisma", () => ({
   prisma: prismaMock,
+}));
+
+vi.mock("@/lib/db/item-metadata", () => ({
+  getItemStats: getItemStatsMock,
+}));
+
+vi.mock("@/lib/db/collections", () => ({
+  getCollectionStats: getCollectionStatsMock,
 }));
 
 beforeEach(() => {
@@ -113,5 +130,49 @@ describe("getOrCreateStripeCustomerId", () => {
     expect(consoleErrorSpy).toHaveBeenCalled();
 
     consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("isAtItemLimit", () => {
+  it("always returns false for a Pro user, without querying stats", async () => {
+    await expect(isAtItemLimit(true)).resolves.toBe(false);
+    expect(getItemStatsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns false when a free user is below the limit", async () => {
+    getItemStatsMock.mockResolvedValue({ total: FREE_TIER_ITEM_LIMIT - 1, favorites: 0 });
+    await expect(isAtItemLimit(false)).resolves.toBe(false);
+  });
+
+  it("returns true when a free user is exactly at the limit", async () => {
+    getItemStatsMock.mockResolvedValue({ total: FREE_TIER_ITEM_LIMIT, favorites: 0 });
+    await expect(isAtItemLimit(false)).resolves.toBe(true);
+  });
+
+  it("returns true when a free user is above the limit", async () => {
+    getItemStatsMock.mockResolvedValue({ total: FREE_TIER_ITEM_LIMIT + 1, favorites: 0 });
+    await expect(isAtItemLimit(false)).resolves.toBe(true);
+  });
+});
+
+describe("isAtCollectionLimit", () => {
+  it("always returns false for a Pro user, without querying stats", async () => {
+    await expect(isAtCollectionLimit(true)).resolves.toBe(false);
+    expect(getCollectionStatsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns false when a free user is below the limit", async () => {
+    getCollectionStatsMock.mockResolvedValue({ total: FREE_TIER_COLLECTION_LIMIT - 1, favorites: 0 });
+    await expect(isAtCollectionLimit(false)).resolves.toBe(false);
+  });
+
+  it("returns true when a free user is exactly at the limit", async () => {
+    getCollectionStatsMock.mockResolvedValue({ total: FREE_TIER_COLLECTION_LIMIT, favorites: 0 });
+    await expect(isAtCollectionLimit(false)).resolves.toBe(true);
+  });
+
+  it("returns true when a free user is above the limit", async () => {
+    getCollectionStatsMock.mockResolvedValue({ total: FREE_TIER_COLLECTION_LIMIT + 1, favorites: 0 });
+    await expect(isAtCollectionLimit(false)).resolves.toBe(true);
   });
 });
