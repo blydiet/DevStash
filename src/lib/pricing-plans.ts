@@ -1,4 +1,8 @@
-import { FREE_TIER_COLLECTION_LIMIT, FREE_TIER_ITEM_LIMIT } from "@/lib/subscription-limits";
+import {
+  FREE_TIER_COLLECTION_LIMIT,
+  FREE_TIER_ITEM_LIMIT,
+  PRO_ONLY_ITEM_TYPES,
+} from "@/lib/subscription-limits";
 
 // Shared between the homepage pricing section and the dashboard's /upgrade
 // page so the two feature lists can't drift apart. The item/collection
@@ -28,3 +32,12 @@ export const PRO_MONTHLY_PRICE = "$8";
 export const PRO_YEARLY_MONTHLY_EQUIVALENT = "$6";
 export const PRO_YEARLY_TOTAL = "$72";
 export const PRO_YEARLY_SAVINGS_PERCENT = 25;
+
+// Shown on /upgrade when a Pro-only item page (`/items/file`, `/items/image`)
+// redirects a free user here, so the "why am I here" context from the old
+// inline ProUpgradeNotice isn't lost. Keyed by PRO_ONLY_ITEM_TYPES itself so
+// a future addition to that list fails to compile without matching copy.
+export const PRO_FEATURE_UPGRADE_CONTEXT: Record<(typeof PRO_ONLY_ITEM_TYPES)[number], string> = {
+  file: "Files are a Pro feature.",
+  image: "Images are a Pro feature.",
+};

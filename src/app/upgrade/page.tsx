@@ -5,8 +5,27 @@ import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradePricing } from "@/components/upgrade/UpgradePricing";
 import { createCheckoutSession } from "@/actions/billing";
 import { getBillingInfo } from "@/lib/db/subscription";
+import { PRO_FEATURE_UPGRADE_CONTEXT } from "@/lib/pricing-plans";
+import { isProOnlyItemType } from "@/lib/subscription-limits";
 
-export default async function UpgradePage() {
+export default async function UpgradePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ feature?: string }>;
+}) {
+  // `feature` is untrusted query input. `isProOnlyItemType` does a real
+  // runtime membership check (not just a TS type predicate) against the
+  // fixed PRO_ONLY_ITEM_TYPES list, and even then only the looked-up,
+  // hardcoded copy from PRO_FEATURE_UPGRADE_CONTEXT is ever rendered — the
+  // raw query value itself never reaches the page. A missing or
+  // unrecognized `feature` (no param, a garbage value, a future item type
+  // not yet in the list) silently falls back to `null` — the plain generic
+  // page, which is also what every non-redirect visitor to /upgrade
+  // (header nav button, Settings' Billing card) already sees.
+  const { feature } = await searchParams;
+  const featureContext =
+    feature && isProOnlyItemType(feature) ? PRO_FEATURE_UPGRADE_CONTEXT[feature] : null;
+
   let isPro = false;
   let hasError = false;
 
@@ -46,6 +65,9 @@ export default async function UpgradePage() {
       <div className="flex min-h-full flex-col items-center">
         <div className="my-auto flex flex-col items-center gap-8 text-center">
           <div>
+            {featureContext && (
+              <p className="text-sm text-muted-foreground">{featureContext}</p>
+            )}
             <h1 className="text-3xl font-bold">Upgrade to Pro</h1>
             <p className="text-muted-foreground">
               Unlimited items and collections, file uploads, and AI features.

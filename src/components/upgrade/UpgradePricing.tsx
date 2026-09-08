@@ -71,8 +71,7 @@ export function UpgradePricing({
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-visible rounded-[10px] ring-2 ring-primary">
-          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 uppercase">Most popular</Badge>
+        <Card className="relative rounded-[10px] ring-2 ring-primary">
           <CardHeader>
             <CardTitle>Pro</CardTitle>
             <p className="mt-2 flex items-baseline justify-center gap-1">
@@ -93,7 +92,7 @@ export function UpgradePricing({
             <div className="flex flex-col gap-2">
               <form action={formAction}>
                 <Button type="submit" className="w-full rounded-[5px]" disabled={isPending}>
-                  {isPending ? "Redirecting..." : `Upgrade to Pro - ${proPrice}/mo`}
+                  {isPending ? "Redirecting..." : "Upgrade to Pro"}
                 </Button>
               </form>
               {!state.success && state.error && (
