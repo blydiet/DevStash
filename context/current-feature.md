@@ -2,21 +2,15 @@
 
 ## Status
 
-Complete
+<!-- Not Started | In Progress | Complete -->
 
 ## Goals
 
-- Free users see an "Upgrade" button in the dashboard header (TopBar), styled as a subtle ghost button (more subdued than the existing New Collection/New Item buttons).
-- Clicking it goes to a new `/upgrade` page, not straight to Stripe checkout.
-- `/upgrade` shows Free vs Pro plans with feature lists, similar to the homepage's pricing section.
-- User can toggle Monthly ($8/mo) vs Yearly ($72/yr) and then click a single button to start checkout for the selected period.
-- Pro users don't see the Upgrade button, and shouldn't land on a meaningful `/upgrade` page if they navigate there directly.
+<!-- Bullet points of what success looks like -->
 
 ## Notes
 
-- Reuses the existing `createCheckoutSession` server action and `getBillingInfo` from Stripe Phase 1/2 — no new Stripe wiring needed.
-- Existing Settings page billing card (`BillingSettings`/`BillingActions`) is untouched/out of scope; this only changes the header nav entry point.
-- Free/Pro feature list text should be a single shared source so the homepage pricing section and `/upgrade` can't drift apart.
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
 
