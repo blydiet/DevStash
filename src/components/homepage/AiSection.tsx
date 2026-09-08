@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { Reveal } from "@/components/homepage/Reveal";
 import { ITEM_TYPES } from "@/lib/item-types";
@@ -48,74 +49,20 @@ export function AiSection() {
 
         <Reveal className="min-w-0">
           <div className="overflow-hidden rounded-[14px] border border-[var(--hp-border)] bg-[#0d0d11] shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
-            <div className="flex items-center gap-[7px] border-b border-[var(--hp-border)] px-4 py-3">
-              <span className="size-2.5 rounded-full bg-[#ff5f56]" />
-              <span className="size-2.5 rounded-full bg-[#ffbd2e]" />
-              <span className="size-2.5 rounded-full bg-[#27c93f]" />
-              <span className="font-mono-hp ml-2 text-xs text-[var(--hp-text-tertiary)]">
-                use-debounce.ts
-              </span>
-            </div>
-            <pre className="font-mono-hp overflow-x-auto p-5 text-[0.8125rem] leading-[1.7] text-[var(--hp-text-secondary)]">
-              <code>
-                <span className="text-[#ec4899]">export function</span>{" "}
-                <span className="text-[var(--hp-accent)]">useDebounce</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"<"}</span>
-                <span className="text-[#06b6d4]">T</span>
-                <span className="text-[var(--hp-text-tertiary)]">{">("}</span>
-                <span className="text-[var(--hp-text-primary)]">value</span>
-                <span className="text-[var(--hp-text-tertiary)]">{":"}</span> <span className="text-[#06b6d4]">T</span>
-                <span className="text-[var(--hp-text-tertiary)]">{","}</span>{" "}
-                <span className="text-[var(--hp-text-primary)]">delay</span>
-                <span className="text-[var(--hp-text-tertiary)]">{":"}</span>{" "}
-                <span className="text-[#06b6d4]">number</span>
-                <span className="text-[var(--hp-text-tertiary)]">{") {"}</span>
-                {"\n  "}
-                <span className="text-[#ec4899]">const</span> [
-                <span className="text-[var(--hp-text-primary)]">debounced</span>
-                <span className="text-[var(--hp-text-tertiary)]">{","}</span>{" "}
-                <span className="text-[var(--hp-text-primary)]">setDebounced</span>]{" "}
-                <span className="text-[var(--hp-text-tertiary)]">{"="}</span>{" "}
-                <span className="text-[var(--hp-accent)]">useState</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"("}</span>
-                <span className="text-[var(--hp-text-primary)]">value</span>
-                <span className="text-[var(--hp-text-tertiary)]">{");"}</span>
-                {"\n\n  "}
-                <span className="text-[var(--hp-accent)]">useEffect</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"(() => {"}</span>
-                {"\n    "}
-                <span className="text-[#ec4899]">const</span>{" "}
-                <span className="text-[var(--hp-text-primary)]">id</span>{" "}
-                <span className="text-[var(--hp-text-tertiary)]">{"="}</span>{" "}
-                <span className="text-[var(--hp-accent)]">setTimeout</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"(() =>"}</span>{" "}
-                <span className="text-[var(--hp-accent)]">setDebounced</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"("}</span>
-                <span className="text-[var(--hp-text-primary)]">value</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"),"}</span>{" "}
-                <span className="text-[var(--hp-text-primary)]">delay</span>
-                <span className="text-[var(--hp-text-tertiary)]">{");"}</span>
-                {"\n    "}
-                <span className="text-[#ec4899]">return</span>{" "}
-                <span className="text-[var(--hp-text-tertiary)]">{"() =>"}</span>{" "}
-                <span className="text-[var(--hp-accent)]">clearTimeout</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"("}</span>
-                <span className="text-[var(--hp-text-primary)]">id</span>
-                <span className="text-[var(--hp-text-tertiary)]">{");"}</span>
-                {"\n  "}
-                <span className="text-[var(--hp-text-tertiary)]">{"}, ["}</span>
-                <span className="text-[var(--hp-text-primary)]">value</span>
-                <span className="text-[var(--hp-text-tertiary)]">{","}</span>{" "}
-                <span className="text-[var(--hp-text-primary)]">delay</span>
-                <span className="text-[var(--hp-text-tertiary)]">{"]);"}</span>
-                {"\n\n  "}
-                <span className="text-[#ec4899]">return</span>{" "}
-                <span className="text-[var(--hp-text-primary)]">debounced</span>
-                <span className="text-[var(--hp-text-tertiary)]">{";"}</span>
-                {"\n"}
-                <span className="text-[var(--hp-text-tertiary)]">{"}"}</span>
-              </code>
-            </pre>
+            {/* A real screenshot of this app's own CodeEditor component
+                (Monaco, real syntax highlighting) rendering the actual
+                seeded "useDebounce Hook" snippet — not a hand-built fake
+                editor. Loading the real Monaco-backed component live on
+                the public marketing page isn't worth the bundle weight for
+                a below-the-fold visual, so a static capture stands in for
+                it instead. */}
+            <Image
+              src="/homepage/ai-code-preview.png"
+              alt="DevStash's code editor showing a TypeScript useDebounce hook"
+              width={768}
+              height={330}
+              className="h-auto w-full"
+            />
             <div
               className="flex flex-wrap items-center gap-2 border-t border-[var(--hp-border)] px-5 pt-3.5 pb-5"
               aria-label="AI generated tags"

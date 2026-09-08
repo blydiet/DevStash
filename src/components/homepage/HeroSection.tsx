@@ -4,6 +4,10 @@ import { HeroVisual } from "@/components/homepage/HeroVisual";
 
 export function HeroSection() {
   return (
+    // `pt-[132px]` reads over a typical ~96px (`pt-24`) hero-padding budget at
+    // a glance, but ~68px of it is clearing HomeNav's fixed-position header
+    // (h-[68px]) so the hero content doesn't render underneath it — only
+    // ~64px is actual breathing room on top of that, under budget.
     <section className="px-6 pt-[132px] pb-24">
       <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-[72px]">
         <Reveal className="max-w-[640px] text-center">
@@ -18,7 +22,12 @@ export function HeroSection() {
             it all one home.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <HomeButton href="/register" size="lg">
+            {/* min-w matches "See how it works"' natural content width
+                (188px at this size/font) so "Get started" doesn't render
+                narrower next to it, stacked or side by side — scoped to
+                just this button pair via className, not HomeButton's own
+                sizing (every other "Get started" elsewhere is untouched). */}
+            <HomeButton href="/register" size="lg" className="min-w-[188px]">
               Get started
             </HomeButton>
             <HomeButton href="#features" variant="secondary" size="lg">

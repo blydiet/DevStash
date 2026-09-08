@@ -31,24 +31,23 @@ export function PriceCard({
   return (
     <div
       ref={ref}
-      className={`relative rounded-[14px] border p-8 ${
+      className={`relative flex h-full flex-col rounded-[14px] border p-8 ${
         highlight
           ? "border-[var(--hp-accent)] bg-gradient-to-b from-[color-mix(in_srgb,var(--hp-accent)_8%,var(--hp-bg-card))] to-[var(--hp-bg-card)] shadow-[0_24px_60px_rgba(59,130,246,0.18)]"
           : "border-[var(--hp-border)] bg-[var(--hp-bg-card)]"
       }`}
     >
-      {highlight && (
-        <span className="font-mono-hp absolute -top-[13px] left-8 rounded-full bg-[var(--hp-accent-solid)] px-3 py-[5px] text-[0.6875rem] tracking-[0.06em] text-white uppercase">
-          Most popular
-        </span>
-      )}
       <h3 className="mb-4 text-[1.0625rem] font-semibold text-[var(--hp-text-secondary)]">{name}</h3>
       <p className="mb-1 flex items-baseline gap-1">
         <span className="text-[2.75rem] leading-none font-bold tracking-tight">{price}</span>
         {period && <span className="text-[0.9375rem] text-[var(--hp-text-tertiary)]">{period}</span>}
       </p>
       <p className="mb-6 text-sm text-[var(--hp-text-tertiary)]">{note}</p>
-      <ul className="mb-7 flex flex-col gap-3">
+      {/* flex-1 absorbs the grid's stretched height (Free's shorter list vs
+          Pro's longer one), so the CTA below always lands at the same
+          bottom position on both cards instead of trailing right after a
+          shorter list. */}
+      <ul className="mb-7 flex flex-1 flex-col gap-3">
         {features.map((feature) => (
           <li
             key={feature}
