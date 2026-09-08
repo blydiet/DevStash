@@ -36,7 +36,7 @@ export function HomeButton({ href, variant = "primary", size = "default", classN
       ref={ref}
       href={href}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-medium whitespace-nowrap transition-colors duration-200 active:scale-97",
+        "inline-flex items-center justify-center gap-2 rounded-[10px] font-medium whitespace-nowrap transition-colors duration-200 active:scale-97",
         VARIANT_CLASSES[variant],
         SIZE_CLASSES[size],
         className,
