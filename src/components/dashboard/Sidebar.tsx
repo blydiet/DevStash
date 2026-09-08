@@ -19,6 +19,7 @@ import { iconMap } from "@/lib/icon-map";
 import type { ItemTypeWithCount } from "@/lib/db/item-metadata";
 import type { CollectionSummary } from "@/lib/db/collections";
 import type { CurrentUser } from "@/lib/db/user";
+import { isProOnlyItemType } from "@/lib/subscription-limits";
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -111,7 +112,7 @@ export function Sidebar({
                     <span className="flex items-center gap-2">
                       <Icon className="size-4" style={{ color: type.color ?? undefined }} />
                       {capitalize(type.name)}
-                      {(type.name === "file" || type.name === "image") && (
+                      {isProOnlyItemType(type.name) && (
                         <Badge variant="outline" className="uppercase">
                           Pro
                         </Badge>

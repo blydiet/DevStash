@@ -1,16 +1,37 @@
+import { auth } from "@/auth";
 import { AddTypeItemButton } from "@/components/dashboard/AddTypeItemButton";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { ItemsGrid } from "@/components/dashboard/ItemsGrid";
+import { ProUpgradeNotice } from "@/components/dashboard/ProUpgradeNotice";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
 import type { ItemTypeSummary } from "@/lib/db/items-queries";
 import { ITEM_TYPES } from "@/lib/item-types";
 import { parsePageParam } from "@/lib/pagination";
+import { PRO_ONLY_ITEM_TYPES, isProOnlyItemType } from "@/lib/subscription-limits";
 
 function formatTypeLabel(name: string) {
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}s`;
 }
+
+// Pre-composed per-type copy (rather than deriving it, e.g. via
+// .toLowerCase()) so the strings stay grammatically exact. Keyed by
+// PRO_ONLY_ITEM_TYPES itself (not a plain `string` index) so TypeScript
+// forces a matching entry here if that list ever grows.
+const PRO_UPGRADE_COPY: Record<
+  (typeof PRO_ONLY_ITEM_TYPES)[number],
+  { title: string; description: string }
+> = {
+  file: {
+    title: "Files are a Pro feature",
+    description: "Upgrade to Pro to start uploading and organizing files.",
+  },
+  image: {
+    title: "Images are a Pro feature",
+    description: "Upgrade to Pro to start uploading and organizing images.",
+  },
+};
 
 export default async function ItemsByTypePage({
   params,
@@ -36,6 +57,11 @@ export default async function ItemsByTypePage({
     ? ITEM_TYPES.find((candidate) => candidate.value === itemType.name)
     : undefined;
 
+  const session = await auth();
+  const upgradeCopy =
+    itemType && isProOnlyItemType(itemType.name) ? PRO_UPGRADE_COPY[itemType.name] : undefined;
+  const isLocked = Boolean(upgradeCopy) && !session?.user?.isPro;
+
   return (
     <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
       <div className="flex flex-col gap-8">
@@ -50,7 +76,7 @@ export default async function ItemsByTypePage({
                 : "Browse items by type"}
             </p>
           </div>
-          {creatableType && (
+          {creatableType && !isLocked && (
             <AddTypeItemButton type={creatableType.value} label={creatableType.label} />
           )}
         </div>
@@ -63,7 +89,11 @@ export default async function ItemsByTypePage({
           <p className="text-sm text-muted-foreground">No such item type.</p>
         )}
 
-        {itemType && <ItemsGrid typeName={itemType.name} page={currentPage} />}
+        {itemType && isLocked && upgradeCopy && (
+          <ProUpgradeNotice title={upgradeCopy.title} description={upgradeCopy.description} />
+        )}
+
+        {itemType && !isLocked && <ItemsGrid typeName={itemType.name} page={currentPage} />}
       </div>
     </DashboardShell>
   );

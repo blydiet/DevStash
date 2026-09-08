@@ -5,7 +5,9 @@ export const FREE_TIER_COLLECTION_LIMIT = 3;
 // See docs/stripe-integration-plan.md §2. Don't second-guess mid-implementation.
 export const PRO_ONLY_ITEM_TYPES = ["file", "image"] as const;
 
-export function isProOnlyItemType(typeName: string): boolean {
+export function isProOnlyItemType(
+  typeName: string
+): typeName is (typeof PRO_ONLY_ITEM_TYPES)[number] {
   return (PRO_ONLY_ITEM_TYPES as readonly string[]).includes(typeName);
 }
 
