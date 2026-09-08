@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { BeforeMount, Monaco, OnMount } from "@monaco-editor/react";
-import { Check, Copy, Maximize2, Minimize2, XIcon } from "lucide-react";
+import { Check, Copy, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import VisuallyHidden from "@/components/VisuallyHidden/VisuallyHidden";
