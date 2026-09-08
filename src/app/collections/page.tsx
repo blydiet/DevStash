@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { PaginationControls } from "@/components/dashboard/PaginationControls";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
+import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getCollectionsPage, type CollectionSummary } from "@/lib/db/collections";
 import { COLLECTIONS_PER_PAGE, getTotalPages, parsePageParam } from "@/lib/pagination";
 
@@ -31,7 +32,11 @@ export default async function CollectionsPage({
   const totalPages = getTotalPages(totalCount, COLLECTIONS_PER_PAGE);
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
+    <DashboardShell
+      sidebar={<SidebarContainer />}
+      search={<GlobalSearchContainer />}
+      upgradeButton={<UpgradeNavButton />}
+    >
       <div className="flex flex-col gap-8">
         <div>
           <h1 className="text-3xl font-bold">Collections</h1>

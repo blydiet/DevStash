@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { FavoritesList } from "@/components/dashboard/FavoritesList";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
+import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getFavoriteCollections, type FavoriteCollection } from "@/lib/db/collections";
 import { getFavoriteItems, type FavoriteItem } from "@/lib/db/items-queries";
 
@@ -37,7 +38,11 @@ export default async function FavoritesPage() {
     collectionsResult.status === "fulfilled" ? collectionsResult.value : [];
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
+    <DashboardShell
+      sidebar={<SidebarContainer />}
+      search={<GlobalSearchContainer />}
+      upgradeButton={<UpgradeNavButton />}
+    >
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-3xl font-bold">Favorites</h1>

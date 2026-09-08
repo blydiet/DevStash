@@ -5,10 +5,15 @@ import { RecentCollections } from "@/components/dashboard/RecentCollections";
 import { RecentItems } from "@/components/dashboard/RecentItems";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 
 export default async function DashboardPage() {
   return (
-    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
+    <DashboardShell
+      sidebar={<SidebarContainer />}
+      search={<GlobalSearchContainer />}
+      upgradeButton={<UpgradeNavButton />}
+    >
       <div className="flex flex-col gap-8">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>

@@ -3,6 +3,7 @@ import { CollectionItemsGrid } from "@/components/dashboard/CollectionItemsGrid"
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
+import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getCollectionById, type CollectionDetail } from "@/lib/db/collections";
 import { parsePageParam } from "@/lib/pagination";
 
@@ -27,7 +28,11 @@ export default async function CollectionDetailPage({
   }
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
+    <DashboardShell
+      sidebar={<SidebarContainer />}
+      search={<GlobalSearchContainer />}
+      upgradeButton={<UpgradeNavButton />}
+    >
       <div className="flex flex-col gap-8">
         <div className="flex items-start justify-between gap-4">
           <div>

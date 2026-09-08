@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { PRO_MONTHLY_PRICE, PRO_YEARLY_TOTAL } from "@/lib/pricing-plans";
 import type { CreateCheckoutSessionResult, CreatePortalSessionResult } from "@/types/billing";
 
 const idleCheckoutState: CreateCheckoutSessionResult = { success: true };
@@ -58,8 +59,13 @@ export function UpgradeButtons({
 }) {
   return (
     <div className="flex flex-wrap justify-center gap-3">
-      <UpgradeButton action={action} period="monthly" label="Upgrade - $8/mo" />
-      <UpgradeButton action={action} period="yearly" label="Upgrade - $72/yr" variant="outline" />
+      <UpgradeButton action={action} period="monthly" label={`Upgrade - ${PRO_MONTHLY_PRICE}/mo`} />
+      <UpgradeButton
+        action={action}
+        period="yearly"
+        label={`Upgrade - ${PRO_YEARLY_TOTAL}/yr`}
+        variant="outline"
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ export const proxy = auth((req) => {
     req.nextUrl.pathname.startsWith("/profile") ||
     req.nextUrl.pathname.startsWith("/settings") ||
     req.nextUrl.pathname.startsWith("/favorites") ||
+    req.nextUrl.pathname.startsWith("/upgrade") ||
     req.nextUrl.pathname.startsWith("/items/") ||
     req.nextUrl.pathname === "/collections" ||
     req.nextUrl.pathname.startsWith("/collections/");
@@ -27,6 +28,7 @@ export const config = {
     "/profile/:path*",
     "/settings/:path*",
     "/favorites/:path*",
+    "/upgrade/:path*",
     "/items/:path*",
     "/collections/:path*",
   ],

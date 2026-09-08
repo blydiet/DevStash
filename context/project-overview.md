@@ -246,8 +246,8 @@ model ItemTag {
 
 | Plan     | Price           | Limits                  | Features                                        |
 | -------- | --------------- | ----------------------- | ----------------------------------------------- |
-| **Free** | $0              | 50 items, 3 collections | Basic search, image uploads, no AI              |
-| **Pro**  | $8/mo or $72/yr | Unlimited               | File uploads, custom types, AI features, export |
+| **Free** | $0              | 50 items, 3 collections | Basic search, no AI                                    |
+| **Pro**  | $8/mo or $72/yr | Unlimited               | File & image uploads, custom types, AI features, export |
 
 > Stripe handles subscriptions; webhooks keep `isPro` / subscription status in sync with the database.
 

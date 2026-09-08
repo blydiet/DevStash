@@ -5,6 +5,7 @@ import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContai
 import { ItemsGrid } from "@/components/dashboard/ItemsGrid";
 import { ProUpgradeNotice } from "@/components/dashboard/ProUpgradeNotice";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
+import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
 import type { ItemTypeSummary } from "@/lib/db/items-queries";
 import { ITEM_TYPES } from "@/lib/item-types";
@@ -63,7 +64,11 @@ export default async function ItemsByTypePage({
   const isLocked = Boolean(upgradeCopy) && !session?.user?.isPro;
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
+    <DashboardShell
+      sidebar={<SidebarContainer />}
+      search={<GlobalSearchContainer />}
+      upgradeButton={<UpgradeNavButton />}
+    >
       <div className="flex flex-col gap-8">
         <div className="flex items-start justify-between gap-4">
           <div>

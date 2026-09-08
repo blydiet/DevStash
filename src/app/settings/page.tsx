@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
+import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { AccountActions } from "@/components/profile/AccountActions";
 import { BillingSettings } from "@/components/settings/BillingSettings";
 import { EditorPreferencesSettings } from "@/components/settings/EditorPreferencesSettings";
@@ -23,7 +24,11 @@ export default async function SettingsPage() {
   }
 
   return (
-    <DashboardShell sidebar={<SidebarContainer />} search={<GlobalSearchContainer />}>
+    <DashboardShell
+      sidebar={<SidebarContainer />}
+      search={<GlobalSearchContainer />}
+      upgradeButton={<UpgradeNavButton />}
+    >
       <div className="flex flex-col items-center gap-6 text-center">
         <div className="flex w-[300px] flex-col items-start gap-1 text-left md:w-[700px] lg:w-[790px]">
           <h1 className="text-3xl font-bold">Settings</h1>

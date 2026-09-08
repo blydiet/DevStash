@@ -2,22 +2,20 @@
 
 import { useState } from "react";
 import { PriceCard } from "@/components/homepage/PriceCard";
-
-const FREE_FEATURES = ["50 items", "3 collections", "Basic search", "Image uploads"];
-const PRO_FEATURES = [
-  "Unlimited items",
-  "Unlimited collections",
-  "File uploads",
-  "Custom item types",
-  "AI features",
-  "Export",
-];
+import {
+  FREE_PLAN_FEATURES,
+  PRO_PLAN_FEATURES,
+  PRO_MONTHLY_PRICE,
+  PRO_YEARLY_MONTHLY_EQUIVALENT,
+  PRO_YEARLY_SAVINGS_PERCENT,
+  PRO_YEARLY_TOTAL,
+} from "@/lib/pricing-plans";
 
 export function BillingToggle() {
   const [isYearly, setIsYearly] = useState(false);
 
-  const proPrice = isYearly ? "$6" : "$8";
-  const proNote = isYearly ? "billed annually at $72/yr" : "billed monthly";
+  const proPrice = isYearly ? PRO_YEARLY_MONTHLY_EQUIVALENT : PRO_MONTHLY_PRICE;
+  const proNote = isYearly ? `billed annually at ${PRO_YEARLY_TOTAL}/yr` : "billed monthly";
 
   return (
     <div>
@@ -51,7 +49,7 @@ export function BillingToggle() {
         >
           Yearly
           <span className="font-mono-hp rounded-full bg-[rgba(34,197,94,0.12)] px-2 py-0.5 text-[0.6875rem] text-[#22c55e]">
-            save 25%
+            save {PRO_YEARLY_SAVINGS_PERCENT}%
           </span>
         </span>
       </div>
@@ -61,7 +59,7 @@ export function BillingToggle() {
           name="Free"
           price="$0"
           note="forever"
-          features={FREE_FEATURES}
+          features={FREE_PLAN_FEATURES}
           ctaLabel="Get started"
           ctaHref="/register"
         />
@@ -70,7 +68,7 @@ export function BillingToggle() {
           price={proPrice}
           period="/mo"
           note={proNote}
-          features={PRO_FEATURES}
+          features={PRO_PLAN_FEATURES}
           highlight
           ctaLabel="Get started"
           ctaHref="/register"

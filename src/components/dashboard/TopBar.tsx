@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { FolderPlus, Package, PanelLeft, Plus, Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,13 @@ import { CreateItemDialog } from "./CreateItemDialog";
 import { CreateCollectionDialog } from "./CreateCollectionDialog";
 import { useGlobalSearch } from "./GlobalSearchContext";
 
-export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+export function TopBar({
+  onToggleSidebar,
+  upgradeButton,
+}: {
+  onToggleSidebar: () => void;
+  upgradeButton: ReactNode;
+}) {
   const [createItemOpen, setCreateItemOpen] = useState(false);
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
   const { setOpen: setSearchOpen } = useGlobalSearch();
@@ -56,6 +62,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        {upgradeButton}
         <Button
           variant="outline"
           size="icon"

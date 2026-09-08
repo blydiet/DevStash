@@ -11,10 +11,12 @@ import { TopBar } from "./TopBar";
 export function DashboardShell({
   sidebar,
   search,
+  upgradeButton,
   children,
 }: {
   sidebar: ReactNode;
   search: ReactNode;
+  upgradeButton: ReactNode;
   children: ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -49,7 +51,7 @@ export function DashboardShell({
     <EditorPreferencesProvider>
       <GlobalSearchProvider>
         <div className="flex h-full flex-col">
-          <TopBar onToggleSidebar={toggleSidebar} />
+          <TopBar onToggleSidebar={toggleSidebar} upgradeButton={upgradeButton} />
           <div className="flex flex-1 overflow-hidden">
             <aside
               className={cn(
