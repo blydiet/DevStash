@@ -181,57 +181,6 @@ export function chunk<T>(items: T[], size: number): T[][] {
       },
     });
 
-    const aiWorkflows = await prisma.collection.create({
-      data: {
-        userId: user.id,
-        name: "AI Workflows",
-        description: "AI prompts and workflow automations",
-        items: {
-          create: [
-            {
-              item: {
-                create: {
-                  userId: user.id,
-                  typeId: typeIdByName.prompt,
-                  title: "Code Review Prompt",
-                  description: "Prompt template for requesting a thorough code review",
-                  contentType: "text",
-                  content:
-                    "Review the following code for correctness, readability, and potential edge cases. Point out any bugs, suggest simplifications, and flag anything that deviates from the existing patterns in the codebase. Be specific about file and line references.\n\n```\n{code}\n```",
-                },
-              },
-            },
-            {
-              item: {
-                create: {
-                  userId: user.id,
-                  typeId: typeIdByName.prompt,
-                  title: "Documentation Generator Prompt",
-                  description: "Prompt template for generating docs from source code",
-                  contentType: "text",
-                  content:
-                    "Generate concise documentation for the following function or module. Include a one-sentence summary, parameter descriptions, return value, and one usage example. Avoid restating what the code obviously does.\n\n```\n{code}\n```",
-                },
-              },
-            },
-            {
-              item: {
-                create: {
-                  userId: user.id,
-                  typeId: typeIdByName.prompt,
-                  title: "Refactoring Assistant Prompt",
-                  description: "Prompt template for guided refactoring suggestions",
-                  contentType: "text",
-                  content:
-                    "Suggest a refactor for the following code that improves readability and removes duplication, without changing its external behavior. Explain the reasoning behind each change before showing the revised code.\n\n```\n{code}\n```",
-                },
-              },
-            },
-          ],
-        },
-      },
-    });
-
     const devOps = await prisma.collection.create({
       data: {
         userId: user.id,
@@ -377,74 +326,12 @@ volumes:
       },
     });
 
-    const designResources = await prisma.collection.create({
-      data: {
-        userId: user.id,
-        name: "Design Resources",
-        description: "UI/UX resources and references",
-        items: {
-          create: [
-            {
-              item: {
-                create: {
-                  userId: user.id,
-                  typeId: typeIdByName.link,
-                  title: "Tailwind CSS Docs",
-                  description: "Official Tailwind CSS documentation and utility reference",
-                  contentType: "text",
-                  url: "https://tailwindcss.com/docs",
-                },
-              },
-            },
-            {
-              item: {
-                create: {
-                  userId: user.id,
-                  typeId: typeIdByName.link,
-                  title: "shadcn/ui",
-                  description: "Copy-paste component library built on Radix UI and Tailwind",
-                  contentType: "text",
-                  url: "https://ui.shadcn.com",
-                },
-              },
-            },
-            {
-              item: {
-                create: {
-                  userId: user.id,
-                  typeId: typeIdByName.link,
-                  title: "Material Design 3",
-                  description: "Google's Material Design 3 system guidelines",
-                  contentType: "text",
-                  url: "https://m3.material.io",
-                },
-              },
-            },
-            {
-              item: {
-                create: {
-                  userId: user.id,
-                  typeId: typeIdByName.link,
-                  title: "Lucide Icons",
-                  description: "Open-source icon library used throughout this project",
-                  contentType: "text",
-                  url: "https://lucide.dev",
-                },
-              },
-            },
-          ],
-        },
-      },
-    });
-
     const itemCount = await prisma.item.count({ where: { userId: user.id } });
     console.log(
-      `Seeded 1 user, ${itemTypes.length} item types, 5 collections (${[
+      `Seeded 1 user, ${itemTypes.length} item types, 3 collections (${[
         reactPatterns,
-        aiWorkflows,
         devOps,
         terminalCommands,
-        designResources,
       ]
         .map((c) => c.name)
         .join(", ")}), ${itemCount} items.`
