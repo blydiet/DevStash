@@ -4,11 +4,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
+import { LanguageSelect } from "@/components/dashboard/LanguageSelect";
 import { FileUpload, type UploadedFile } from "@/components/dashboard/FileUpload";
 import {
   typeShowsCodeEditor,
   typeShowsContent,
   typeShowsFileUpload,
+  typeShowsLanguage,
   typeShowsMarkdownEditor,
   typeShowsUrl,
 } from "@/lib/item-type-capabilities";
@@ -34,6 +36,7 @@ interface CreateItemFieldsProps {
 export function CreateItemFields({ form, setForm }: CreateItemFieldsProps) {
   const showsUrl = typeShowsUrl(form.type);
   const showsContent = typeShowsContent(form.type);
+  const showsLanguage = typeShowsLanguage(form.type);
   const showsCodeEditor = typeShowsCodeEditor(form.type);
   const showsMarkdownEditor = typeShowsMarkdownEditor(form.type);
   const showsFileUpload = typeShowsFileUpload(form.type);
@@ -49,6 +52,17 @@ export function CreateItemFields({ form, setForm }: CreateItemFieldsProps) {
             onChange={(e) => setForm({ ...form, url: e.target.value })}
             placeholder="https://example.com"
             className="rounded-[5px]"
+          />
+        </div>
+      )}
+
+      {showsContent && showsLanguage && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="item-language">Language</Label>
+          <LanguageSelect
+            id="item-language"
+            value={form.language}
+            onChange={(language) => setForm({ ...form, language })}
           />
         </div>
       )}

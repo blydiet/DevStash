@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
+import { LanguageSelect } from "@/components/dashboard/LanguageSelect";
 import { FileUpload } from "@/components/dashboard/FileUpload";
 import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
 import {
@@ -52,6 +53,16 @@ export function ItemDrawerEditForm({
         />
       </div>
 
+      {showsLanguage && (
+        <div>
+          <h3 className="pb-2 text-sm font-medium text-muted-foreground">Language</h3>
+          <LanguageSelect
+            value={form.language}
+            onChange={(language) => setForm({ ...form, language })}
+          />
+        </div>
+      )}
+
       {showsContent && (
         <div>
           <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
@@ -68,17 +79,6 @@ export function ItemDrawerEditForm({
               onChange={(value) => setForm({ ...form, content: value })}
             />
           ) : null}
-        </div>
-      )}
-
-      {showsLanguage && (
-        <div>
-          <h3 className="pb-2 text-sm font-medium text-muted-foreground">Language</h3>
-          <Input
-            value={form.language}
-            onChange={(e) => setForm({ ...form, language: e.target.value })}
-            placeholder="e.g. typescript"
-          />
         </div>
       )}
 

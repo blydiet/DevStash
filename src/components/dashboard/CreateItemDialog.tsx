@@ -29,7 +29,6 @@ import {
   typeShowsLanguage,
   typeShowsUrl,
 } from "@/lib/item-type-capabilities";
-import { cn } from "@/lib/utils";
 import type { ItemType } from "@/lib/item-types";
 
 const EMPTY_FORM: CreateItemFormState = {
@@ -154,30 +153,15 @@ export function CreateItemDialog({
               <CreateItemFields form={form} setForm={setForm} />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-              {showsLanguage && (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="item-language">Language</Label>
-                  <Input
-                    id="item-language"
-                    value={form.language}
-                    onChange={(e) => setForm({ ...form, language: e.target.value })}
-                    placeholder="e.g. typescript"
-                    className="rounded-[5px]"
-                  />
-                </div>
-              )}
-
-              <div className={cn("flex flex-col gap-1.5", !showsLanguage && "sm:col-span-2")}>
-                <Label htmlFor="item-tags">Tags</Label>
-                <Input
-                  id="item-tags"
-                  value={form.tags}
-                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                  placeholder="react, hooks, custom"
-                  className="rounded-[5px]"
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="item-tags">Tags</Label>
+              <Input
+                id="item-tags"
+                value={form.tags}
+                onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                placeholder="react, hooks, custom"
+                className="rounded-[5px]"
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
