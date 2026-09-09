@@ -214,7 +214,7 @@ export function ItemDrawer({
         {!isLoading && !error && item && (
           <>
             <SheetHeader className="gap-3 border-b border-border">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 pr-8">
                 <div
                   className="flex size-10 shrink-0 items-center justify-center rounded-lg"
                   style={{ backgroundColor: `${item.type.color}1a` }}
@@ -229,7 +229,7 @@ export function ItemDrawer({
                     className="flex-1"
                   />
                 ) : (
-                  <SheetTitle className="pr-8">{item.title}</SheetTitle>
+                  <SheetTitle>{item.title}</SheetTitle>
                 )}
               </div>
               <div className="flex flex-wrap gap-1.5">
