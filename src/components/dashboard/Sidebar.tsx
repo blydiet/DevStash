@@ -112,7 +112,7 @@ export function Sidebar({
                     <span className="flex items-center gap-2">
                       <Icon className="size-4" style={{ color: type.color ?? undefined }} />
                       {capitalize(type.name)}
-                      {isProOnlyItemType(type.name) && (
+                      {isProOnlyItemType(type.name) && !currentUser.isPro && (
                         <Badge variant="outline" className="uppercase">
                           Pro
                         </Badge>

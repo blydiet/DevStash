@@ -15,6 +15,7 @@ export interface CurrentUser {
   name: string;
   email: string;
   image: string | null;
+  isPro: boolean;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {
@@ -28,6 +29,7 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     name: session.user.name ?? session.user.email ?? "User",
     email: session.user.email ?? "",
     image: session.user.image ?? null,
+    isPro: session.user.isPro,
   };
 }
 

@@ -7,7 +7,7 @@ import { Sidebar } from "./Sidebar";
 export async function SidebarContainer() {
   let itemTypes: ItemTypeWithCount[] = [];
   let collections: CollectionSummary[] = [];
-  let currentUser: CurrentUser = { name: "", email: "", image: null };
+  let currentUser: CurrentUser = { name: "", email: "", image: null, isPro: false };
   let error: string | null = null;
 
   try {
