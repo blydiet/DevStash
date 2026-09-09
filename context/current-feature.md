@@ -2,19 +2,15 @@
 
 ## Status
 
-Complete
+<!-- Not Started | In Progress | Complete -->
 
 ## Goals
 
-- Replace the free-text "Language" input with a dropdown (`Select`) of real Monaco language ids, for both the New Item dialog (`CreateItemFields.tsx`) and the item drawer's edit mode (`ItemDrawerEditForm.tsx`).
-- Move the Language field to sit directly above the Content editor in both places (currently rendered after Content / near Tags).
-- Selecting a language should drive `CodeEditor`'s live Monaco syntax highlighting as the user types — `CodeEditor` already reacts to its `language` prop, so this is mostly a matter of feeding it a valid, canonical Monaco language id from the dropdown instead of arbitrary free text.
+<!-- Bullet points of what success looks like -->
 
 ## Notes
 
-- Only applies to `snippet`/`command` types (`typeShowsLanguage`/`typeShowsCodeEditor` in `src/lib/item-type-capabilities.ts` — currently identical sets).
-- New `src/lib/code-languages.ts`: curated list of `{value, label}` matched to Monaco's actual registered language ids (confirmed by grepping `node_modules/monaco-editor/esm/vs/languages/definitions/*/register.js`) — e.g. Monaco's shell-script id is `"shell"`, not `"bash"` (seed data currently stores `"bash"`, which doesn't match any registered Monaco language/alias — a pre-existing, out-of-scope gap, not touched here). Going forward, new items get a canonical id from the dropdown.
-- New `LanguageSelect.tsx`, same shadcn `Select` pattern as the existing `ItemTypeSelect.tsx`.
+<!-- Additional context, constraints, or details from spec -->
 
 ## History
 
