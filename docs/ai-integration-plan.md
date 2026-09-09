@@ -1,8 +1,8 @@
 # AI Integration Plan (Auto-tagging, Summaries, Explain Code, Prompt Optimization)
 
-This covers the four "AI Superpowers (Pro)" features from `context/project-overview.md`: auto-tagging, AI summaries, explain code, and prompt optimization. None of these exist in the codebase yet — no `src/actions/ai.ts`, no `src/lib/openai.ts`, no `openai` package in `package.json`. This is a from-scratch integration, same situation Stripe was in before `docs/stripe-integration-plan.md`.
+This covers the four "AI Superpowers (Pro)" features from `context/project-overview.md`: auto-tagging, AI summaries, explain code, and prompt optimization. **Auto-tagging has since shipped** (`feature/ai-auto-tagging`: `src/actions/ai.ts`, `src/lib/openai.ts`, `openai` in `package.json`) — see the model resolution below and §2c. Summaries, explain code, and prompt optimization remain unbuilt; this doc's patterns (SDK usage, Server Action shape, streaming, rate limiting, Pro-gating, cost controls, security) still apply to them, following the precedent auto-tagging already established.
 
-**⚠️ Model flag, read first:** the research prompt for this doc names **"GPT-6 Astra"** as the target model. That's a real, current OpenAI model (released 2026-09-03) — but it's OpenAI's new flagship frontier model (SOTA on FrontierMath/ARC-AGI-3/coding benchmarks, "AGI era" positioning), not a lightweight one. `context/project-overview.md` and `CLAUDE.md` both still say **"AI powered by OpenAI gpt-5-nano"** — a small, cheap model chosen specifically for cost reasons on lightweight tasks like tagging. See §2 for the pricing gap and a recommendation before this plan gets built against either name. Everything else in this document (SDK usage, patterns, gating, security) applies regardless of which model is ultimately used — only the model string and cost math change.
+**✅ Model resolved:** this doc originally flagged its research prompt's target model, **"GPT-6 Astra,"** as unverifiable and likely steering toward an unnecessarily expensive flagship model for a lightweight tagging task (see the original §2 discussion, kept below for that reasoning). The model actually shipped with is **`gpt-5.6-luna`** (configurable via the `OPENAI_MODEL` env var, `src/lib/openai.ts`) — also not in this assistant's training data at the time it was chosen, but confirmed genuinely real and working once real API calls succeeded: live testing (both the item-drawer edit flow and the Create Item dialog) returned correct, relevant tag suggestions end-to-end. Astra was not used. Everything else in this document (SDK usage, patterns, gating, security) applies regardless of model — only the model string and cost math would change if this is revisited.
 
 ---
 
@@ -109,22 +109,26 @@ None of auto-tagging, summarization, explain-code, or prompt-optimization are "h
 
 Concretely, at Astra's output pricing ($50/M), a single 500-token AI summary costs **~2.5¢ in output tokens alone** before counting input. At Pro-tier usage volume (unlimited items, `context/project-overview.md`'s own "Open Questions" section already flags "gpt-5-nano calls should probably be throttled... to control cost" — written when nano pricing was assumed), a `$8/mo` Pro subscription could be consumed by a handful of AI calls. This isn't a style nitpick — it's a per-request cost ~50-500× a nano-tier model, which is the specific risk this research prompt's own "Cost optimization strategies" bullet was meant to investigate.
 
-### 2c. Recommendation
+### 2c. Resolution (was: Recommendation)
 
-Two honest options, not a decision made on your behalf:
+This section originally posed two options without deciding between them. It's now resolved for the codebase:
 
-1. **Use `gpt-5-nano` as originally documented** (project docs already say this, `.env.example` already anticipates an `OPENAI_API_KEY`, no plan changes needed) for all four features, and reserve a flagship-tier model (Astra or otherwise) for nothing in this app's current scope.
-2. **Use GPT-6 Astra**, but only if the intent is genuinely higher-quality output (e.g. explain-code on complex snippets) and the cost is accepted — in which case this plan recommends a **low `reasoning_effort`** setting (§5) and tight **output token caps** (§7) to keep Astra's cost closer to nano-tier economics, plus per-user daily/monthly spend caps rather than only request-count rate limits (§6), since Astra's cost-per-call variance is large enough that request-count limiting alone doesn't bound spend the way it does for a flat-cost-per-call nano model.
+1. ~~Use `gpt-5-nano` as originally documented~~ — superseded; the project docs' "gpt-5-nano" reference predates this decision.
+2. ~~Use GPT-6 Astra~~ — **rejected.** Astra was never used. Its cost profile (§2a/§2b) is real reasoning to avoid it for lightweight, non-agentic tasks like these four, and that reasoning stands regardless of which model ended up shipping.
 
-Everything below is written to work with either model — swap the `OPENAI_MODEL` env var and adjust §7's cost estimates.
+**What actually shipped (auto-tagging, `feature/ai-auto-tagging`): `gpt-5.6-luna`.** Configured via the `OPENAI_MODEL` env var (`src/lib/openai.ts`, default `"gpt-5.6-luna"` if unset), matching the "previous generation... better value for anything that is not a hard agentic task" model family OpenAI itself pointed to in §2a. Like Astra, this model name wasn't in this assistant's training data when chosen — but unlike Astra, it was confirmed genuinely real and working via live end-to-end testing (real OpenAI API calls returning correct, relevant tag suggestions), not just cited from a web search. Future features built from this plan (summaries, explain-code, prompt-optimization) should default to the same model via the same env var unless a specific feature's quality needs justify reconsidering.
+
+Everything below is written to work with any model — swap the `OPENAI_MODEL` env var and adjust §7's cost estimates.
 
 ---
 
 ## 3. SDK Setup
 
-Package: `openai` (official Node/TypeScript SDK — not yet installed, `npm install openai`). Not the Vercel AI SDK (`ai` package) — this project has no other AI-SDK-style abstraction and the four features are simple enough not to need one; introducing it would be a new dependency for marginal benefit given the existing direct-fetch patterns this codebase already uses for Stripe/R2 (raw SDK client, no wrapper library).
+Package: `openai` (official Node/TypeScript SDK — now installed, `^7.13.0`). Not the Vercel AI SDK (`ai` package) — this project has no other AI-SDK-style abstraction and the four features are simple enough not to need one; introducing it would be a new dependency for marginal benefit given the existing direct-fetch patterns this codebase already uses for Stripe/R2 (raw SDK client, no wrapper library).
 
 Uses the **Responses API** (`client.responses.create`), OpenAI's current-generation API surface — the Chat Completions API still works but Responses is what OpenAI's own docs default every current example to, including structured outputs and reasoning-effort control.
+
+**Now shipped as `src/lib/openai.ts`** (default model updated per §2c's resolution):
 
 ```ts
 // src/lib/openai.ts
@@ -132,7 +136,7 @@ import OpenAI from "openai";
 
 let client: OpenAI | null = null;
 
-function getOpenAIClient(): OpenAI {
+export function getOpenAIClient(): OpenAI {
   if (!client) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
@@ -141,9 +145,7 @@ function getOpenAIClient(): OpenAI {
   return client;
 }
 
-const MODEL = process.env.OPENAI_MODEL ?? "gpt-5-nano";
-
-export { getOpenAIClient, MODEL };
+export const AI_MODEL = process.env.OPENAI_MODEL ?? "gpt-5.6-luna";
 ```
 
 ---
@@ -159,7 +161,7 @@ All four follow one shape: auth → Pro-gate → rate-limit → ownership-scoped
 import { auth } from "@/auth";
 import { getItemDetail } from "@/lib/db/items-queries";
 import { checkRateLimit, rateLimitMessage } from "@/lib/rate-limit";
-import { getOpenAIClient, MODEL } from "@/lib/openai";
+import { AI_MODEL, getOpenAIClient } from "@/lib/openai";
 
 export async function suggestTags(itemId: string): Promise<AiSuggestTagsResult> {
   const session = await auth();
@@ -177,7 +179,7 @@ export async function suggestTags(itemId: string): Promise<AiSuggestTagsResult> 
 
   try {
     const response = await getOpenAIClient().responses.create({
-      model: MODEL,
+      model: AI_MODEL,
       input: [
         { role: "system", content: "Suggest 3-5 short, lowercase, hyphenated tags for this content. No explanation." },
         { role: "user", content: content.slice(0, 4000) }, // input cap, see §7
@@ -225,7 +227,7 @@ Structured Outputs (`text.format.type: "json_schema"` with `strict: true`) is th
 The SDK's streaming shape (verified via Context7):
 
 ```ts
-const stream = await client.responses.create({ model: MODEL, input: [...], stream: true });
+const stream = await client.responses.create({ model: AI_MODEL, input: [...], stream: true });
 for await (const event of stream) {
   if (event.type === "response.output_text.delta") {
     // event.delta is the incremental text chunk
@@ -276,7 +278,7 @@ if (!session.user.isPro) {
 
 Placed immediately after the auth check and before any OpenAI call, so a free user's request never spends a token (unlike the item-type gate, which currently runs after Zod validation but before the DB write — AI's gate should run *before* even reading the item, since reading is cheap but calling OpenAI is the expensive step being guarded against).
 
-**UI-side gating**: mirror the `/upgrade?feature=file|image` pattern from the 2026-09-08 "Redirect free users to /upgrade" history entry — an AI action button visible to a free user should route to `/upgrade?feature=ai` (a new `PRO_FEATURE_UPGRADE_CONTEXT` entry in `src/lib/pricing-plans.ts`) rather than being hidden outright, consistent with how this codebase already treats Pro-only affordances as a redirect-to-upsell rather than a disappearing feature.
+**UI-side gating — what shipped**: rather than hiding the button for free users (which would've meant prop-drilling `isPro` through `DashboardShell` down to the AI buttons, since this codebase has zero client-side session access anywhere — every Pro check happens server-side via `auth()`), the button is **always shown**. A free user clicking it gets the server action's `upgradeRequired: true` result surfaced as a toast ("Upgrade to Pro for AI features.") with an "Upgrade" action that navigates to `/upgrade?feature=ai` (the `PRO_FEATURE_UPGRADE_CONTEXT`/`isKnownProFeature` pair in `src/lib/pricing-plans.ts`, generalized beyond the file/image-only `PRO_ONLY_ITEM_TYPES` this doc originally pointed to). This was an explicit choice, confirmed with the user, over the file/image pages' hide-and-redirect pattern — a good default for future AI-gated buttons in this codebase too, given the same session-access constraint applies to all of them.
 
 ---
 
@@ -285,7 +287,7 @@ Placed immediately after the auth check and before any OpenAI call, so a free us
 No existing precedent in this codebase for AI-suggestion UI specifically, but two closely-related patterns to reuse:
 
 - **Loading state**: `useActionState`'s `isPending` (already the standard form-submission pattern per `SignInForm.tsx`/`RegisterForm.tsx`/`BillingActions.tsx`) — a "Suggest tags" button shows a spinner/disabled state while the action runs, same shape as every other async button in this app. No new loading-state primitive needed.
-- **Accept/reject suggestions**: closest existing precedent is the edit-mode pattern in `ItemDrawerEditForm.tsx` (Save/Cancel with optimistic local state) — an AI suggestion should populate the relevant field (tags, description) as a **proposed, editable value** the user can accept-as-is, edit, or discard, not an auto-applied silent write. Concretely: "Suggest tags" appends suggested tags to the edit form's tag input as removable chips (using the existing tag-chip UI already in `ItemDrawerEditForm.tsx`) rather than calling `updateItem` directly — the user still has to hit the form's own "Save" to persist, so a bad suggestion costs nothing and needs no separate "undo".
+- **Accept/reject suggestions**: closest existing precedent is the edit-mode pattern in `ItemDrawerEditForm.tsx` (Save/Cancel with optimistic local state) — an AI suggestion should populate the relevant field (tags, description) as a **proposed, editable value** the user can accept-as-is, edit, or discard, not an auto-applied silent write. **Correction from an earlier draft of this doc**: there is no tag-chip UI anywhere in this codebase — Tags is a plain comma-separated text `Input` (`form.tags: string`, both in `ItemDrawerEditForm.tsx`'s `EditForm` and `CreateItemDialog.tsx`'s `CreateItemFormState`). What actually shipped: "Suggest tags" appends suggested tags into that comma-separated string (deduped case-insensitively against what's already there) via a shared `mergeTagInput` helper (`src/lib/tag-input.ts`), used by both the edit form and the Create Item dialog. The user still has to hit Save/Create to persist, so a bad suggestion costs nothing and needs no separate "undo".
 - **Explain Code output**: rendered via the existing `MarkdownEditor`'s read-only Preview pane (`react-markdown` + `remark-gfm`, already wired for prompt/note content) rather than a new markdown renderer — explain-code output is markdown-shaped (headings, code blocks) and this component already exists.
 - **Streaming UI** (Explain Code only, per §5): incremental text append to a `useState` string as SSE chunks arrive, rendered live into the same `MarkdownEditor`-style preview — no new component, just a different data source (a `fetch` reader loop instead of a static prop).
 
@@ -303,10 +305,12 @@ No existing precedent in this codebase for AI-suggestion UI specifically, but tw
 
 ## 11. Open Questions
 
-1. **Which model — `gpt-5-nano` or `gpt-6-astra`?** (§2) Blocks §7's cost estimates and §6's rate-limit tuning until resolved.
-2. **Monthly spend cap mechanism** (§7.7) — no schema exists yet for tracking per-user AI usage over a billing period; needs a small design decision (DB counter vs. Redis) before implementation, not a large one.
-3. **Fail-open vs. fail-closed on rate-limit-check failure for AI specifically** (§10) — a deliberate deviation from this codebase's existing fail-open default, should be confirmed explicitly rather than assumed.
-4. **`OPENAI_MODEL` env var** — recommended in §1/§3 but not yet in `.env.example`; trivial to add once §1 is resolved.
+1. ~~Which model — `gpt-5-nano` or `gpt-6-astra`?~~ **Resolved** (§2c): `gpt-5.6-luna`, confirmed real and working. §7's cost estimates still assume nano-tier economics and haven't been re-costed against Luna's actual pricing — worth doing before summaries/explain-code (likely higher token volume per call) are built.
+2. **Monthly spend cap mechanism** (§7.7) — still open. No schema exists yet for tracking per-user AI usage over a billing period; needs a small design decision (DB counter vs. Redis) before implementation, not a large one. Auto-tagging shipped with only the hourly `ai-tag` rate-limit scope (§6/§10), no monthly cap.
+3. ~~Fail-open vs. fail-closed on rate-limit-check failure for AI specifically~~ **Resolved**: shipped as designed — the `ai-tag` scope fails closed on a configured-limiter error (`FAIL_CLOSED_SCOPES` in `src/lib/rate-limit.ts`), fails open only when Upstash isn't configured at all, confirmed explicitly with the user before implementation.
+4. ~~`OPENAI_MODEL` env var~~ **Resolved**: added to `.env.example`, defaults to `gpt-5.6-luna` if unset.
+
+Full implementation details, review findings, and live-verification notes for auto-tagging are in `context/current-feature.md`'s History.
 
 ---
 

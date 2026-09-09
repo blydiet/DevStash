@@ -33,11 +33,21 @@ export const PRO_YEARLY_MONTHLY_EQUIVALENT = "$6";
 export const PRO_YEARLY_TOTAL = "$72";
 export const PRO_YEARLY_SAVINGS_PERCENT = 25;
 
-// Shown on /upgrade when a Pro-only item page (`/items/file`, `/items/image`)
-// redirects a free user here, so the "why am I here" context from the old
-// inline ProUpgradeNotice isn't lost. Keyed by PRO_ONLY_ITEM_TYPES itself so
-// a future addition to that list fails to compile without matching copy.
-export const PRO_FEATURE_UPGRADE_CONTEXT: Record<(typeof PRO_ONLY_ITEM_TYPES)[number], string> = {
+// Shown on /upgrade when a Pro-only surface (the item-type pages, or an AI
+// action) redirects a free user here, so the "why am I here" context from
+// the old inline ProUpgradeNotice isn't lost. Keyed by PRO_ONLY_ITEM_TYPES
+// plus any other named Pro feature ("ai") so a future addition fails to
+// compile without matching copy.
+export const PRO_FEATURE_UPGRADE_CONTEXT: Record<(typeof PRO_ONLY_ITEM_TYPES)[number] | "ai", string> = {
   file: "Files are a Pro feature.",
   image: "Images are a Pro feature.",
+  ai: "AI features are a Pro feature.",
 };
+
+// Runtime guard for the untrusted `?feature=` query param — broader than
+// isProOnlyItemType (item types only), since "ai" isn't an item type.
+export function isKnownProFeature(
+  value: string
+): value is keyof typeof PRO_FEATURE_UPGRADE_CONTEXT {
+  return value in PRO_FEATURE_UPGRADE_CONTEXT;
+}

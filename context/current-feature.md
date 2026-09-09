@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: AI Auto-Tagging
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add `suggestTags(itemId)` Server Action in `src/actions/ai.ts`: auth check → Pro-gate (`session.user.isPro`) → rate-limit check → ownership-scoped item fetch via existing `getItemDetail` → OpenAI call → return `{success, data: {tags}}` / `{success: false, error}`
+- Add `suggestTagsForDraft(content, existingTags)` Server Action for the Create Item dialog (no item id yet — operates on unsaved form content, Zod-validated since there's no ownership-scoped DB lookup to fall back on). Shares `authorizeAiCall`/`generateTagSuggestions` helpers with `suggestTags`
+- Add `src/lib/openai.ts`: lazy/cached OpenAI client singleton (throws only when actually invoked without an API key, not at module load, so the app/tests still work with no `OPENAI_API_KEY` set)
+- Add `OPENAI_MODEL` env var, default `gpt-5.6-luna`, documented in `.env.example`
+- Add a new `"ai-tag"` rate-limit scope to `src/lib/rate-limit.ts` (20/hour, keyed by `session.user.id`, shared by both actions above) — this scope specifically fails **closed** (blocks the AI call) if the Upstash check itself errors, a deliberate exception to this codebase's existing fail-open default, since the risk here is unbounded OpenAI spend rather than a locked-out user
+- Use OpenAI Structured Outputs (`text.format.type: "json_schema"`, `strict: true`) so the response is guaranteed `{tags: string[]}` — no manual JSON parsing/retry fallback needed
+- UI: "Suggest tags" button in both `ItemDrawerEditForm.tsx`'s edit mode and `CreateItemDialog.tsx`. Suggested tags are merged into the existing comma-separated Tags text input (via shared `mergeTagInput` in `src/lib/tag-input.ts`) — never auto-saved; the user still has to hit Save/Create to persist
+- Free (non-Pro) users always see the button; clicking it surfaces a toast ("Upgrade to Pro for AI features.") with an "Upgrade" action routing to `/upgrade?feature=ai` (new `PRO_FEATURE_UPGRADE_CONTEXT`/`isKnownProFeature` in `src/lib/pricing-plans.ts`) — confirmed via explicit choice over hiding the button, since that would've required prop-drilling `isPro` through `DashboardShell` with no client-side session access anywhere in this codebase
+- System prompt explicitly instructs the model to treat item content as data only, never as instructions to follow (prompt-injection mitigation)
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Scoped to auto-tagging only. Explicitly **out of scope**: AI summaries, explain-code, prompt-optimization, and a monthly AI spend cap — all deferred to future features, per `docs/ai-integration-plan.md`
+- `docs/ai-integration-plan.md`/`context/research/ai-integration-research.md` (from a prior session) flagged a model called "GPT-6 Astra" as the research target — this claim could not be verified and looked like it might be steering toward an unnecessarily expensive model for a lightweight tagging task; flagged to the user
+- Confirmed model choice: `gpt-5.6-luna` — also unverified against training data at the time it was chosen, but confirmed genuinely real and working once the OpenAI account's credits were topped up mid-session (verified live: real, relevant tag suggestions returned for both the edit-form and create-dialog paths)
+- Follows the existing `{success, data?, error?}` action-result convention, `getItemDetail`'s ownership-scoping/no-existence-leak pattern, and the `isProOnlyItemType`/`session.user.isPro` Pro-gating pattern already used in `createItem`/`POST /api/upload`
+- A `/feature review` pass caught and fixed one real bug before merge: `CreateItemDialog.tsx`'s `handleSuggestTags` had no guard against a stale in-flight `suggestTagsForDraft` response landing on a form that had since been reset (dialog closed/reopened, or a successful Create) — unlike `ItemDrawerEditForm.tsx`, which already had a `null`-sentinel guard for this. Fixed with a generation counter (`suggestGenerationRef`) bumped on every reset, checked before applying a suggestion result. Also added a missing re-entrancy guard (`if (isSuggesting) return`) to both `handleSuggestTags` implementations, matching the existing pattern in `ItemDrawer.tsx`'s `handleToggleFavorite`/`handleTogglePin`; removed an unused `userId` field from `authorizeAiCall`'s success branch; and added Zod validation (`suggestTagsForDraftSchema`) to `suggestTagsForDraft` specifically, since — unlike `suggestTags(itemId)`, which matches this codebase's existing itemId-unvalidated-but-ownership-scoped convention — it takes raw, unscoped client content with no DB lookup to fall back on.
 
 ## History
 

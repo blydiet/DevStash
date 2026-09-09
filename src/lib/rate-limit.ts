@@ -8,7 +8,8 @@ export type RateLimitScope =
   | "forgot-password"
   | "reset-password"
   | "resend-verification"
-  | "upload";
+  | "upload"
+  | "ai-tag";
 
 const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m" | "h"}` }> = {
   "sign-in": { requests: 5, window: "15 m" },
@@ -17,7 +18,16 @@ const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m
   "reset-password": { requests: 5, window: "15 m" },
   "resend-verification": { requests: 3, window: "15 m" },
   upload: { requests: 20, window: "1 h" },
+  "ai-tag": { requests: 20, window: "1 h" },
 };
+
+// Scopes where a failed rate-limit *check* (Upstash configured but the
+// request to it errors) should block the call rather than let it through.
+// Every other scope fails open because the worst case is a locked-out user;
+// AI scopes fail closed because the worst case is unbounded OpenAI spend.
+// This does NOT apply when Upstash isn't configured at all (see getLimiter) —
+// that's a deliberate deployment state, not a transient failure.
+const FAIL_CLOSED_SCOPES = new Set<RateLimitScope>(["ai-tag"]);
 
 const redis =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
@@ -52,8 +62,8 @@ export interface RateLimitResult {
 }
 
 /**
- * Fails open: if Upstash isn't configured or the request to it fails, the
- * caller is allowed through rather than being locked out.
+ * Fails open if Upstash isn't configured, and fails open on a failed check
+ * too — except for FAIL_CLOSED_SCOPES, which block the caller instead.
  */
 export async function checkRateLimit(
   scope: RateLimitScope,
@@ -70,6 +80,9 @@ export async function checkRateLimit(
     return { success: result.success, remaining: result.remaining, reset: result.reset };
   } catch (err) {
     console.error(`Rate limit check failed for scope "${scope}":`, err);
+    if (FAIL_CLOSED_SCOPES.has(scope)) {
+      return { success: false, remaining: 0, reset: Date.now() + 60_000 };
+    }
     return { success: true, remaining: LIMITS[scope].requests, reset: 0 };
   }
 }

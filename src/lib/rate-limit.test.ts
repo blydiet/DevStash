@@ -1,13 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkRateLimit, getClientIp, rateLimitMessage, retryAfterSeconds } from "@/lib/rate-limit";
 
-const { headersMock } = vi.hoisted(() => ({
-  headersMock: vi.fn(),
-}));
+const { headersMock, limitMock, RatelimitMock, RedisMock } = vi.hoisted(() => {
+  const limitMock = vi.fn();
+  const RatelimitMock = Object.assign(
+    vi.fn().mockImplementation(function RatelimitMock(this: { limit: typeof limitMock }) {
+      this.limit = limitMock;
+    }),
+    { slidingWindow: vi.fn() }
+  );
+  return {
+    headersMock: vi.fn(),
+    limitMock,
+    RatelimitMock,
+    RedisMock: vi.fn().mockImplementation(function RedisMock() {}),
+  };
+});
 
 vi.mock("next/headers", () => ({
   headers: headersMock,
 }));
+
+vi.mock("@upstash/ratelimit", () => ({ Ratelimit: RatelimitMock }));
+vi.mock("@upstash/redis", () => ({ Redis: RedisMock }));
 
 describe("getClientIp", () => {
   it("returns the first IP from a comma-separated x-forwarded-for header", async () => {
@@ -70,5 +85,48 @@ describe("checkRateLimit", () => {
   it("fails open with the scope's full quota when Upstash isn't configured", async () => {
     const result = await checkRateLimit("sign-in", "1.2.3.4:test@example.com");
     expect(result).toEqual({ success: true, remaining: 5, reset: 0 });
+  });
+});
+
+// The `redis` client and `limiters` cache in rate-limit.ts are module-level
+// state computed from env vars present at import time, so exercising the
+// "Upstash is configured but the check itself throws" path requires a fresh
+// module instance with the env vars set beforehand — hence vi.resetModules()
+// + a dynamic re-import, isolated to this describe block. The other
+// describe blocks above keep using the file's original static import
+// (module-cached with no Upstash env vars set), so they're unaffected.
+describe("checkRateLimit — configured limiter throws", () => {
+  const originalUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const originalToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  beforeEach(() => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://upstash.example";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+    limitMock.mockRejectedValue(new Error("upstash down"));
+  });
+
+  afterEach(() => {
+    process.env.UPSTASH_REDIS_REST_URL = originalUrl;
+    process.env.UPSTASH_REDIS_REST_TOKEN = originalToken;
+    vi.resetModules();
+  });
+
+  it("fails closed (blocks the caller) for the ai-tag scope", async () => {
+    vi.resetModules();
+    const { checkRateLimit: freshCheckRateLimit } = await import("@/lib/rate-limit");
+
+    const result = await freshCheckRateLimit("ai-tag", "user-1");
+
+    expect(result.success).toBe(false);
+    expect(result.remaining).toBe(0);
+  });
+
+  it("still fails open for a non-AI scope", async () => {
+    vi.resetModules();
+    const { checkRateLimit: freshCheckRateLimit } = await import("@/lib/rate-limit");
+
+    const result = await freshCheckRateLimit("sign-in", "1.2.3.4");
+
+    expect(result.success).toBe(true);
   });
 });

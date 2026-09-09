@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
 import FocusLock from "react-focus-lock";
-import { XIcon } from "lucide-react";
+import { Sparkles, XIcon } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -22,7 +22,9 @@ import { ItemTypeSelect } from "@/components/dashboard/ItemTypeSelect";
 import { CreateItemFields, type CreateItemFormState } from "@/components/dashboard/CreateItemFields";
 import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
 import { createItem } from "@/actions/items";
+import { suggestTagsForDraft } from "@/actions/ai";
 import { fetchCollectionOptions } from "@/lib/swr-fetcher";
+import { mergeTagInput } from "@/lib/tag-input";
 import {
   typeShowsContent,
   typeShowsFileUpload,
@@ -58,6 +60,15 @@ export function CreateItemDialog({
     type: defaultType ?? EMPTY_FORM.type,
   }));
   const [isSaving, setIsSaving] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  // Bumped every time the dialog resets (close, or a successful create,
+  // which also closes it). A suggestTagsForDraft call in flight when that
+  // happens must not land its result on whatever form now occupies this
+  // component — unlike ItemDrawerEditForm, which has a real `null` sentinel
+  // for "no active edit session," this dialog's form always resets to a
+  // real EMPTY_FORM object, so there's no falsy value to guard on; a plain
+  // generation counter captured at request-time serves the same purpose.
+  const suggestGenerationRef = useRef(0);
   const { data: collections = [], error: collectionsError } = useSWR(
     open ? "/api/collections" : null,
     fetchCollectionOptions
@@ -68,8 +79,57 @@ export function CreateItemDialog({
   const showsContent = typeShowsContent(form.type);
   const showsFileUpload = typeShowsFileUpload(form.type);
 
+  async function handleSuggestTags() {
+    if (isSuggesting) return;
+
+    const generation = suggestGenerationRef.current;
+    const content = showsContent && form.content.trim() !== "" ? form.content : form.description;
+
+    setIsSuggesting(true);
+    try {
+      const existingTags = form.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      const result = await suggestTagsForDraft(content, existingTags);
+
+      if (generation !== suggestGenerationRef.current) return; // dialog reset while this was in flight
+
+      if (!result.success || !result.data) {
+        toast.error(result.error ?? "AI tagging failed. Try again.", {
+          action: result.upgradeRequired
+            ? { label: "Upgrade", onClick: () => router.push("/upgrade?feature=ai") }
+            : undefined,
+        });
+        return;
+      }
+
+      if (result.data.tags.length === 0) {
+        toast.info("No new tags to suggest");
+        return;
+      }
+
+      const suggested = result.data.tags;
+      setForm((prev) => ({ ...prev, tags: mergeTagInput(prev.tags, suggested) }));
+    } catch {
+      if (generation === suggestGenerationRef.current) {
+        toast.error("AI tagging failed. Try again.");
+      }
+    } finally {
+      if (generation === suggestGenerationRef.current) {
+        setIsSuggesting(false);
+      }
+    }
+  }
+
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
+      // Bumping the generation makes a stale in-flight suggestion's finally
+      // skip clearing isSuggesting (see handleSuggestTags) — so it has to
+      // be cleared here instead, or a reopened dialog could inherit a
+      // "Suggesting…" state that nothing would ever turn off.
+      suggestGenerationRef.current += 1;
+      setIsSuggesting(false);
       setForm({ ...EMPTY_FORM, type: defaultType ?? EMPTY_FORM.type });
     }
     onOpenChange(nextOpen);
@@ -154,7 +214,19 @@ export function CreateItemDialog({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="item-tags">Tags</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="item-tags">Tags</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isSuggesting}
+                  onClick={handleSuggestTags}
+                >
+                  <Sparkles />
+                  {isSuggesting ? "Suggesting…" : "Suggest tags"}
+                </Button>
+              </div>
               <Input
                 id="item-tags"
                 value={form.tags}

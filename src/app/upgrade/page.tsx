@@ -5,26 +5,24 @@ import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradePricing } from "@/components/upgrade/UpgradePricing";
 import { createCheckoutSession } from "@/actions/billing";
 import { getBillingInfo } from "@/lib/db/subscription";
-import { PRO_FEATURE_UPGRADE_CONTEXT } from "@/lib/pricing-plans";
-import { isProOnlyItemType } from "@/lib/subscription-limits";
+import { isKnownProFeature, PRO_FEATURE_UPGRADE_CONTEXT } from "@/lib/pricing-plans";
 
 export default async function UpgradePage({
   searchParams,
 }: {
   searchParams: Promise<{ feature?: string }>;
 }) {
-  // `feature` is untrusted query input. `isProOnlyItemType` does a real
+  // `feature` is untrusted query input. `isKnownProFeature` does a real
   // runtime membership check (not just a TS type predicate) against the
-  // fixed PRO_ONLY_ITEM_TYPES list, and even then only the looked-up,
-  // hardcoded copy from PRO_FEATURE_UPGRADE_CONTEXT is ever rendered — the
-  // raw query value itself never reaches the page. A missing or
-  // unrecognized `feature` (no param, a garbage value, a future item type
-  // not yet in the list) silently falls back to `null` — the plain generic
-  // page, which is also what every non-redirect visitor to /upgrade
-  // (header nav button, Settings' Billing card) already sees.
+  // fixed PRO_FEATURE_UPGRADE_CONTEXT keys, and even then only the looked-up,
+  // hardcoded copy is ever rendered — the raw query value itself never
+  // reaches the page. A missing or unrecognized `feature` (no param, a
+  // garbage value, a future feature not yet in the map) silently falls back
+  // to `null` — the plain generic page, which is also what every
+  // non-redirect visitor to /upgrade (header nav button, Settings' Billing
+  // card) already sees.
   const { feature } = await searchParams;
-  const featureContext =
-    feature && isProOnlyItemType(feature) ? PRO_FEATURE_UPGRADE_CONTEXT[feature] : null;
+  const featureContext = feature && isKnownProFeature(feature) ? PRO_FEATURE_UPGRADE_CONTEXT[feature] : null;
 
   let isPro = false;
   let hasError = false;
