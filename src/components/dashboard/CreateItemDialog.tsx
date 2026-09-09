@@ -37,7 +37,7 @@ const EMPTY_FORM: CreateItemFormState = {
   description: "",
   content: "",
   url: "",
-  language: "",
+  language: "plaintext",
   file: null,
   tags: "",
   collectionIds: [],

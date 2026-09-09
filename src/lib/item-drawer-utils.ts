@@ -18,7 +18,7 @@ export function toEditForm(item: ItemDetail): EditForm {
     description: item.description ?? "",
     content: item.content ?? "",
     url: item.url ?? "",
-    language: item.language ?? "",
+    language: item.language ?? "plaintext",
     file: item.fileUrl
       ? { fileUrl: item.fileUrl, fileName: item.fileName ?? "", fileSize: item.fileSize ?? 0 }
       : null,
