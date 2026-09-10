@@ -276,6 +276,35 @@ export async function setItemPinned(id: string, isPinned: boolean): Promise<Item
   }
 }
 
+// A narrow, content-only sibling to updateItem — used by the Optimize-prompt
+// apply flow, which only ever changes `content` and must not touch
+// title/tags/collectionIds at all. Reusing updateItem there would mean
+// reconstructing those unrelated fields from a client-side snapshot that
+// could be stale relative to a concurrent edit (e.g. a second tab), silently
+// overwriting it; this function can't do that because it never reads or
+// writes those fields in the first place, mirroring setItemFavorite/
+// setItemPinned's single-field shape exactly.
+export async function setItemContent(id: string, content: string): Promise<ItemDetail | null> {
+  const userId = await getCurrentUserId();
+
+  let count: number;
+  try {
+    ({ count } = await prisma.item.updateMany({ where: { id, userId }, data: { content } }));
+  } catch (err) {
+    console.error(`Failed to update content for item ${id}:`, err);
+    throw err;
+  }
+
+  if (count === 0) return null;
+
+  try {
+    return await getItemDetail(id);
+  } catch (err) {
+    console.error(`Failed to refetch item ${id} after updating content:`, err);
+    throw err;
+  }
+}
+
 export async function deleteItem(id: string): Promise<boolean> {
   const userId = await getCurrentUserId();
 

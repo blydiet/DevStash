@@ -21,3 +21,10 @@ export interface ExplainCodeActionResult {
   error?: string;
   upgradeRequired?: boolean;
 }
+
+export interface OptimizePromptActionResult {
+  success: boolean;
+  data?: { optimizedContent: string };
+  error?: string;
+  upgradeRequired?: boolean;
+}

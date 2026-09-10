@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { suggestTags, suggestTagsForDraft, summarizeDraft, explainCode } from "@/actions/ai";
+import {
+  suggestTags,
+  suggestTagsForDraft,
+  summarizeDraft,
+  explainCode,
+  optimizePrompt,
+} from "@/actions/ai";
 
 const { authMock, getItemDetailMock, checkRateLimitMock, rateLimitMessageMock, responsesCreateMock } =
   vi.hoisted(() => ({
@@ -48,6 +54,10 @@ function mockOpenAiSummary(description: string) {
 
 function mockOpenAiExplanation(explanation: string) {
   responsesCreateMock.mockResolvedValue({ output_text: JSON.stringify({ explanation }) });
+}
+
+function mockOpenAiOptimization(optimizedContent: string) {
+  responsesCreateMock.mockResolvedValue({ output_text: JSON.stringify({ optimizedContent }) });
 }
 
 beforeEach(() => {
@@ -685,6 +695,179 @@ describe("explainCode", () => {
     const result = await explainCode("item-1");
 
     expect(result).toEqual({ success: false, error: "AI explanation failed. Try again." });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("optimizePrompt", () => {
+  const PROMPT_ITEM = { ...BASE_ITEM, type: { name: "prompt" } };
+
+  it("rejects when there is no session", async () => {
+    authMock.mockResolvedValue(null);
+
+    await expect(optimizePrompt("item-1")).resolves.toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+    expect(getItemDetailMock).not.toHaveBeenCalled();
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a free user before touching rate-limit, the item, or OpenAI", async () => {
+    authMock.mockResolvedValue(FREE_SESSION);
+
+    await expect(optimizePrompt("item-1")).resolves.toEqual({
+      success: false,
+      error: "Upgrade to Pro for AI features.",
+      upgradeRequired: true,
+    });
+    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(getItemDetailMock).not.toHaveBeenCalled();
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the shared ai rate limit is exceeded, before touching OpenAI", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+
+    const result = await optimizePrompt("item-1");
+
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(result).toEqual({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the item doesn't exist or isn't owned by the caller", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue(null);
+
+    await expect(optimizePrompt("item-1")).resolves.toEqual({
+      success: false,
+      error: "Item not found",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects item types other than prompt, as defense-in-depth against a bypassed UI", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...BASE_ITEM, type: { name: "note" } });
+
+    await expect(optimizePrompt("item-1")).resolves.toEqual({
+      success: false,
+      error: "Optimization is only available for prompts.",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects snippet items too, unlike explainCode's snippet/command allowance", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...BASE_ITEM, type: { name: "snippet" } });
+
+    await expect(optimizePrompt("item-1")).resolves.toEqual({
+      success: false,
+      error: "Optimization is only available for prompts.",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the item has no content to optimize", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...PROMPT_ITEM, content: null });
+
+    await expect(optimizePrompt("item-1")).resolves.toEqual({
+      success: false,
+      error: "Nothing to optimize",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("truncates content sent to OpenAI to 8000 characters", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...PROMPT_ITEM, content: "a".repeat(9000) });
+    mockOpenAiOptimization("An optimized prompt.");
+
+    await optimizePrompt("item-1");
+
+    const input = responsesCreateMock.mock.calls[0][0].input;
+    expect(input[1].content).toHaveLength(8000);
+  });
+
+  it("sends the expected model, output cap, and Structured Outputs schema", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue(PROMPT_ITEM);
+    mockOpenAiOptimization("An optimized prompt.");
+
+    await optimizePrompt("item-1");
+
+    expect(responsesCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "gpt-5.6-luna",
+        max_output_tokens: 4000,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "prompt_optimization",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                optimizedContent: { type: "string", maxLength: 8000 },
+              },
+              required: ["optimizedContent"],
+              additionalProperties: false,
+            },
+          },
+        },
+      })
+    );
+  });
+
+  it("trims whitespace off the returned optimized content", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue(PROMPT_ITEM);
+    mockOpenAiOptimization("  An optimized prompt.  ");
+
+    const result = await optimizePrompt("item-1");
+
+    expect(result).toEqual({ success: true, data: { optimizedContent: "An optimized prompt." } });
+  });
+
+  it("returns 'Nothing to optimize' when the model's response is empty after trimming", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue(PROMPT_ITEM);
+    mockOpenAiOptimization("   ");
+
+    const result = await optimizePrompt("item-1");
+
+    expect(result).toEqual({ success: false, error: "Nothing to optimize" });
+  });
+
+  it("returns a generic error and logs when the OpenAI call throws", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue(PROMPT_ITEM);
+    responsesCreateMock.mockRejectedValue(new Error("OpenAI is down"));
+
+    const result = await optimizePrompt("item-1");
+
+    expect(result).toEqual({ success: false, error: "AI optimization failed. Try again." });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("returns a generic error and logs when the OpenAI response isn't valid JSON", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue(PROMPT_ITEM);
+    responsesCreateMock.mockResolvedValue({ output_text: "not valid json" });
+
+    const result = await optimizePrompt("item-1");
+
+    expect(result).toEqual({ success: false, error: "AI optimization failed. Try again." });
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });

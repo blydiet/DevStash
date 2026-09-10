@@ -6,9 +6,23 @@ import { formatFileSize } from "@/lib/file-constraints";
 import { typeShowsCodeEditor, typeShowsMarkdownEditor } from "@/lib/item-type-capabilities";
 import type { ItemDetail } from "@/lib/db/items-queries";
 
-export function ItemDrawerViewContent({ item, isPro }: { item: ItemDetail; isPro: boolean }) {
+export function ItemDrawerViewContent({
+  item,
+  isPro,
+  onApplyOptimizedPrompt,
+}: {
+  item: ItemDetail;
+  isPro: boolean;
+  // Only meaningful for Prompt items — passed through to MarkdownEditor's
+  // onApply so the drawer (which owns the SWR cache and the
+  // updateItemContent call) can persist an accepted optimization. Note
+  // items share the same MarkdownEditor component but never receive this,
+  // so they never render the Optimize button either.
+  onApplyOptimizedPrompt?: (newContent: string) => Promise<boolean>;
+}) {
   const showsCodeEditor = typeShowsCodeEditor(item.type.name);
   const showsMarkdownEditor = typeShowsMarkdownEditor(item.type.name);
+  const isPrompt = item.type.name === "prompt";
 
   return (
     <>
@@ -38,7 +52,14 @@ export function ItemDrawerViewContent({ item, isPro }: { item: ItemDetail; isPro
               isPro={isPro}
             />
           ) : showsMarkdownEditor ? (
-            <MarkdownEditor key="view" value={item.content} readOnly />
+            <MarkdownEditor
+              key="view"
+              value={item.content}
+              readOnly
+              itemId={isPrompt ? item.id : undefined}
+              isPro={isPrompt ? isPro : undefined}
+              onApply={isPrompt ? onApplyOptimizedPrompt : undefined}
+            />
           ) : null}
         </div>
       )}

@@ -10,7 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { iconMap } from "@/lib/icon-map";
 import { fetchCollectionOptions, fetchItemDetail } from "@/lib/swr-fetcher";
-import { deleteItem, toggleItemFavorite, toggleItemPin, updateItem } from "@/actions/items";
+import {
+  deleteItem,
+  toggleItemFavorite,
+  toggleItemPin,
+  updateItem,
+  updateItemContent,
+} from "@/actions/items";
 import {
   typeShowsContent,
   typeShowsFileUpload,
@@ -112,6 +118,43 @@ export function ItemDrawer({
       toast.error("Failed to update item");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  // From MarkdownEditor's "Use this prompt" button, via
+  // ItemDrawerViewContent — persists an accepted AI optimization. Uses the
+  // narrow updateItemContent action (content-only) rather than the
+  // whole-item updateItem: this closure's `item` is a snapshot from whenever
+  // the drawer last loaded, and reconstructing title/tags/collectionIds from
+  // it into a full updateItem call could silently overwrite a concurrent
+  // edit to those fields made elsewhere (e.g. a second tab) with stale
+  // values — updateItemContent can't do that because it never reads or
+  // writes anything but `content`. Returns whether the save succeeded so the
+  // caller knows whether to clear the suggestion or leave it for a retry;
+  // the `!item` guard toasts (unlike this file's other silent void guards)
+  // since a caller here actually depends on the boolean for user-facing
+  // feedback.
+  async function handleApplyOptimizedPrompt(newContent: string): Promise<boolean> {
+    if (!item) {
+      toast.error("Failed to update item");
+      return false;
+    }
+
+    try {
+      const result = await updateItemContent(item.id, newContent);
+
+      if (!result.success || !result.data) {
+        toast.error(result.error ?? "Failed to update item");
+        return false;
+      }
+
+      mutate(result.data, { revalidate: false });
+      toast.success("Prompt updated");
+      router.refresh();
+      return true;
+    } catch {
+      toast.error("Failed to update item");
+      return false;
     }
   }
 
@@ -269,7 +312,11 @@ export function ItemDrawer({
                   collectionsHaveError={Boolean(collectionsError)}
                 />
               ) : (
-                <ItemDrawerViewContent item={item} isPro={isPro} />
+                <ItemDrawerViewContent
+                  item={item}
+                  isPro={isPro}
+                  onApplyOptimizedPrompt={handleApplyOptimizedPrompt}
+                />
               )}
               <ItemDrawerMetadata item={item} showCollections={mode !== "edit"} />
             </div>

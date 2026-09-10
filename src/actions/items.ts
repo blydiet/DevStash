@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
+  setItemContent as setItemContentInDb,
   setItemFavorite as setItemFavoriteInDb,
   setItemPinned as setItemPinnedInDb,
   updateItem as updateItemInDb,
@@ -131,6 +132,32 @@ export async function toggleItemFavorite(
   } catch (err) {
     console.error("Failed to update item favorite:", err);
     return { success: false, error: "Failed to update favorite" };
+  }
+
+  if (!item) {
+    return { success: false, error: "Item not found" };
+  }
+
+  return { success: true, data: item };
+}
+
+// Narrow, content-only counterpart to updateItem — see setItemContent's own
+// comment for why: it exists specifically so the Optimize-prompt apply flow
+// never has to reconstruct title/tags/collectionIds from a snapshot that
+// could be stale relative to a concurrent edit.
+export async function updateItemContent(itemId: string, content: string): Promise<UpdateItemActionResult> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  let item;
+  try {
+    item = await setItemContentInDb(itemId, content);
+  } catch (err) {
+    console.error(`Failed to update content for item ${itemId}:`, err);
+    return { success: false, error: "Failed to update item" };
   }
 
   if (!item) {

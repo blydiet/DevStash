@@ -6,6 +6,7 @@ import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { LanguageSelect } from "@/components/dashboard/LanguageSelect";
 import { FileUpload, type UploadedFile } from "@/components/dashboard/FileUpload";
+import { cn } from "@/lib/utils";
 import {
   typeShowsCodeEditor,
   typeShowsContent,
@@ -68,7 +69,18 @@ export function CreateItemFields({ form, setForm }: CreateItemFieldsProps) {
       )}
 
       {showsContent && (
-        <div className="flex flex-col gap-1.5">
+        <div
+          className={cn(
+            "flex flex-col gap-1.5",
+            // Prompt/Note have no Language field above Content, unlike
+            // Snippet/Command — without a matching sm:flex-1, this wrapper
+            // (and the MarkdownEditor box inside it) stays at its natural
+            // height while the Description column on the left stretches to
+            // fill the grid row, leaving Content short and top-aligned
+            // instead of bottom-aligned with Description.
+            showsMarkdownEditor && "sm:min-h-0 sm:flex-1"
+          )}
+        >
           <Label htmlFor="item-content">Content</Label>
           {showsCodeEditor ? (
             <CodeEditor
@@ -81,6 +93,7 @@ export function CreateItemFields({ form, setForm }: CreateItemFieldsProps) {
               id="item-content"
               value={form.content}
               onChange={(value) => setForm({ ...form, content: value })}
+              fill
             />
           ) : null}
         </div>
