@@ -6,13 +6,17 @@ import { RecentItems } from "@/components/dashboard/RecentItems";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
+import { getDashboardIsPro } from "@/lib/db/user";
 
 export default async function DashboardPage() {
+  const isPro = await getDashboardIsPro("/dashboard");
+
   return (
     <DashboardShell
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
-      upgradeButton={<UpgradeNavButton />}
+      upgradeButton={<UpgradeNavButton isPro={isPro} />}
+      isPro={isPro}
     >
       <div className="flex flex-col gap-8">
         <div>

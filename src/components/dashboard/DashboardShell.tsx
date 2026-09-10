@@ -12,11 +12,13 @@ export function DashboardShell({
   sidebar,
   search,
   upgradeButton,
+  isPro,
   children,
 }: {
   sidebar: ReactNode;
   search: ReactNode;
   upgradeButton: ReactNode;
+  isPro: boolean;
   children: ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -70,7 +72,7 @@ export function DashboardShell({
             </Sheet>
 
             <main className="flex-1 overflow-y-auto p-6">
-              <ItemDrawerProvider>
+              <ItemDrawerProvider isPro={isPro}>
                 {children}
                 {search}
               </ItemDrawerProvider>

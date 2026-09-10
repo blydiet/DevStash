@@ -6,7 +6,7 @@ import { formatFileSize } from "@/lib/file-constraints";
 import { typeShowsCodeEditor, typeShowsMarkdownEditor } from "@/lib/item-type-capabilities";
 import type { ItemDetail } from "@/lib/db/items-queries";
 
-export function ItemDrawerViewContent({ item }: { item: ItemDetail }) {
+export function ItemDrawerViewContent({ item, isPro }: { item: ItemDetail; isPro: boolean }) {
   const showsCodeEditor = typeShowsCodeEditor(item.type.name);
   const showsMarkdownEditor = typeShowsMarkdownEditor(item.type.name);
 
@@ -23,7 +23,20 @@ export function ItemDrawerViewContent({ item }: { item: ItemDetail }) {
         <div>
           <h3 className="pb-2 text-sm font-medium text-muted-foreground">Content</h3>
           {showsCodeEditor ? (
-            <CodeEditor value={item.content} language={item.language} readOnly />
+            // Keyed by item id: ItemDrawerProvider's openItem() can switch
+            // itemId while the drawer stays open (e.g. clicking a different
+            // item while this one's drawer is already showing), which
+            // doesn't unmount this tree — without this key, CodeEditor's
+            // local explanation/tab state would leak from the previous item
+            // onto the next one instead of resetting.
+            <CodeEditor
+              key={item.id}
+              value={item.content}
+              language={item.language}
+              readOnly
+              itemId={item.id}
+              isPro={isPro}
+            />
           ) : showsMarkdownEditor ? (
             <MarkdownEditor key="view" value={item.content} readOnly />
           ) : null}

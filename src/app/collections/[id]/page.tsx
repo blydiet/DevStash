@@ -5,6 +5,7 @@ import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContai
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getCollectionById, type CollectionDetail } from "@/lib/db/collections";
+import { getDashboardIsPro } from "@/lib/db/user";
 import { parsePageParam } from "@/lib/pagination";
 
 export default async function CollectionDetailPage({
@@ -17,6 +18,7 @@ export default async function CollectionDetailPage({
   const { id } = await params;
   const { page } = await searchParams;
   const currentPage = parsePageParam(page);
+  const isPro = await getDashboardIsPro(`/collections/${id}`);
 
   let collection: CollectionDetail | null = null;
   let error: string | null = null;
@@ -31,7 +33,8 @@ export default async function CollectionDetailPage({
     <DashboardShell
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
-      upgradeButton={<UpgradeNavButton />}
+      upgradeButton={<UpgradeNavButton isPro={isPro} />}
+      isPro={isPro}
     >
       <div className="flex flex-col gap-8">
         <div className="flex items-start justify-between gap-4">

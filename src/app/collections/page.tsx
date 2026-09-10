@@ -5,6 +5,7 @@ import { PaginationControls } from "@/components/dashboard/PaginationControls";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getCollectionsPage, type CollectionSummary } from "@/lib/db/collections";
+import { getDashboardIsPro } from "@/lib/db/user";
 import { COLLECTIONS_PER_PAGE, getTotalPages, parsePageParam } from "@/lib/pagination";
 
 export default async function CollectionsPage({
@@ -14,6 +15,7 @@ export default async function CollectionsPage({
 }) {
   const { page } = await searchParams;
   const requestedPage = parsePageParam(page);
+  const isPro = await getDashboardIsPro("/collections");
 
   let collections: CollectionSummary[] = [];
   let totalCount = 0;
@@ -35,7 +37,8 @@ export default async function CollectionsPage({
     <DashboardShell
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
-      upgradeButton={<UpgradeNavButton />}
+      upgradeButton={<UpgradeNavButton isPro={isPro} />}
+      isPro={isPro}
     >
       <div className="flex flex-col gap-8">
         <div>

@@ -6,10 +6,12 @@ import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { AccountActions } from "@/components/profile/AccountActions";
 import { BillingSettings } from "@/components/settings/BillingSettings";
 import { EditorPreferencesSettings } from "@/components/settings/EditorPreferencesSettings";
-import { getProfileUser } from "@/lib/db/user";
+import { getDashboardIsPro, getProfileUser } from "@/lib/db/user";
 import { changePassword, deleteAccount } from "@/actions/profile";
 
 export default async function SettingsPage() {
+  const isPro = await getDashboardIsPro("/settings");
+
   let hasError = false;
   let hasPassword: boolean | null = null;
 
@@ -27,7 +29,8 @@ export default async function SettingsPage() {
     <DashboardShell
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
-      upgradeButton={<UpgradeNavButton />}
+      upgradeButton={<UpgradeNavButton isPro={isPro} />}
+      isPro={isPro}
     >
       <div className="flex flex-col items-center gap-6 text-center">
         <div className="flex w-[300px] flex-col items-start gap-1 text-left md:w-[700px] lg:w-[790px]">

@@ -14,3 +14,10 @@ export interface SummarizeDraftActionResult {
   error?: string;
   upgradeRequired?: boolean;
 }
+
+export interface ExplainCodeActionResult {
+  success: boolean;
+  data?: { explanation: string };
+  error?: string;
+  upgradeRequired?: boolean;
+}

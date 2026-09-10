@@ -1,17 +1,14 @@
 import Link from "next/link";
 import { Zap } from "lucide-react";
-import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 
-// Renders nothing for Pro users. Kept as its own async Server Component
-// (rather than threading `isPro` through every page) so every DashboardShell
-// caller just passes this in, matching the sidebar/search container pattern.
-// Follows the same icon-first, label-on-sm-and-up shape as the New
-// Collection/New Item buttons in TopBar, rather than hiding on mobile.
-export async function UpgradeNavButton() {
-  const session = await auth();
-
-  if (session?.user?.isPro) {
+// Renders nothing for Pro users. Takes `isPro` as a prop rather than calling
+// auth() itself — every DashboardShell caller now already resolves
+// session-derived isPro once (needed for the item drawer's AI Explain
+// gating too), so re-deriving it here a second time per page would just be
+// a redundant, duplicate session read.
+export function UpgradeNavButton({ isPro }: { isPro: boolean }) {
+  if (isPro) {
     return null;
   }
 

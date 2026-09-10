@@ -28,10 +28,12 @@ export function ItemDrawer({
   itemId,
   open,
   onOpenChange,
+  isPro,
 }: {
   itemId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isPro: boolean;
 }) {
   const router = useRouter();
   const {
@@ -267,7 +269,7 @@ export function ItemDrawer({
                   collectionsHaveError={Boolean(collectionsError)}
                 />
               ) : (
-                <ItemDrawerViewContent item={item} />
+                <ItemDrawerViewContent item={item} isPro={isPro} />
               )}
               <ItemDrawerMetadata item={item} showCollections={mode !== "edit"} />
             </div>

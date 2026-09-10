@@ -9,7 +9,7 @@ export type RateLimitScope =
   | "reset-password"
   | "resend-verification"
   | "upload"
-  | "ai-tag";
+  | "ai";
 
 const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m" | "h"}` }> = {
   "sign-in": { requests: 5, window: "15 m" },
@@ -18,7 +18,13 @@ const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m
   "reset-password": { requests: 5, window: "15 m" },
   "resend-verification": { requests: 3, window: "15 m" },
   upload: { requests: 20, window: "1 h" },
-  "ai-tag": { requests: 20, window: "1 h" },
+  // Shared budget across every AI feature (tags, summaries, explanations) —
+  // one pool per user rather than a scope per feature, since they're all the
+  // same underlying cost concern (unbounded OpenAI spend). Originally named
+  // "ai-tag" when only auto-tagging existed; renamed once a third feature
+  // (explain code) joined the same bucket, so the name stops implying it's
+  // tagging-specific.
+  ai: { requests: 20, window: "1 h" },
 };
 
 // Scopes where a failed rate-limit *check* (Upstash configured but the
@@ -27,7 +33,7 @@ const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m
 // AI scopes fail closed because the worst case is unbounded OpenAI spend.
 // This does NOT apply when Upstash isn't configured at all (see getLimiter) —
 // that's a deliberate deployment state, not a transient failure.
-const FAIL_CLOSED_SCOPES = new Set<RateLimitScope>(["ai-tag"]);
+const FAIL_CLOSED_SCOPES = new Set<RateLimitScope>(["ai"]);
 
 const redis =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN

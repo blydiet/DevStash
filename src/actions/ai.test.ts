@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { suggestTags, suggestTagsForDraft, summarizeDraft } from "@/actions/ai";
+import { suggestTags, suggestTagsForDraft, summarizeDraft, explainCode } from "@/actions/ai";
 
 const { authMock, getItemDetailMock, checkRateLimitMock, rateLimitMessageMock, responsesCreateMock } =
   vi.hoisted(() => ({
@@ -34,6 +34,8 @@ const BASE_ITEM = {
   content: "some real content to analyze",
   description: null,
   tags: [] as string[],
+  type: { name: "snippet" },
+  language: null as string | null,
 };
 
 function mockOpenAiTags(tags: string[]) {
@@ -42,6 +44,10 @@ function mockOpenAiTags(tags: string[]) {
 
 function mockOpenAiSummary(description: string) {
   responsesCreateMock.mockResolvedValue({ output_text: JSON.stringify({ description }) });
+}
+
+function mockOpenAiExplanation(explanation: string) {
+  responsesCreateMock.mockResolvedValue({ output_text: JSON.stringify({ explanation }) });
 }
 
 beforeEach(() => {
@@ -82,7 +88,7 @@ describe("suggestTags", () => {
 
     const result = await suggestTags("item-1");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai-tag", "user-1");
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",
@@ -252,7 +258,7 @@ describe("suggestTagsForDraft", () => {
 
     const result = await suggestTagsForDraft("some draft content", []);
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai-tag", "user-1");
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",
@@ -350,7 +356,7 @@ describe("summarizeDraft", () => {
 
     await summarizeDraft("Title", "content", "");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai-tag", "user-1");
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
   });
 
   it("rejects when the ai-tag rate limit is exceeded, before touching OpenAI", async () => {
@@ -359,7 +365,7 @@ describe("summarizeDraft", () => {
 
     const result = await summarizeDraft("Title", "content", "");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai-tag", "user-1");
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",
@@ -486,6 +492,199 @@ describe("summarizeDraft", () => {
     const result = await summarizeDraft("Title", "content", "");
 
     expect(result).toEqual({ success: false, error: "AI summary failed. Try again." });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("explainCode", () => {
+  it("rejects when there is no session", async () => {
+    authMock.mockResolvedValue(null);
+
+    await expect(explainCode("item-1")).resolves.toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+    expect(getItemDetailMock).not.toHaveBeenCalled();
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a free user before touching rate-limit, the item, or OpenAI", async () => {
+    authMock.mockResolvedValue(FREE_SESSION);
+
+    await expect(explainCode("item-1")).resolves.toEqual({
+      success: false,
+      error: "Upgrade to Pro for AI features.",
+      upgradeRequired: true,
+    });
+    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(getItemDetailMock).not.toHaveBeenCalled();
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the shared ai rate limit is exceeded, before touching OpenAI", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+
+    const result = await explainCode("item-1");
+
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(result).toEqual({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the item doesn't exist or isn't owned by the caller", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue(null);
+
+    await expect(explainCode("item-1")).resolves.toEqual({
+      success: false,
+      error: "Item not found",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects item types that don't show a code editor, as defense-in-depth against a bypassed UI", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...BASE_ITEM, type: { name: "note" } });
+
+    await expect(explainCode("item-1")).resolves.toEqual({
+      success: false,
+      error: "Explanations are only available for snippets and commands.",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts command items, not just snippets", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...BASE_ITEM, type: { name: "command" } });
+    mockOpenAiExplanation("This runs a command.");
+
+    const result = await explainCode("item-1");
+
+    expect(result).toEqual({ success: true, data: { explanation: "This runs a command." } });
+  });
+
+  it("rejects when the item has no content to explain", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...BASE_ITEM, content: null });
+
+    await expect(explainCode("item-1")).resolves.toEqual({
+      success: false,
+      error: "Nothing to explain",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("includes a Language line when the item has a language set", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...BASE_ITEM, language: "typescript" });
+    mockOpenAiExplanation("An explanation.");
+
+    await explainCode("item-1");
+
+    const input = responsesCreateMock.mock.calls[0][0].input;
+    expect(input[1].content).toBe(
+      "Language: typescript\n\nCode:\nsome real content to analyze"
+    );
+  });
+
+  it("omits the Language line when the item has no language set", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({ ...BASE_ITEM, language: null });
+    mockOpenAiExplanation("An explanation.");
+
+    await explainCode("item-1");
+
+    const input = responsesCreateMock.mock.calls[0][0].input;
+    expect(input[1].content).toBe("Code:\nsome real content to analyze");
+  });
+
+  it("truncates content to exactly 8000 characters, capped independently of the language line", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    getItemDetailMock.mockResolvedValue({
+      ...BASE_ITEM,
+      content: "a".repeat(9000),
+      language: "typescript",
+    });
+    mockOpenAiExplanation("An explanation.");
+
+    await explainCode("item-1");
+
+    const input: string = responsesCreateMock.mock.calls[0][0].input[1].content;
+    expect(input).toBe(`Language: typescript\n\nCode:\n${"a".repeat(8000)}`);
+  });
+
+  it("sends the expected model, output cap, and Structured Outputs schema", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiExplanation("An explanation.");
+
+    await explainCode("item-1");
+
+    expect(responsesCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "gpt-5.6-luna",
+        max_output_tokens: 600,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "code_explanation",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                explanation: { type: "string", maxLength: 2500 },
+              },
+              required: ["explanation"],
+              additionalProperties: false,
+            },
+          },
+        },
+      })
+    );
+  });
+
+  it("trims whitespace off the returned explanation", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiExplanation("  An explanation.  ");
+
+    const result = await explainCode("item-1");
+
+    expect(result).toEqual({ success: true, data: { explanation: "An explanation." } });
+  });
+
+  it("returns 'Nothing to explain' when the model's explanation is empty after trimming", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiExplanation("   ");
+
+    const result = await explainCode("item-1");
+
+    expect(result).toEqual({ success: false, error: "Nothing to explain" });
+  });
+
+  it("returns a generic error and logs when the OpenAI call throws", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    authMock.mockResolvedValue(PRO_SESSION);
+    responsesCreateMock.mockRejectedValue(new Error("OpenAI is down"));
+
+    const result = await explainCode("item-1");
+
+    expect(result).toEqual({ success: false, error: "AI explanation failed. Try again." });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("returns a generic error and logs when the OpenAI response isn't valid JSON", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    authMock.mockResolvedValue(PRO_SESSION);
+    responsesCreateMock.mockResolvedValue({ output_text: "not valid json" });
+
+    const result = await explainCode("item-1");
+
+    expect(result).toEqual({ success: false, error: "AI explanation failed. Try again." });
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });

@@ -52,6 +52,7 @@ export default async function UpgradePage({
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
       upgradeButton={null}
+      isPro={isPro}
     >
       {/* `my-auto` on the inner block, not `justify-center` on the outer
           flex column: `justify-content: center` (even the `safe` variant)

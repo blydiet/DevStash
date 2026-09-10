@@ -6,12 +6,15 @@ import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getFavoriteCollections, type FavoriteCollection } from "@/lib/db/collections";
 import { getFavoriteItems, type FavoriteItem } from "@/lib/db/items-queries";
+import { getDashboardIsPro } from "@/lib/db/user";
 
 function isNotAuthenticated(reason: unknown) {
   return reason instanceof Error && reason.message === "Not authenticated";
 }
 
 export default async function FavoritesPage() {
+  const isPro = await getDashboardIsPro("/favorites");
+
   const [itemsResult, collectionsResult] = await Promise.allSettled([
     getFavoriteItems(),
     getFavoriteCollections(),
@@ -41,7 +44,8 @@ export default async function FavoritesPage() {
     <DashboardShell
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
-      upgradeButton={<UpgradeNavButton />}
+      upgradeButton={<UpgradeNavButton isPro={isPro} />}
+      isPro={isPro}
     >
       <div className="flex flex-col gap-6">
         <div>

@@ -4,9 +4,11 @@ import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { ProfileStats } from "@/components/profile/ProfileStats";
-import { getProfileUser } from "@/lib/db/user";
+import { getDashboardIsPro, getProfileUser } from "@/lib/db/user";
 
 export default async function ProfilePage() {
+  const isPro = await getDashboardIsPro("/profile");
+
   let profileError: string | null = null;
   let profileUser: Awaited<ReturnType<typeof getProfileUser>> | null = null;
 
@@ -20,7 +22,8 @@ export default async function ProfilePage() {
     <DashboardShell
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
-      upgradeButton={<UpgradeNavButton />}
+      upgradeButton={<UpgradeNavButton isPro={isPro} />}
+      isPro={isPro}
     >
       <div className="flex flex-col gap-6 md: items-center  ">
         <div className="flex flex-col gap-1  md:items-start lg:mr-[490px] md:mr-[400px]">

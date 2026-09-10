@@ -115,7 +115,7 @@ describe("checkRateLimit — configured limiter throws", () => {
     vi.resetModules();
     const { checkRateLimit: freshCheckRateLimit } = await import("@/lib/rate-limit");
 
-    const result = await freshCheckRateLimit("ai-tag", "user-1");
+    const result = await freshCheckRateLimit("ai", "user-1");
 
     expect(result.success).toBe(false);
     expect(result.remaining).toBe(0);

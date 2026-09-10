@@ -1,13 +1,20 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { BeforeMount, Monaco, OnMount } from "@monaco-editor/react";
-import { Check, Copy, Maximize2, Minimize2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
+import { Check, Copy, Crown, Loader2, Maximize2, Minimize2, Sparkles } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import VisuallyHidden from "@/components/VisuallyHidden/VisuallyHidden";
 import { useEditorPreferences } from "@/components/dashboard/EditorPreferencesContext";
+import { explainCode } from "@/actions/ai";
+import { cn } from "@/lib/utils";
 
 // Monaco only ships "vs" / "vs-dark" / "hc-black" out of the box — "monokai" and
 // "github-dark" are approximations of the well-known palettes, registered here since
@@ -103,22 +110,96 @@ interface CodeEditorProps {
   onChange?: (value: string) => void;
   language?: string | null;
   readOnly?: boolean;
+  // Only set from the item drawer's read view (ItemDrawerViewContent) — the
+  // Explain feature is scoped to already-saved snippet/command items, never
+  // the create/edit forms, so CodeEditor renders no Explain UI at all
+  // unless a caller opts in by passing this.
+  itemId?: string;
+  isPro?: boolean;
 }
 
-export function CodeEditor({ value, onChange, language, readOnly = false }: CodeEditorProps) {
+export function CodeEditor({
+  value,
+  onChange,
+  language,
+  readOnly = false,
+  itemId,
+  isPro,
+}: CodeEditorProps) {
   const { preferences } = useEditorPreferences();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [activeTab, setActiveTab] = useState<"code" | "explain">("code");
+  const mountedRef = useRef(true);
+
+  // Guards against a stale in-flight explainCode response landing after this
+  // instance unmounts — reachable since ItemDrawerProvider.openItem() can
+  // switch to a different item's id while the drawer stays open, and this
+  // component itself is remounted via key={item.id} at that point (not
+  // simply left mounted with new props), so an in-flight request from the
+  // previous item's instance must not call setState/toast after that.
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const minHeight = expanded ? EXPANDED_MIN_HEIGHT : MIN_HEIGHT;
   const maxHeight = expanded ? EXPANDED_MAX_HEIGHT : MAX_HEIGHT;
+
+  // The collapsed/expanded wrapper can be hidden (display:none) while the
+  // Explain tab is active, which leaves Monaco's last layout stale for its
+  // now-visible-again container next time the Code tab is selected.
+  useEffect(() => {
+    if (activeTab === "code") {
+      requestAnimationFrame(() => editorRef.current?.layout());
+    }
+  }, [activeTab]);
+
+  // A re-click while an explanation already exists (regenerate) doesn't
+  // clear the stale one — the Explain tab's render below gates on
+  // isExplaining to show a loading state instead of silently leaving the
+  // old explanation on screen mid-request, rather than clearing state here
+  // and risking a flash-to-empty if the caller is already sitting on that
+  // tab when the click happens.
+  async function handleExplain() {
+    if (!itemId || isExplaining) return;
+
+    setIsExplaining(true);
+    try {
+      const result = await explainCode(itemId);
+      if (!mountedRef.current) return;
+
+      if (!result.success || !result.data) {
+        toast.error(result.error ?? "AI explanation failed. Try again.");
+        return;
+      }
+
+      setExplanation(result.data.explanation);
+      setActiveTab("explain");
+    } catch {
+      if (mountedRef.current) {
+        toast.error("AI explanation failed. Try again.");
+      }
+    } finally {
+      if (mountedRef.current) {
+        setIsExplaining(false);
+      }
+    }
+  }
 
   // Height is applied imperatively (not via React state) so a resize never forces a
   // re-render of the controlled <Editor>: doing so mid-keystroke raced with Monaco's own
   // content sync and dropped characters during fast typing.
   const handleMount: OnMount = useCallback(
     (editor) => {
+      editorRef.current = editor;
+
       const syncHeight = () => {
         // Force a remeasure against the container's actual current width before reading
         // content height. Monaco's word-wrap width is otherwise whatever it was at
@@ -181,7 +262,44 @@ export function CodeEditor({ value, onChange, language, readOnly = false }: Code
           <span className="size-2.5 rounded-full bg-[#28c840]" />
         </div>
         <div className="flex items-center gap-2.5">
-          {language && <span className="text-xs text-neutral-400">{language}</span>}
+          {explanation !== null ? (
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "code" | "explain")}>
+              <TabsList variant="line">
+                <TabsTrigger value="code">Code</TabsTrigger>
+                <TabsTrigger value="explain">Explain</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          ) : (
+            language && <span className="text-xs text-neutral-400">{language}</span>
+          )}
+          {itemId &&
+            (isPro ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={handleExplain}
+                disabled={isExplaining}
+                aria-label={isExplaining ? "Generating explanation…" : "Explain code"}
+                className="text-neutral-400 hover:text-neutral-200"
+              >
+                {isExplaining ? <Loader2 className="animate-spin" /> : <Sparkles />}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger
+                  aria-disabled="true"
+                  aria-label="Explain code — AI features require Pro subscription"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "icon-xs" }),
+                    "cursor-not-allowed text-neutral-500 hover:bg-transparent hover:text-neutral-500"
+                  )}
+                >
+                  <Crown />
+                </TooltipTrigger>
+                <TooltipContent>AI features require Pro subscription</TooltipContent>
+              </Tooltip>
+            ))}
           <Button
             type="button"
             variant="ghost"
@@ -204,33 +322,55 @@ export function CodeEditor({ value, onChange, language, readOnly = false }: Code
           </Button>
         </div>
       </div>
-      <div ref={wrapperRef} style={{ height: minHeight }}>
-        <Editor
-          height="100%"
-          language={language?.toLowerCase() || "plaintext"}
-          value={value}
-          onChange={(v) => onChange?.(v ?? "")}
-          onMount={handleMount}
-          beforeMount={handleBeforeMount}
-          theme={preferences.theme}
-          options={{
-            readOnly,
-            domReadOnly: readOnly,
-            automaticLayout: true,
-            minimap: { enabled: preferences.minimap },
-            fontSize: preferences.fontSize,
-            tabSize: preferences.tabSize,
-            scrollBeyondLastLine: false,
-            padding: { top: 12, bottom: 12 },
-            renderLineHighlight: readOnly ? "none" : "line",
-            wordWrap: preferences.wordWrap ? "on" : "off",
-            scrollbar: {
-              verticalScrollbarSize: 8,
-              horizontalScrollbarSize: 8,
-            },
-          }}
-        />
+      <div className={activeTab === "explain" ? "hidden" : undefined}>
+        <div ref={wrapperRef} style={{ height: minHeight }}>
+          <Editor
+            height="100%"
+            language={language?.toLowerCase() || "plaintext"}
+            value={value}
+            onChange={(v) => onChange?.(v ?? "")}
+            onMount={handleMount}
+            beforeMount={handleBeforeMount}
+            theme={preferences.theme}
+            options={{
+              readOnly,
+              domReadOnly: readOnly,
+              automaticLayout: true,
+              minimap: { enabled: preferences.minimap },
+              fontSize: preferences.fontSize,
+              tabSize: preferences.tabSize,
+              scrollBeyondLastLine: false,
+              padding: { top: 12, bottom: 12 },
+              renderLineHighlight: readOnly ? "none" : "line",
+              wordWrap: preferences.wordWrap ? "on" : "off",
+              scrollbar: {
+                verticalScrollbarSize: 8,
+                horizontalScrollbarSize: 8,
+              },
+            }}
+          />
+        </div>
       </div>
+      {explanation !== null && (
+        <div
+          className={cn(
+            "overflow-y-auto px-3 py-2.5",
+            activeTab === "code" && "hidden"
+          )}
+          style={{ minHeight, maxHeight }}
+        >
+          {isExplaining ? (
+            <div className="flex items-center gap-2 text-xs text-neutral-500">
+              <Loader2 className="size-3.5 animate-spin" />
+              Generating explanation…
+            </div>
+          ) : (
+            <div className="markdown-preview">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{explanation}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 

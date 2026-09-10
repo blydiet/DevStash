@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { AddTypeItemButton } from "@/components/dashboard/AddTypeItemButton";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
@@ -8,6 +7,7 @@ import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getItemTypeByName } from "@/lib/db/item-metadata";
 import type { ItemTypeSummary } from "@/lib/db/items-queries";
+import { getDashboardIsPro } from "@/lib/db/user";
 import { ITEM_TYPES } from "@/lib/item-types";
 import { parsePageParam } from "@/lib/pagination";
 import { isProOnlyItemType } from "@/lib/subscription-limits";
@@ -40,8 +40,9 @@ export default async function ItemsByTypePage({
     ? ITEM_TYPES.find((candidate) => candidate.value === itemType.name)
     : undefined;
 
-  const session = await auth();
-  if (itemType && isProOnlyItemType(itemType.name) && !session?.user?.isPro) {
+  const isPro = await getDashboardIsPro(`/items/${type}`);
+
+  if (itemType && isProOnlyItemType(itemType.name) && !isPro) {
     redirect(`/upgrade?feature=${itemType.name}`);
   }
 
@@ -49,7 +50,8 @@ export default async function ItemsByTypePage({
     <DashboardShell
       sidebar={<SidebarContainer />}
       search={<GlobalSearchContainer />}
-      upgradeButton={<UpgradeNavButton />}
+      upgradeButton={<UpgradeNavButton isPro={isPro} />}
+      isPro={isPro}
     >
       <div className="flex flex-col gap-8">
         <div className="flex items-start justify-between gap-4">
