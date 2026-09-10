@@ -12,6 +12,7 @@ import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { LanguageSelect } from "@/components/dashboard/LanguageSelect";
 import { FileUpload } from "@/components/dashboard/FileUpload";
 import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
+import { SummarizeDescriptionButton } from "@/components/dashboard/SummarizeDescriptionButton";
 import {
   typeShowsCodeEditor,
   typeShowsContent,
@@ -88,7 +89,18 @@ export function ItemDrawerEditForm({
   return (
     <>
       <div>
-        <h3 className="pb-2 text-sm font-medium text-muted-foreground">Description</h3>
+        <div className="flex items-center justify-between pb-2">
+          <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
+          <SummarizeDescriptionButton
+            title={form.title}
+            content={form.content}
+            url={form.url}
+            description={form.description}
+            onSummarized={(description) =>
+              setForm((prev) => (prev ? { ...prev, description } : prev))
+            }
+          />
+        </div>
         <Textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}

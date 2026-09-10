@@ -67,9 +67,13 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 });
 
 const MIN_HEIGHT = 157;
+const MIN_HEIGHT_MOBILE = 120;
 const MAX_HEIGHT = 400;
 const EXPANDED_MIN_HEIGHT = 400;
 const EXPANDED_MAX_HEIGHT = 500;
+// Matches Tailwind's `sm` breakpoint, used elsewhere in this codebase for
+// the same mobile/desktop split (e.g. CreateItemDialog's two-column grid).
+const MOBILE_MAX_WIDTH = 640;
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -123,7 +127,15 @@ export function CodeEditor({ value, onChange, language, readOnly = false }: Code
         // the loading-skeleton frame that normally gives layout time to settle first,
         // so Monaco measures against a container that hasn't reached its final size yet).
         editor.layout();
-        const height = Math.min(maxHeight, Math.max(minHeight, editor.getContentHeight()));
+        // Only lower the floor for the collapsed editor (minHeight === MIN_HEIGHT) — the
+        // expanded modal is already full-size, so it doesn't need this. A smaller floor
+        // keeps the collapsed editor from dominating short mobile viewports (e.g. inside
+        // the Create Item dialog, where it was pushing the whole modal past the screen).
+        const effectiveMinHeight =
+          minHeight === MIN_HEIGHT && window.innerWidth < MOBILE_MAX_WIDTH
+            ? MIN_HEIGHT_MOBILE
+            : minHeight;
+        const height = Math.min(maxHeight, Math.max(effectiveMinHeight, editor.getContentHeight()));
         if (wrapperRef.current) wrapperRef.current.style.height = `${height}px`;
         // Monaco doesn't know the wrapper's height just changed, so its internal viewport/
         // scroll positioning would otherwise lag a frame behind the new container size.

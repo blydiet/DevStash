@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ItemTypeSelect } from "@/components/dashboard/ItemTypeSelect";
 import { CreateItemFields, type CreateItemFormState } from "@/components/dashboard/CreateItemFields";
 import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
+import { SummarizeDescriptionButton } from "@/components/dashboard/SummarizeDescriptionButton";
 import { createItem } from "@/actions/items";
 import { suggestTagsForDraft } from "@/actions/ai";
 import { fetchCollectionOptions } from "@/lib/swr-fetcher";
@@ -62,13 +63,24 @@ export function CreateItemDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   // Bumped every time the dialog resets (close, or a successful create,
-  // which also closes it). A suggestTagsForDraft call in flight when that
-  // happens must not land its result on whatever form now occupies this
-  // component — unlike ItemDrawerEditForm, which has a real `null` sentinel
-  // for "no active edit session," this dialog's form always resets to a
-  // real EMPTY_FORM object, so there's no falsy value to guard on; a plain
-  // generation counter captured at request-time serves the same purpose.
-  const suggestGenerationRef = useRef(0);
+  // which also closes it) — guards a stale in-flight suggestTagsForDraft
+  // result from landing on whatever form now occupies this component.
+  // Unlike ItemDrawerEditForm, which has a real `null` sentinel for "no
+  // active edit session," this dialog's form always resets to a real
+  // EMPTY_FORM object, so there's no falsy value to guard on; handleSuggestTags
+  // below reads this ref directly inside its async closure (safe — that's
+  // not render) rather than through the formGeneration state below, since it
+  // only needs the value at request-start/request-resolve time, not to
+  // trigger anything reactive.
+  const draftAiGenerationRef = useRef(0);
+  // A parallel, render-safe counter for the same reset event — passed as
+  // SummarizeDescriptionButton's `key` so a reset actually unmounts and
+  // remounts it (what makes that component's own internal mountedRef guard
+  // take effect for a stale summarizeDraft result). `key` is read during
+  // render, where reading a ref's `.current` directly isn't safe/allowed
+  // (react-hooks/refs) — state is the correct tool here, kept in lockstep
+  // with draftAiGenerationRef by bumping both together in handleOpenChange.
+  const [formGeneration, setFormGeneration] = useState(0);
   const { data: collections = [], error: collectionsError } = useSWR(
     open ? "/api/collections" : null,
     fetchCollectionOptions
@@ -82,7 +94,7 @@ export function CreateItemDialog({
   async function handleSuggestTags() {
     if (isSuggesting) return;
 
-    const generation = suggestGenerationRef.current;
+    const generation = draftAiGenerationRef.current;
     const content = showsContent && form.content.trim() !== "" ? form.content : form.description;
 
     setIsSuggesting(true);
@@ -93,7 +105,7 @@ export function CreateItemDialog({
         .filter(Boolean);
       const result = await suggestTagsForDraft(content, existingTags);
 
-      if (generation !== suggestGenerationRef.current) return; // dialog reset while this was in flight
+      if (generation !== draftAiGenerationRef.current) return; // dialog reset while this was in flight
 
       if (!result.success || !result.data) {
         toast.error(result.error ?? "AI tagging failed. Try again.", {
@@ -112,11 +124,11 @@ export function CreateItemDialog({
       const suggested = result.data.tags;
       setForm((prev) => ({ ...prev, tags: mergeTagInput(prev.tags, suggested) }));
     } catch {
-      if (generation === suggestGenerationRef.current) {
+      if (generation === draftAiGenerationRef.current) {
         toast.error("AI tagging failed. Try again.");
       }
     } finally {
-      if (generation === suggestGenerationRef.current) {
+      if (generation === draftAiGenerationRef.current) {
         setIsSuggesting(false);
       }
     }
@@ -128,7 +140,8 @@ export function CreateItemDialog({
       // skip clearing isSuggesting (see handleSuggestTags) — so it has to
       // be cleared here instead, or a reopened dialog could inherit a
       // "Suggesting…" state that nothing would ever turn off.
-      suggestGenerationRef.current += 1;
+      draftAiGenerationRef.current += 1;
+      setFormGeneration((g) => g + 1);
       setIsSuggesting(false);
       setForm({ ...EMPTY_FORM, type: defaultType ?? EMPTY_FORM.type });
     }
@@ -198,14 +211,24 @@ export function CreateItemDialog({
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="item-description">Description</Label>
+                <div className="flex flex-col gap-1.5 sm:min-h-0 sm:flex-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="item-description">Description</Label>
+                    <SummarizeDescriptionButton
+                      key={formGeneration}
+                      title={form.title}
+                      content={showsContent ? form.content : ""}
+                      url={showsUrl ? form.url : ""}
+                      description={form.description}
+                      onSummarized={(description) => setForm((prev) => ({ ...prev, description }))}
+                    />
+                  </div>
                   <Textarea
                     id="item-description"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="Description"
-                    className="rounded-[5px] overflow-auto md:field-sizing-fixed resize-none"
+                    className="rounded-[5px] overflow-auto resize-none sm:min-h-0 sm:flex-1 sm:field-sizing-fixed"
                   />
                 </div>
               </div>

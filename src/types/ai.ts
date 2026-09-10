@@ -7,3 +7,10 @@ export interface SuggestTagsActionResult {
   // without string-matching `error`.
   upgradeRequired?: boolean;
 }
+
+export interface SummarizeDraftActionResult {
+  success: boolean;
+  data?: { description: string };
+  error?: string;
+  upgradeRequired?: boolean;
+}

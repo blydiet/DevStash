@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: AI Description Summary
 
 ## Status
 
-<!-- Not Started | In Progress | Complete -->
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add an icon button (next to the Description field, matching the existing "Suggest tags" button's placement/style) that generates a concise 1-2 sentence AI summary and fills it into the Description field.
+- Available in both the Create Item dialog and the item drawer's edit mode, for every item type — the summary should be generated from whatever fields are currently available for that type (title + content for snippet/prompt/command/note, title + URL for link, title only for file/image if nothing else is present).
+- Operates purely on current in-memory form state, not saved/DB data — no save required first, and nothing is persisted until the user hits Save/Create themselves (same "never auto-saves" precedent as Suggest Tags).
+- Clicking the button overwrites the Description field with the generated summary (simple replace, not merge — unlike tags, a description is a single field, not a list to append to).
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Mirrors the existing AI Auto-Tagging feature (`suggestTagsForDraft`/`suggestTags` in `src/actions/ai.ts`) closely: same Pro-gate + rate-limit `authorizeAiCall` pattern, same OpenAI Structured Outputs approach, same Sparkles-icon ghost button treatment (see `ItemDrawerEditForm.tsx`'s "Suggest tags" button, `CreateItemFields.tsx`/`CreateItemDialog.tsx` for the Create dialog's equivalent).
+- Because this must work purely off current form inputs with no save step, this action's shape is closer to `suggestTagsForDraft` (draft content, no item id) than `suggestTags` (existing item, DB-scoped) — a single `summarizeDraft(input)`-style action operating on whatever title/content/url the user has typed, used identically by both the Create dialog and the drawer's edit mode (no separate "existing item" variant needed, since it never reads from the DB).
+- Should reuse the existing `"ai-tag"` rate-limit scope or add a new one — decide during implementation; likely fine to share since both are lightweight per-request OpenAI calls gated the same way.
+- Consider what "nothing to summarize" looks like (e.g. no title and no content typed yet) and surface the same kind of toast-based error/no-op messaging the tag feature uses.
 
 ## History
 

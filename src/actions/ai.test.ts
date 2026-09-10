@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { suggestTags, suggestTagsForDraft } from "@/actions/ai";
+import { suggestTags, suggestTagsForDraft, summarizeDraft } from "@/actions/ai";
 
 const { authMock, getItemDetailMock, checkRateLimitMock, rateLimitMessageMock, responsesCreateMock } =
   vi.hoisted(() => ({
@@ -38,6 +38,10 @@ const BASE_ITEM = {
 
 function mockOpenAiTags(tags: string[]) {
   responsesCreateMock.mockResolvedValue({ output_text: JSON.stringify({ tags }) });
+}
+
+function mockOpenAiSummary(description: string) {
+  responsesCreateMock.mockResolvedValue({ output_text: JSON.stringify({ description }) });
 }
 
 beforeEach(() => {
@@ -311,6 +315,177 @@ describe("suggestTagsForDraft", () => {
     const result = await suggestTagsForDraft("some draft content", []);
 
     expect(result).toEqual({ success: false, error: "AI tagging failed. Try again." });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("summarizeDraft", () => {
+  it("rejects when there is no session, without touching OpenAI", async () => {
+    authMock.mockResolvedValue(null);
+
+    await expect(summarizeDraft("Title", "content", "")).resolves.toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+    expect(getItemDetailMock).not.toHaveBeenCalled();
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a free user before touching rate-limit or OpenAI", async () => {
+    authMock.mockResolvedValue(FREE_SESSION);
+
+    await expect(summarizeDraft("Title", "content", "")).resolves.toEqual({
+      success: false,
+      error: "Upgrade to Pro for AI features.",
+      upgradeRequired: true,
+    });
+    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("checks the ai-tag rate-limit scope, keyed by user id, on the success path", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("A short description.");
+
+    await summarizeDraft("Title", "content", "");
+
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai-tag", "user-1");
+  });
+
+  it("rejects when the ai-tag rate limit is exceeded, before touching OpenAI", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+
+    const result = await summarizeDraft("Title", "content", "");
+
+    expect(checkRateLimitMock).toHaveBeenCalledWith("ai-tag", "user-1");
+    expect(result).toEqual({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("never touches getItemDetail — it has no item id to look up", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("A short description.");
+
+    await summarizeDraft("Title", "content", "");
+
+    expect(getItemDetailMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when title, content, and url are all blank", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+
+    await expect(summarizeDraft("   ", "", "  ")).resolves.toEqual({
+      success: false,
+      error: "Nothing to summarize",
+    });
+    expect(responsesCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("summarizes from title alone when content and url are blank (e.g. a fresh file/image draft)", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("A short description.");
+
+    const result = await summarizeDraft("Debounce Hook", "", "");
+
+    expect(result).toEqual({ success: true, data: { description: "A short description." } });
+    const input = responsesCreateMock.mock.calls[0][0].input;
+    expect(input[1].content).toBe("Title: Debounce Hook");
+  });
+
+  it("builds the combined input from only the non-blank fields, one per line", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("A short description.");
+
+    await summarizeDraft("My Title", "some content", "https://example.com");
+
+    const input = responsesCreateMock.mock.calls[0][0].input;
+    expect(input[1].content).toBe(
+      "Title: My Title\n\nContent: some content\n\nURL: https://example.com"
+    );
+  });
+
+  it("truncates a long content field to exactly 3000 characters before concatenation", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("A short description.");
+
+    await summarizeDraft("My Title", "a".repeat(5000), "https://example.com");
+
+    const input: string = responsesCreateMock.mock.calls[0][0].input[1].content;
+    expect(input).toBe(`Title: My Title\n\nContent: ${"a".repeat(3000)}\n\nURL: https://example.com`);
+  });
+
+  it("sends the expected model, output cap, and Structured Outputs schema", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("A short description.");
+
+    await summarizeDraft("Title", "content", "");
+
+    expect(responsesCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "gpt-5.6-luna",
+        max_output_tokens: 150,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "description_summary",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                description: { type: "string", maxLength: 300 },
+              },
+              required: ["description"],
+              additionalProperties: false,
+            },
+          },
+        },
+      })
+    );
+  });
+
+  it("trims whitespace off the returned description", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("  A short description.  ");
+
+    const result = await summarizeDraft("Title", "content", "");
+
+    expect(result).toEqual({ success: true, data: { description: "A short description." } });
+  });
+
+  it("returns 'Nothing to summarize' when the model's description is empty after trimming", async () => {
+    authMock.mockResolvedValue(PRO_SESSION);
+    mockOpenAiSummary("   ");
+
+    const result = await summarizeDraft("Title", "content", "");
+
+    expect(result).toEqual({ success: false, error: "Nothing to summarize" });
+  });
+
+  it("returns a generic error and logs when the OpenAI call throws", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    authMock.mockResolvedValue(PRO_SESSION);
+    responsesCreateMock.mockRejectedValue(new Error("OpenAI is down"));
+
+    const result = await summarizeDraft("Title", "content", "");
+
+    expect(result).toEqual({ success: false, error: "AI summary failed. Try again." });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("returns a generic error and logs when the OpenAI response isn't valid JSON", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    authMock.mockResolvedValue(PRO_SESSION);
+    responsesCreateMock.mockResolvedValue({ output_text: "not valid json" });
+
+    const result = await summarizeDraft("Title", "content", "");
+
+    expect(result).toEqual({ success: false, error: "AI summary failed. Try again." });
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
