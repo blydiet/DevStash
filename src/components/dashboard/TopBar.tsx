@@ -48,15 +48,21 @@ export function TopBar({
         <Star className="size-4" />
       </Button>
 
-      <div className="relative min-w-0 flex-1 sm:mx-auto sm:max-w-md sm:flex-initial">
+      <div className="relative min-w-0 flex-1 lg:mx-auto lg:max-w-md lg:flex-initial">
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search items..."
-          className="cursor-pointer pl-9 pr-9 sm:pr-14"
+          aria-label="Search items"
+          className="cursor-pointer pl-9 pr-9 lg:hidden"
           readOnly
           onClick={() => setSearchOpen(true)}
         />
-        <kbd className="absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground sm:block">
+        <Input
+          placeholder="Search items..."
+          className="hidden cursor-pointer pl-9 pr-14 lg:block"
+          readOnly
+          onClick={() => setSearchOpen(true)}
+        />
+        <kbd className="absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground lg:block">
           ⌘K
         </kbd>
       </div>
