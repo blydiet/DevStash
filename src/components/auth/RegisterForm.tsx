@@ -6,9 +6,10 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { GitHubIcon } from "@/components/shared/GitHubIcon";
 import { registerSchema } from "@/lib/validations/auth";
 
-export function RegisterForm() {
+export function RegisterForm({ githubAction }: { githubAction: () => Promise<void> }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,47 +56,62 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="name" className="text-sm font-medium">
-          Name
-        </label>
-        <Input id="name" name="name" placeholder="Ada Lovelace" required />
+    <div className="flex flex-col gap-6">
+      <form action={githubAction}>
+        <Button type="submit" variant="outline" className="w-full rounded-[10px]">
+          <GitHubIcon />
+          Sign up with GitHub
+        </Button>
+      </form>
+
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="h-px flex-1 bg-border" />
+        or
+        <div className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <Input id="email" name="email" type="email" placeholder="you@example.com" required />
-      </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="name" className="text-sm font-medium">
+            Name
+          </label>
+          <Input id="name" name="name" placeholder="Ada Lovelace" required />
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-sm font-medium">
-          Password
-        </label>
-        <Input id="password" name="password" type="password" required />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className="text-sm font-medium">
+            Email
+          </label>
+          <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="confirmPassword" className="text-sm font-medium">
-          Confirm Password
-        </label>
-        <Input id="confirmPassword" name="confirmPassword" type="password" required />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-sm font-medium">
+            Password
+          </label>
+          <Input id="password" name="password" type="password" required />
+        </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="confirmPassword" className="text-sm font-medium">
+            Confirm Password
+          </label>
+          <Input id="confirmPassword" name="confirmPassword" type="password" required />
+        </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Creating account..." : "Create Account"}
-      </Button>
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <p className="text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
-        <Link href="/sign-in" className="text-primary hover:underline">
-          Sign in
-        </Link>
-      </p>
-    </form>
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Creating account..." : "Create Account"}
+        </Button>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/sign-in" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }

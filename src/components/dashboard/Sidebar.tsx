@@ -2,8 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight, Folder, Settings, Star, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,10 +51,12 @@ function CollectionList({
   label,
   collections,
   trailing,
+  activeCollectionId,
 }: {
   label: string;
   collections: CollectionSummary[];
   trailing: (collection: CollectionSummary) => ReactNode;
+  activeCollectionId: string | null;
 }) {
   if (collections.length === 0) return null;
 
@@ -61,15 +65,20 @@ function CollectionList({
       <p className="px-2 pb-1 text-xs tracking-wide text-muted-foreground">{label}</p>
       <ul className="flex flex-col gap-0.5">
         {collections.map((collection) => (
-          <li
-            key={collection.id}
-            className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            <span className="flex items-center gap-2">
-              <Folder className="size-4" style={{ color: collection.borderColor }} />
-              {collection.name}
-            </span>
-            {trailing(collection)}
+          <li key={collection.id}>
+            <Link
+              href={`/collections/${collection.id}`}
+              className={cn(
+                "flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-muted",
+                collection.id === activeCollectionId && "bg-muted font-medium",
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <Folder className="size-4" style={{ color: collection.borderColor }} />
+                {collection.name}
+              </span>
+              {trailing(collection)}
+            </Link>
           </li>
         ))}
       </ul>
@@ -90,10 +99,15 @@ export function Sidebar({
 }) {
   const [typesOpen, setTypesOpen] = useState(true);
   const [collectionsOpen, setCollectionsOpen] = useState(true);
+  const pathname = usePathname();
 
   const favoriteCollections = collections.filter((c) => c.isFavorite);
   const otherCollections = collections.filter((c) => !c.isFavorite);
-  
+
+  const activeCollectionId = pathname.startsWith("/collections/")
+    ? (pathname.split("/")[2] ?? null)
+    : null;
+  const isAllCollectionsActive = pathname === "/collections";
 
   return (
     <div className="flex h-full flex-col">
@@ -103,11 +117,16 @@ export function Sidebar({
           <ul className="flex flex-col gap-0.5">
             {itemTypes.map((type) => {
               const Icon = iconMap[type.icon ?? ""] ?? Folder;
+              const href = `/items/${type.name.toLowerCase()}`;
+              const isActive = pathname === href;
               return (
                 <li key={type.id}>
                   <Link
-                    href={`/items/${type.name.toLowerCase()}`}
-                    className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
+                    href={href}
+                    className={cn(
+                      "flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-muted",
+                      isActive && "bg-muted font-medium",
+                    )}
                   >
                     <span className="flex items-center gap-2">
                       <Icon className="size-4" style={{ color: type.color ?? undefined }} />
@@ -143,6 +162,7 @@ export function Sidebar({
               label="FAVORITES"
               collections={favoriteCollections}
               trailing={() => <Star className="size-4 fill-yellow-500 text-yellow-500" />}
+              activeCollectionId={activeCollectionId}
             />
             <CollectionList
               label="ALL COLLECTIONS"
@@ -153,10 +173,14 @@ export function Sidebar({
                   style={{ backgroundColor: collection.borderColor }}
                 />
               )}
+              activeCollectionId={activeCollectionId}
             />
             <Link
               href="/collections"
-              className="px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+              className={cn(
+                "rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground",
+                isAllCollectionsActive && "bg-muted font-medium text-foreground",
+              )}
             >
               View all collections
             </Link>

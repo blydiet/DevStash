@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { signInWithGithub } from "@/actions/auth";
 import { auth } from "@/auth";
 import { HomeNav } from "@/components/homepage/HomeNav";
 import { spaceGrotesk, jetbrainsMono } from "@/app/fonts/homepage-fonts";
@@ -24,7 +25,7 @@ export default async function RegisterPage() {
             <CardDescription>Store smarter. Build faster.</CardDescription>
           </CardHeader>
           <CardContent>
-            <RegisterForm />
+            <RegisterForm githubAction={signInWithGithub.bind(null, "/dashboard")} />
           </CardContent>
         </Card>
       </div>

@@ -2,9 +2,20 @@
 
 ## Status
 
+Complete on `feature/ui-review-fixes`, ready to commit and merge.
+
 ## Goals
 
+Fixes from a `/ui-review`-style Playwright + design-taste-frontend pass over the dashboard:
+
+1. Sidebar has no active-link highlighting — visiting `/items/snippet`, `/collections`, etc. gives no visual indication of the current page in `Sidebar.tsx`.
+2. `/register` has no GitHub OAuth option, unlike `/sign-in` — `RegisterForm.tsx` has no GitHub button/action.
+3. ~~Free-tier pricing card vertical balance~~ — re-checked live and it already bottom-aligns correctly (an earlier session's `flex flex-1 justify-between` fix). Not a real bug; skipped per explicit user choice.
+4. ~~Item drawer code block empty space on single-line snippets~~ — `CodeEditor.tsx`'s 157px `MIN_HEIGHT` floor is a deliberate, previously-tuned match to `MarkdownEditor`'s ~136px box for visual consistency across item types in the drawer. Not a real bug; skipped per explicit user choice.
+
 ## Notes
+
+While fixing #1, found (not in the original review) that the sidebar's Collections list items (`CollectionList` in `Sidebar.tsx`) had no `href` at all — plain `<li>` text, not navigable. Fixed alongside the highlighting work: wrapped each in a `Link` to `/collections/[id]`, which was necessary groundwork before active-state highlighting made sense.
 
 ## History
 
