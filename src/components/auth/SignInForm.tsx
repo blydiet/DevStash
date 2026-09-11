@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GitHubIcon } from "@/components/shared/GitHubIcon";
+import { withCallbackUrl } from "@/lib/safe-redirect";
 import type { SignInActionResult } from "@/types/auth";
 
 const initialState: SignInActionResult = { success: false };
@@ -128,7 +129,7 @@ export function SignInForm({
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-primary hover:underline">
+        <Link href={withCallbackUrl("/register", callbackUrl)} className="text-primary hover:underline">
           Register
         </Link>
       </p>

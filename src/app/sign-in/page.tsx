@@ -5,6 +5,7 @@ import { signInWithCredentials, signInWithGithub, resendVerificationEmail } from
 import { auth } from "@/auth";
 import { HomeNav } from "@/components/homepage/HomeNav";
 import { spaceGrotesk, jetbrainsMono } from "@/app/fonts/homepage-fonts";
+import { getSafeRedirectUrl } from "@/lib/safe-redirect";
 import "@/app/homepage.css";
 
 export default async function SignInPage({
@@ -13,11 +14,11 @@ export default async function SignInPage({
   searchParams: Promise<{ callbackUrl?: string }>;
 }) {
   const { callbackUrl } = await searchParams;
-  const resolvedCallbackUrl = callbackUrl ?? "/dashboard";
+  const resolvedCallbackUrl = getSafeRedirectUrl(callbackUrl, "/dashboard");
 
   const session = await auth();
   if (session?.user) {
-    redirect("/dashboard");
+    redirect(resolvedCallbackUrl);
   }
 
   return (

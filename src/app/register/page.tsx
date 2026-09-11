@@ -5,12 +5,20 @@ import { signInWithGithub } from "@/actions/auth";
 import { auth } from "@/auth";
 import { HomeNav } from "@/components/homepage/HomeNav";
 import { spaceGrotesk, jetbrainsMono } from "@/app/fonts/homepage-fonts";
+import { getSafeRedirectUrl } from "@/lib/safe-redirect";
 import "@/app/homepage.css";
 
-export default async function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
+  const resolvedCallbackUrl = getSafeRedirectUrl(callbackUrl, "/dashboard");
+
   const session = await auth();
   if (session?.user) {
-    redirect("/dashboard");
+    redirect(resolvedCallbackUrl);
   }
 
   return (
@@ -25,7 +33,10 @@ export default async function RegisterPage() {
             <CardDescription>Store smarter. Build faster.</CardDescription>
           </CardHeader>
           <CardContent>
-            <RegisterForm githubAction={signInWithGithub.bind(null, "/dashboard")} />
+            <RegisterForm
+              callbackUrl={resolvedCallbackUrl}
+              githubAction={signInWithGithub.bind(null, resolvedCallbackUrl)}
+            />
           </CardContent>
         </Card>
       </div>

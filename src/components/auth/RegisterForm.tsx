@@ -8,8 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GitHubIcon } from "@/components/shared/GitHubIcon";
 import { registerSchema } from "@/lib/validations/auth";
+import { withCallbackUrl } from "@/lib/safe-redirect";
 
-export function RegisterForm({ githubAction }: { githubAction: () => Promise<void> }) {
+export function RegisterForm({
+  callbackUrl,
+  githubAction,
+}: {
+  callbackUrl: string;
+  githubAction: () => Promise<void>;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,7 +53,7 @@ export function RegisterForm({ githubAction }: { githubAction: () => Promise<voi
         return;
       }
 
-      router.push("/sign-in");
+      router.push(withCallbackUrl("/sign-in", callbackUrl));
       setTimeout(() => {
         toast.success("Account created — check your email to verify your account.");
       });
@@ -107,7 +114,7 @@ export function RegisterForm({ githubAction }: { githubAction: () => Promise<voi
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/sign-in" className="text-primary hover:underline">
+          <Link href={withCallbackUrl("/sign-in", callbackUrl)} className="text-primary hover:underline">
             Sign in
           </Link>
         </p>
