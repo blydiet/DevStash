@@ -2,21 +2,9 @@
 
 ## Status
 
-Complete on `feature/register-callback-url`, ready to commit and merge.
-
 ## Goals
 
-Close a gap surfaced by a `/do-i-understand` pass on the `feature/ui-review-fixes` branch (see History): `callbackUrl` is not threaded through the register flow the way it is through sign-in.
-
-- `proxy.ts` redirects unauthenticated visitors to `/sign-in?callbackUrl=...` (never to `/register`), but `SignInForm.tsx`'s "Don't have an account? Register" link is a bare `<Link href="/register">` — any `callbackUrl` already resolved on the sign-in page is silently dropped the moment a user clicks through to register.
-- `register/page.tsx` hardcodes `signInWithGithub.bind(null, "/dashboard")` with no callback support at all, and `RegisterForm.tsx`'s credentials path (`handleSubmit`) unconditionally does `router.push("/sign-in")` after a successful signup, also dropping any callback context.
-- Net effect: a user who deep-links into gated content while logged out, lands on sign-in, then registers instead of signing in, gets dropped on `/dashboard` instead of back on what they originally wanted.
-
-Fix: propagate `callbackUrl` from `/sign-in`'s Register link through `/register`, into both the GitHub and credentials sign-up paths, ending on the original destination after verification — mirroring `/sign-in`'s existing pattern. Verify the open-redirect angle explicitly (next-auth's default `redirect` callback is the only current guard on `callbackUrl` values) since this is auth-surface and there's no CI/test coverage on this path today.
-
 ## Notes
-
-Discovered mid-implementation that the original Goals' premise about the open-redirect angle was incomplete: `signIn()`'s `redirectTo` *is* validated by next-auth's own `redirect` callback, but `/sign-in`'s and `/register`'s already-authenticated branches both use a raw `next/navigation` `redirect()` call, which has zero built-in validation. Adding `callbackUrl` support to those branches (needed for the already-signed-in-but-hit-a-stale-link case) would have introduced a real open redirect if shipped as originally planned. Fixed via a new `getSafeRedirectUrl()` (`src/lib/safe-redirect.ts`) used at both raw-`redirect()` call sites. See History for the full account, including a second bug caught only through live Playwright testing: the first version of `getSafeRedirectUrl` validated against a fabricated sentinel origin (`http://localhost`, no port) instead of the app's real origin, which silently broke the primary real-world case (`proxy.ts` and next-auth's own signout page both pass callbackUrl as an absolute URL, e.g. `http://localhost:3000/items/snippet` in dev) — every such value was incorrectly rejected and fell back to `/dashboard`. Fixed by anchoring validation to `getAppUrl()` (the same trusted-origin helper used for email links) instead.
 
 ## History
 
