@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight, Folder, Settings, Star, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -100,13 +100,12 @@ export function Sidebar({
   const [typesOpen, setTypesOpen] = useState(true);
   const [collectionsOpen, setCollectionsOpen] = useState(true);
   const pathname = usePathname();
+  const params = useParams<{ id?: string }>();
 
   const favoriteCollections = collections.filter((c) => c.isFavorite);
   const otherCollections = collections.filter((c) => !c.isFavorite);
 
-  const activeCollectionId = pathname.startsWith("/collections/")
-    ? (pathname.split("/")[2] ?? null)
-    : null;
+  const activeCollectionId = params.id ?? null;
   const isAllCollectionsActive = pathname === "/collections";
 
   return (
