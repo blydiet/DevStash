@@ -2,6 +2,7 @@
 
 import { ImageOff, Pin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { onActivationKeydown } from "@/lib/keyboard-activation";
 import { useItemDrawer } from "./ItemDrawerContext";
 import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
 import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
@@ -26,6 +27,10 @@ export function ImageCard({ item }: { item: ItemSummary }) {
     <Card
       className="cursor-pointer gap-3 overflow-hidden rounded py-0 transition-colors hover:bg-muted/50"
       onClick={() => openItem(item.id)}
+      onKeyDown={onActivationKeydown(() => openItem(item.id))}
+      role="button"
+      tabIndex={0}
+      aria-label={`View ${item.title}`}
     >
       <div
         className="relative aspect-video overflow-hidden border-b-4"

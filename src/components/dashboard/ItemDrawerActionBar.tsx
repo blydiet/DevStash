@@ -69,7 +69,7 @@ export function ItemDrawerActionBar({
         onClick={onToggleFavorite}
       >
         <Star className={item.isFavorite ? "fill-yellow-500" : ""} />
-        <span className="hidden sm:inline">Favorite</span>
+        <span className="sr-only sm:not-sr-only sm:inline">Favorite</span>
       </Button>
       <Button
         variant="ghost"
@@ -79,12 +79,12 @@ export function ItemDrawerActionBar({
         onClick={onTogglePin}
       >
         <Pin className={item.isPinned ? "fill-primary" : ""} />
-        <span className="hidden sm:inline">Pin</span>
+        <span className="sr-only sm:not-sr-only sm:inline">Pin</span>
       </Button>
       {item.contentType !== "file" && (
         <Button variant="ghost" size="sm">
           <Copy />
-          <span className="hidden sm:inline">Copy</span>
+          <span className="sr-only sm:not-sr-only sm:inline">Copy</span>
         </Button>
       )}
       {item.contentType === "file" && item.fileUrl && (
@@ -95,12 +95,12 @@ export function ItemDrawerActionBar({
           render={<a href={`/api/items/${item.id}/download`} />}
         >
           <Download />
-          <span className="hidden sm:inline">Download</span>
+          <span className="sr-only sm:not-sr-only sm:inline">Download</span>
         </Button>
       )}
       <Button variant="ghost" size="sm" className="ml-auto" onClick={onStartEdit}>
         <Pencil />
-        <span className="hidden sm:inline">Edit</span>
+        <span className="sr-only sm:not-sr-only sm:inline">Edit</span>
       </Button>
       <AlertDialog>
         <AlertDialogTrigger

@@ -228,7 +228,7 @@ export function MarkdownEditor({
               placeholder="Write markdown..."
               style={{ minHeight, maxHeight }}
               className={cn(
-                "field-sizing-content block w-full resize-none bg-[#1e1e1e] px-3 py-2.5 font-mono text-xs text-neutral-200 outline-none placeholder:text-neutral-500",
+                "field-sizing-content block w-full resize-none bg-[#1e1e1e] px-3 py-2.5 font-mono text-base text-neutral-200 outline-none placeholder:text-neutral-500",
                 fill && "sm:h-full sm:field-sizing-fixed"
               )}
             />

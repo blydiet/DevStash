@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/icon-map";
+import { onActivationKeydown } from "@/lib/keyboard-activation";
 import { fetchItemDetail } from "@/lib/swr-fetcher";
 import { useItemDrawer } from "./ItemDrawerContext";
 import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
@@ -57,6 +58,10 @@ export function ItemCard({ item }: { item: ItemSummary }) {
       className="cursor-pointer rounded-l-none border-l-4 border-y-0 border-r-0 transition-colors hover:bg-muted/50"
       style={{ borderLeftColor: item.type.color ?? undefined }}
       onClick={() => openItem(item.id)}
+      onKeyDown={onActivationKeydown(() => openItem(item.id))}
+      role="button"
+      tabIndex={0}
+      aria-label={`View ${item.title}`}
     >
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">

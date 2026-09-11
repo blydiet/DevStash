@@ -3,6 +3,7 @@
 import { Download, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_FILE_ICON, EXTENSION_ICONS, formatFileSize, getExtension } from "@/lib/file-constraints";
+import { onActivationKeydown } from "@/lib/keyboard-activation";
 import { useItemDrawer } from "./ItemDrawerContext";
 import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
 import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
@@ -29,6 +30,10 @@ export function FileListItem({ item }: { item: ItemSummary }) {
     <div
       className="flex cursor-pointer flex-col gap-2 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/50 sm:flex-row sm:items-center sm:gap-4"
       onClick={() => openItem(item.id)}
+      onKeyDown={onActivationKeydown(() => openItem(item.id))}
+      role="button"
+      tabIndex={0}
+      aria-label={`View ${item.fileName ?? item.title}`}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div

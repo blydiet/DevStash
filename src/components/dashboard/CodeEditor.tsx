@@ -346,6 +346,15 @@ export function CodeEditor({
               scrollbar: {
                 verticalScrollbarSize: 8,
                 horizontalScrollbarSize: 8,
+                // Monaco defaults to always calling preventDefault()/
+                // stopPropagation() on wheel events over the editor, even
+                // once it has nothing left to scroll — so a wheel gesture
+                // over this small, capped-height box (inside a scrollable
+                // dialog/drawer) never reaches the dialog at all. Letting
+                // Monaco give up the event once it's at its own scroll
+                // boundary lets the page scroll normally, the way any other
+                // field in this form already does.
+                alwaysConsumeMouseWheel: false,
               },
             }}
           />

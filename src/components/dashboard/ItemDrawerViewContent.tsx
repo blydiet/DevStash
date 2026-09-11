@@ -29,7 +29,7 @@ export function ItemDrawerViewContent({
       {item.description && (
         <div>
           <h3 className="pb-2 text-sm font-medium text-muted-foreground">Description</h3>
-          <p className="text-sm">{item.description}</p>
+          <p className="text-base">{item.description}</p>
         </div>
       )}
 
@@ -71,7 +71,7 @@ export function ItemDrawerViewContent({
             href={item.url}
             target="_blank"
             rel="noreferrer"
-            className="break-all text-sm text-primary underline underline-offset-4"
+            className="break-all text-base text-primary underline underline-offset-4"
           >
             {item.url}
           </a>

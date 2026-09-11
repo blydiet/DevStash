@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { iconMap } from "@/lib/icon-map";
+import { onActivationKeydown } from "@/lib/keyboard-activation";
 import { useItemDrawer } from "./ItemDrawerContext";
 import type { FavoriteItem } from "@/lib/db/items-queries";
 import type { FavoriteCollection } from "@/lib/db/collections";
@@ -137,6 +138,10 @@ export function FavoritesList({
                     key={item.id}
                     className="flex cursor-pointer items-center gap-3 border-b border-border/40 px-3 py-1.5 font-mono text-sm last:border-b-0 hover:bg-muted/50"
                     onClick={() => openItem(item.id)}
+                    onKeyDown={onActivationKeydown(() => openItem(item.id))}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View ${item.title}`}
                   >
                     <Icon
                       className="size-3.5 shrink-0"

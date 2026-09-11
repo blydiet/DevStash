@@ -60,11 +60,11 @@ export function CollectionDetailActions({ collection }: { collection: Collection
           onClick={toggleFavorite}
         >
           <Star className={isFavorite ? "fill-yellow-500" : ""} />
-          <span className="hidden sm:inline">Favorite</span>
+          <span className="sr-only sm:not-sr-only sm:inline">Favorite</span>
         </Button>
         <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
           <Pencil />
-          <span className="hidden sm:inline">Edit</span>
+          <span className="sr-only sm:not-sr-only sm:inline">Edit</span>
         </Button>
         <AlertDialog>
           <AlertDialogTrigger
