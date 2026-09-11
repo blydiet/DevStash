@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ProStatusSync } from "@/components/shared/ProStatusSync";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,7 +32,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>{children}</TooltipProvider>
+        <SessionProvider refetchInterval={5 * 60}>
+          <TooltipProvider>{children}</TooltipProvider>
+          <ProStatusSync />
+        </SessionProvider>
         <Toaster theme="dark" richColors />
       </body>
     </html>

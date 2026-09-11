@@ -1,10 +1,23 @@
-# Current Feature
+# Current Feature: Client-Side Session Refresh on Pro Status Change
 
 ## Status
 
+Not Started
+
 ## Goals
 
+- Add NextAuth's `SessionProvider` to the app (root layout) — the first client-side session access in this codebase; every existing Pro check today is server-only via `auth()`.
+- Add a client component (`ProStatusSync`) that watches for a Pro → free transition in the session data `SessionProvider` already refetches — via its default `refetchOnWindowFocus` (tab focus/visibility) and an explicit `refetchInterval={5 * 60}` backstop (added after a `/do-i-understand` session identified focus/visibility as the only client-side detection path, with no automated safety net if it ever silently stopped firing). No manual `update()` call or custom listener — both refetch paths already re-run the `jwt` callback server-side, which re-syncs `isPro` from the DB, the same as `update()` would.
+- On a confirmed downgrade, show a toast ("Your Pro subscription has ended.") and call `router.refresh()` so server-rendered Pro affordances (Upgrade nav button, sidebar Pro badges, gated `/items/file`/`/items/image` pages, AI feature buttons, etc.) update without a manual reload.
+- Mounted app-wide (root layout), not scoped to just the dashboard.
+
 ## Notes
+
+- Motivated by the Stripe webhook (`src/app/api/webhooks/stripe/route.ts`) updating `User.isPro` in the DB asynchronously — the JWT callback already re-syncs on every `auth()` call, but a user sitting on a client-rendered page with no navigation/server round-trip never sees that change until they navigate or reload.
+- The refresh lives in the webhook's "effect radius" (a client-side listener reacting to focus/visibility, plus the poll backstop), not in the webhook itself — the webhook stays a pure DB sync, unaware of any connected client.
+- Keep the existing `jwt` callback's try/catch/fallback-on-DB-failure behavior untouched (confirmed: `src/auth.ts` was not touched by this feature).
+- Sign-out resets the transition-tracking ref to `null` rather than leaving it stale — otherwise a shared-device sign-out/sign-in as a different user could misfire the downgrade toast for someone who was never Pro (walked through in the `/do-i-understand` session).
+- A malformed/incomplete session payload (`isPro` present but not strictly a boolean) is skipped rather than treated as a confirmed "not Pro" — currently unreachable given `auth.ts`'s existing `?? false` coalescing in both callbacks, kept as cheap defense-in-depth against that invariant drifting later.
 
 ## History
 
