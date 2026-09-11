@@ -37,14 +37,14 @@ export default async function CollectionDetailPage({
       isPro={isPro}
     >
       <div className="flex flex-col gap-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-4">
             <h1 className="text-3xl font-bold">{collection ? collection.name : "Collection"}</h1>
-            {collection?.description && (
-              <p className="text-muted-foreground">{collection.description}</p>
-            )}
+            {collection && <CollectionDetailActions collection={collection} />}
           </div>
-          {collection && <CollectionDetailActions collection={collection} />}
+          {collection?.description && (
+            <p className="text-muted-foreground">{collection.description}</p>
+          )}
         </div>
 
         {error && (
