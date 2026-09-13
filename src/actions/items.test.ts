@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createItem,
   deleteItem,
@@ -46,8 +46,19 @@ vi.mock("@/lib/db/item-metadata", () => ({
   getItemTypeByName: getItemTypeByNameMock,
 }));
 
+// createItemSchema/updateItemSchema (src/lib/validations/items.ts) restrict
+// fileUrl to R2_PUBLIC_URL's own origin, so fixtures below using
+// "https://public.example/..." fileUrls need it set, matching
+// src/lib/validations/items.test.ts's convention.
+const originalR2PublicUrl = process.env.R2_PUBLIC_URL;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  process.env.R2_PUBLIC_URL = "https://public.example";
+});
+
+afterEach(() => {
+  process.env.R2_PUBLIC_URL = originalR2PublicUrl;
 });
 
 const validData = {
