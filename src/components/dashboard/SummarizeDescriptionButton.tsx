@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { summarizeDraft } from "@/actions/ai";
+import { handleAiActionResult } from "@/lib/ai-result-toast";
+import { useMountedRef } from "@/hooks/use-mounted-ref";
 
 interface SummarizeDescriptionButtonProps {
   title: string;
@@ -51,20 +53,7 @@ export function SummarizeDescriptionButton({
   const router = useRouter();
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const mountedRef = useRef(true);
-
-  // The setup function has to set this true (not just useRef's initial
-  // value) — React's dev-only StrictMode runs setup→cleanup→setup once on
-  // mount to surface exactly this class of bug. With only a cleanup
-  // function here, that extra cleanup flips mountedRef.current to false
-  // with nothing to ever set it back, permanently marking a fully-mounted,
-  // interactive component as unmounted from its very first render.
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  const mountedRef = useMountedRef();
 
   async function runSummarize() {
     setIsSummarizing(true);
@@ -72,16 +61,10 @@ export function SummarizeDescriptionButton({
       const result = await summarizeDraft(title, content, url);
       if (!mountedRef.current) return;
 
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? "AI summary failed. Try again.", {
-          action: result.upgradeRequired
-            ? { label: "Upgrade", onClick: () => router.push("/upgrade?feature=ai") }
-            : undefined,
-        });
-        return;
-      }
+      const data = handleAiActionResult(result, router, "AI summary failed. Try again.");
+      if (!data) return;
 
-      onSummarized(result.data.description);
+      onSummarized(data.description);
     } catch {
       if (mountedRef.current) {
         toast.error("AI summary failed. Try again.");

@@ -25,6 +25,7 @@ import type { EditForm } from "@/lib/item-drawer-utils";
 import type { ItemDetail } from "@/lib/db/items-queries";
 import type { CollectionOption } from "@/lib/db/collections";
 import { suggestTags } from "@/actions/ai";
+import { handleAiActionResult } from "@/lib/ai-result-toast";
 import { mergeTagInput } from "@/lib/tag-input";
 
 interface ItemDrawerEditFormProps {
@@ -63,21 +64,15 @@ export function ItemDrawerEditForm({
     try {
       const result = await suggestTags(item.id);
 
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? "AI tagging failed. Try again.", {
-          action: result.upgradeRequired
-            ? { label: "Upgrade", onClick: () => router.push("/upgrade?feature=ai") }
-            : undefined,
-        });
-        return;
-      }
+      const data = handleAiActionResult(result, router, "AI tagging failed. Try again.");
+      if (!data) return;
 
-      if (result.data.tags.length === 0) {
+      if (data.tags.length === 0) {
         toast.info("No new tags to suggest");
         return;
       }
 
-      const suggested = result.data.tags;
+      const suggested = data.tags;
       setForm((prev) => (prev ? { ...prev, tags: mergeTagInput(prev.tags, suggested) } : prev));
     } catch {
       toast.error("AI tagging failed. Try again.");

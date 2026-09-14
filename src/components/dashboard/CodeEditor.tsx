@@ -1,19 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { BeforeMount, Monaco, OnMount } from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
-import { Check, Copy, Crown, Loader2, Maximize2, Minimize2, Sparkles } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import VisuallyHidden from "@/components/VisuallyHidden/VisuallyHidden";
+import { AiActionButton } from "@/components/dashboard/AiActionButton";
+import { CopyButton } from "@/components/dashboard/CopyButton";
+import { ExpandableEditorDialog } from "@/components/dashboard/ExpandableEditorDialog";
 import { useEditorPreferences } from "@/components/dashboard/EditorPreferencesContext";
 import { explainCode } from "@/actions/ai";
+import { handleAiActionResult } from "@/lib/ai-result-toast";
+import { useMountedRef } from "@/hooks/use-mounted-ref";
 import { cn } from "@/lib/utils";
 
 // Monaco only ships "vs" / "vs-dark" / "hc-black" out of the box — "monokai" and
@@ -110,10 +113,12 @@ interface CodeEditorProps {
   onChange?: (value: string) => void;
   language?: string | null;
   readOnly?: boolean;
-  // Only set from the item drawer's read view (ItemDrawerViewContent) — the
-  // Explain feature is scoped to already-saved snippet/command items, never
-  // the create/edit forms, so CodeEditor renders no Explain UI at all
-  // unless a caller opts in by passing this.
+  // Only meaningful when readOnly (i.e. only ever passed from the item
+  // drawer's read view, ItemDrawerViewContent) — Explain is scoped to
+  // already-saved snippet/command items, never the create/edit forms. The
+  // button below is gated on `readOnly` as well as `itemId`, mirroring
+  // MarkdownEditor's identical Optimize guard, so this doesn't silently
+  // rely on how it happens to be called today.
   itemId?: string;
   isPro?: boolean;
 }
@@ -126,28 +131,21 @@ export function CodeEditor({
   itemId,
   isPro,
 }: CodeEditorProps) {
+  const router = useRouter();
   const { preferences } = useEditorPreferences();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
-  const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [activeTab, setActiveTab] = useState<"code" | "explain">("code");
-  const mountedRef = useRef(true);
-
   // Guards against a stale in-flight explainCode response landing after this
   // instance unmounts — reachable since ItemDrawerProvider.openItem() can
   // switch to a different item's id while the drawer stays open, and this
   // component itself is remounted via key={item.id} at that point (not
   // simply left mounted with new props), so an in-flight request from the
   // previous item's instance must not call setState/toast after that.
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  const mountedRef = useMountedRef();
 
   const minHeight = expanded ? EXPANDED_MIN_HEIGHT : MIN_HEIGHT;
   const maxHeight = expanded ? EXPANDED_MAX_HEIGHT : MAX_HEIGHT;
@@ -175,12 +173,10 @@ export function CodeEditor({
       const result = await explainCode(itemId);
       if (!mountedRef.current) return;
 
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? "AI explanation failed. Try again.");
-        return;
-      }
+      const data = handleAiActionResult(result, router, "AI explanation failed. Try again.");
+      if (!data) return;
 
-      setExplanation(result.data.explanation);
+      setExplanation(data.explanation);
       setActiveTab("explain");
     } catch {
       if (mountedRef.current) {
@@ -247,12 +243,6 @@ export function CodeEditor({
     [minHeight, maxHeight]
   );
 
-  async function handleCopy() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
   const editorPanel = (
     <div className="overflow-hidden rounded-lg border border-border bg-[#1e1e1e]">
       <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
@@ -272,34 +262,15 @@ export function CodeEditor({
           ) : (
             language && <span className="text-xs text-neutral-400">{language}</span>
           )}
-          {itemId &&
-            (isPro ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                onClick={handleExplain}
-                disabled={isExplaining}
-                aria-label={isExplaining ? "Generating explanation…" : "Explain code"}
-                className="text-neutral-400 hover:text-neutral-200"
-              >
-                {isExplaining ? <Loader2 className="animate-spin" /> : <Sparkles />}
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger
-                  aria-disabled="true"
-                  aria-label="Explain code — AI features require Pro subscription"
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "icon-xs" }),
-                    "cursor-not-allowed text-neutral-500 hover:bg-transparent hover:text-neutral-500"
-                  )}
-                >
-                  <Crown />
-                </TooltipTrigger>
-                <TooltipContent>AI features require Pro subscription</TooltipContent>
-              </Tooltip>
-            ))}
+          {itemId && readOnly && (
+            <AiActionButton
+              isPro={!!isPro}
+              isPending={isExplaining}
+              onClick={handleExplain}
+              label="Explain code"
+              pendingLabel="Generating explanation…"
+            />
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -310,16 +281,7 @@ export function CodeEditor({
           >
             {expanded ? <Minimize2 /> : <Maximize2 />}
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={handleCopy}
-            aria-label="Copy code"
-            className="text-neutral-400 hover:text-neutral-200"
-          >
-            {copied ? <Check /> : <Copy />}
-          </Button>
+          <CopyButton value={value} label="Copy code" />
         </div>
       </div>
       <div className={activeTab === "explain" ? "hidden" : undefined}>
@@ -383,19 +345,9 @@ export function CodeEditor({
     </div>
   );
 
-  if (!expanded) return editorPanel;
-
   return (
-    <Dialog open onOpenChange={setExpanded}>
-      <DialogContent
-        className="gap-0 overflow-hidden rounded-lg bg-transparent p-0 ring-0 sm:max-w-3xl"
-        showCloseButton={false}
-      >
-        <VisuallyHidden>
-          <DialogTitle>Content</DialogTitle>
-        </VisuallyHidden>
-        {editorPanel}
-      </DialogContent>
-    </Dialog>
+    <ExpandableEditorDialog expanded={expanded} onOpenChange={setExpanded}>
+      {editorPanel}
+    </ExpandableEditorDialog>
   );
 }

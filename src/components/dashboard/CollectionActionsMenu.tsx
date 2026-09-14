@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import useSWRMutation from "swr/mutation";
 import { MoreVertical, Pencil, Star, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -11,20 +9,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { EditCollectionDialog } from "@/components/dashboard/EditCollectionDialog";
-import { deleteCollectionMutation } from "@/lib/swr-fetcher";
-import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { CollectionFormDialog } from "@/components/dashboard/CollectionFormDialog";
+import { DeleteCollectionAlertDialog } from "@/components/dashboard/DeleteCollectionAlertDialog";
+import { useDeleteCollection } from "@/hooks/use-delete-collection";
 import { useToggleCollectionFavorite } from "@/hooks/use-toggle-collection-favorite";
 
 interface CollectionActionsMenuProps {
@@ -33,31 +21,17 @@ interface CollectionActionsMenuProps {
 
 export function CollectionActionsMenu({ collection }: CollectionActionsMenuProps) {
   const router = useRouter();
-  const handleApiError = useApiErrorToast();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { trigger, isMutating } = useSWRMutation(
-    `/api/collections/${collection.id}`,
-    deleteCollectionMutation,
-  );
+  const { handleDelete, isDeleting } = useDeleteCollection(collection.id, () => {
+    setDeleteOpen(false);
+    router.refresh();
+  });
   const {
     isFavorite,
     toggle: toggleFavorite,
     isTogglingFavorite,
   } = useToggleCollectionFavorite(collection.id, collection.isFavorite);
-
-  async function handleDelete() {
-    try {
-      await trigger();
-    } catch (err) {
-      handleApiError(err, "Failed to delete collection");
-      return;
-    }
-
-    setDeleteOpen(false);
-    toast.success("Collection deleted");
-    router.refresh();
-  }
 
   return (
     <>
@@ -83,25 +57,15 @@ export function CollectionActionsMenu({ collection }: CollectionActionsMenuProps
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <EditCollectionDialog collection={collection} open={editOpen} onOpenChange={setEditOpen} />
+      <CollectionFormDialog collection={collection} open={editOpen} onOpenChange={setEditOpen} />
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this collection?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This deletes &ldquo;{collection.name}&rdquo;. Items in this collection will not be
-              deleted — they&apos;ll just no longer be part of it. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isMutating}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isMutating} variant="destructive">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteCollectionAlertDialog
+        collectionName={collection.name}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

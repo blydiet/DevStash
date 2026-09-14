@@ -6,7 +6,7 @@ import { FolderPlus, Package, PanelLeft, Plus, Search, Star } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateItemDialog } from "./CreateItemDialog";
-import { CreateCollectionDialog } from "./CreateCollectionDialog";
+import { CollectionFormDialog } from "./CollectionFormDialog";
 import { useGlobalSearch } from "./GlobalSearchContext";
 
 export function TopBar({
@@ -86,7 +86,7 @@ export function TopBar({
       </div>
 
       <CreateItemDialog open={createItemOpen} onOpenChange={setCreateItemOpen} />
-      <CreateCollectionDialog open={createCollectionOpen} onOpenChange={setCreateCollectionOpen} />
+      <CollectionFormDialog open={createCollectionOpen} onOpenChange={setCreateCollectionOpen} />
     </header>
   );
 }

@@ -5,15 +5,8 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
 import FocusLock from "react-focus-lock";
-import { Sparkles, XIcon } from "lucide-react";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Sparkles } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +15,10 @@ import { ItemTypeSelect } from "@/components/dashboard/ItemTypeSelect";
 import { CreateItemFields, type CreateItemFormState } from "@/components/dashboard/CreateItemFields";
 import { CollectionsMultiSelect } from "@/components/dashboard/CollectionsMultiSelect";
 import { SummarizeDescriptionButton } from "@/components/dashboard/SummarizeDescriptionButton";
+import { DialogCloseXButton } from "@/components/dashboard/DialogCloseXButton";
 import { createItem } from "@/actions/items";
 import { suggestTagsForDraft } from "@/actions/ai";
+import { handleAiActionResult } from "@/lib/ai-result-toast";
 import { fetchCollectionOptions } from "@/lib/swr-fetcher";
 import { mergeTagInput } from "@/lib/tag-input";
 import {
@@ -107,21 +102,15 @@ export function CreateItemDialog({
 
       if (generation !== draftAiGenerationRef.current) return; // dialog reset while this was in flight
 
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? "AI tagging failed. Try again.", {
-          action: result.upgradeRequired
-            ? { label: "Upgrade", onClick: () => router.push("/upgrade?feature=ai") }
-            : undefined,
-        });
-        return;
-      }
+      const data = handleAiActionResult(result, router, "AI tagging failed. Try again.");
+      if (!data) return;
 
-      if (result.data.tags.length === 0) {
+      if (data.tags.length === 0) {
         toast.info("No new tags to suggest");
         return;
       }
 
-      const suggested = result.data.tags;
+      const suggested = data.tags;
       setForm((prev) => ({ ...prev, tags: mergeTagInput(prev.tags, suggested) }));
     } catch {
       if (generation === draftAiGenerationRef.current) {
@@ -190,10 +179,7 @@ export function CreateItemDialog({
           <DialogHeader>
             <DialogTitle>New Item</DialogTitle>
           </DialogHeader>
-          <DialogClose className="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-            <XIcon className="size-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
+          <DialogCloseXButton />
 
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">

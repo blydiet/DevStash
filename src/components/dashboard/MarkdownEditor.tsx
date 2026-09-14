@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
-import { Check, Copy, Crown, Loader2, Maximize2, Minimize2, Sparkles } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import VisuallyHidden from "@/components/VisuallyHidden/VisuallyHidden";
+import { AiActionButton } from "@/components/dashboard/AiActionButton";
+import { CopyButton } from "@/components/dashboard/CopyButton";
+import { ExpandableEditorDialog } from "@/components/dashboard/ExpandableEditorDialog";
 import { optimizePrompt } from "@/actions/ai";
+import { handleAiActionResult } from "@/lib/ai-result-toast";
+import { useMountedRef } from "@/hooks/use-mounted-ref";
 import { cn } from "@/lib/utils";
 
 const MIN_HEIGHT = 136;
@@ -23,14 +26,19 @@ interface MarkdownEditorProps {
   value: string;
   onChange?: (value: string) => void;
   readOnly?: boolean;
-  // Only set from ItemDrawerViewContent for Prompt items — Optimize is
-  // scoped to already-saved prompts in the drawer's read view, never the
-  // create/edit forms, matching CodeEditor's itemId/isPro convention for
-  // Explain. onApply persists the optimized text via the caller's own
-  // updateItem call (this component never writes to the DB) and resolves
-  // to whether the save actually succeeded, so a failure leaves the
-  // suggestion on screen for the user to retry rather than silently
-  // discarding it.
+  // Only meaningful when readOnly (i.e. only ever passed from
+  // ItemDrawerViewContent for Prompt items) — Optimize is scoped to
+  // already-saved prompts in the drawer's read view, never the create/edit
+  // forms, matching CodeEditor's itemId/isPro convention for Explain. The
+  // "optimized" tab trigger below is only ever rendered in the readOnly
+  // branch of the tab list, so the button itself is gated on `readOnly`
+  // (not just `itemId`) below — a caller passing itemId with readOnly
+  // false would otherwise land in a state with an optimized result but no
+  // visible tab to select it from. onApply persists the optimized text via
+  // the caller's own updateItem call (this component never writes to the
+  // DB) and resolves to whether the save actually succeeded, so a failure
+  // leaves the suggestion on screen for the user to retry rather than
+  // silently discarding it.
   itemId?: string;
   isPro?: boolean;
   onApply?: (newContent: string) => Promise<boolean>;
@@ -57,33 +65,20 @@ export function MarkdownEditor({
   onApply,
   fill = false,
 }: MarkdownEditorProps) {
+  const router = useRouter();
   const [tab, setTab] = useState<"write" | "preview" | "optimized">(readOnly ? "preview" : "write");
-  const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [optimizedContent, setOptimizedContent] = useState<string | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const mountedRef = useRef(true);
-
   // Guards against a stale in-flight optimizePrompt/onApply response landing
   // after this instance unmounts — mirrors CodeEditor's identical guard for
   // Explain, reachable the same way (ItemDrawerProvider.openItem() can
   // switch to a different item's id while the drawer stays open).
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  const mountedRef = useMountedRef();
 
   const minHeight = expanded ? EXPANDED_MIN_HEIGHT : MIN_HEIGHT;
   const maxHeight = expanded ? EXPANDED_MAX_HEIGHT : MAX_HEIGHT;
-
-  async function handleCopy() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
 
   async function handleOptimize() {
     if (!itemId || isOptimizing) return;
@@ -93,12 +88,10 @@ export function MarkdownEditor({
       const result = await optimizePrompt(itemId);
       if (!mountedRef.current) return;
 
-      if (!result.success || !result.data) {
-        toast.error(result.error ?? "AI optimization failed. Try again.");
-        return;
-      }
+      const data = handleAiActionResult(result, router, "AI optimization failed. Try again.");
+      if (!data) return;
 
-      setOptimizedContent(result.data.optimizedContent);
+      setOptimizedContent(data.optimizedContent);
       setTab("optimized");
     } catch {
       if (mountedRef.current) {
@@ -168,34 +161,15 @@ export function MarkdownEditor({
             </TabsList>
           )}
           <div className="flex items-center gap-1">
-            {itemId &&
-              (isPro ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={handleOptimize}
-                  disabled={isOptimizing}
-                  aria-label={isOptimizing ? "Optimizing prompt…" : "Optimize prompt"}
-                  className="text-neutral-400 hover:text-neutral-200"
-                >
-                  {isOptimizing ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                </Button>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger
-                    aria-disabled="true"
-                    aria-label="Optimize prompt — AI features require Pro subscription"
-                    className={cn(
-                      buttonVariants({ variant: "ghost", size: "icon-xs" }),
-                      "cursor-not-allowed text-neutral-500 hover:bg-transparent hover:text-neutral-500"
-                    )}
-                  >
-                    <Crown />
-                  </TooltipTrigger>
-                  <TooltipContent>AI features require Pro subscription</TooltipContent>
-                </Tooltip>
-              ))}
+            {itemId && readOnly && (
+              <AiActionButton
+                isPro={!!isPro}
+                isPending={isOptimizing}
+                onClick={handleOptimize}
+                label="Optimize prompt"
+                pendingLabel="Optimizing prompt…"
+              />
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -206,16 +180,7 @@ export function MarkdownEditor({
             >
               {expanded ? <Minimize2 /> : <Maximize2 />}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={handleCopy}
-              aria-label="Copy content"
-              className="text-neutral-400 hover:text-neutral-200"
-            >
-              {copied ? <Check /> : <Copy />}
-            </Button>
+            <CopyButton value={value} label="Copy content" />
           </div>
         </div>
 
@@ -238,7 +203,7 @@ export function MarkdownEditor({
         <TabsContent
           value="preview"
           className="m-0 overflow-y-auto px-3 py-2.5"
-          style={{ minHeight, maxHeight  }}
+          style={{ minHeight, maxHeight }}
         >
           {value.trim() === "" ? (
             <p className="text-xs text-neutral-500">Nothing to preview.</p>
@@ -283,19 +248,9 @@ export function MarkdownEditor({
     </div>
   );
 
-  if (!expanded) return editorPanel;
-
   return (
-    <Dialog open onOpenChange={setExpanded}>
-      <DialogContent
-        className="gap-0 overflow-hidden rounded-lg bg-transparent p-0 ring-0 sm:max-w-3xl"
-        showCloseButton={false}
-      >
-        <VisuallyHidden>
-          <DialogTitle>Content</DialogTitle>
-        </VisuallyHidden>
-        {editorPanel}
-      </DialogContent>
-    </Dialog>
+    <ExpandableEditorDialog expanded={expanded} onOpenChange={setExpanded}>
+      {editorPanel}
+    </ExpandableEditorDialog>
   );
 }
