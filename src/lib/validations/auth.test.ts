@@ -22,6 +22,11 @@ describe("credentialsSchema", () => {
     const result = credentialsSchema.safeParse({ email: "a@b.com", password: "" });
     expect(result.success).toBe(false);
   });
+
+  it("rejects a password longer than 100 characters", () => {
+    const result = credentialsSchema.safeParse({ email: "a@b.com", password: "x".repeat(101) });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("registerSchema", () => {
@@ -54,6 +59,16 @@ describe("registerSchema", () => {
     const result = registerSchema.safeParse({ ...base, name: "" });
     expect(result.success).toBe(false);
   });
+
+  it("rejects a password longer than 100 characters", () => {
+    const longPassword = "x".repeat(101);
+    const result = registerSchema.safeParse({
+      ...base,
+      password: longPassword,
+      confirmPassword: longPassword,
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("forgotPasswordSchema", () => {
@@ -79,6 +94,15 @@ describe("resetPasswordSchema", () => {
     const result = resetPasswordSchema.safeParse({
       password: "password1",
       confirmPassword: "password2",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a password longer than 100 characters", () => {
+    const longPassword = "x".repeat(101);
+    const result = resetPasswordSchema.safeParse({
+      password: longPassword,
+      confirmPassword: longPassword,
     });
     expect(result.success).toBe(false);
   });
@@ -108,6 +132,25 @@ describe("changePasswordSchema", () => {
       currentPassword: "old-password",
       newPassword: "newpassword1",
       confirmPassword: "different1",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a current password longer than 100 characters", () => {
+    const result = changePasswordSchema.safeParse({
+      currentPassword: "x".repeat(101),
+      newPassword: "newpassword1",
+      confirmPassword: "newpassword1",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a new password longer than 100 characters", () => {
+    const longPassword = "x".repeat(101);
+    const result = changePasswordSchema.safeParse({
+      currentPassword: "old-password",
+      newPassword: longPassword,
+      confirmPassword: longPassword,
     });
     expect(result.success).toBe(false);
   });
