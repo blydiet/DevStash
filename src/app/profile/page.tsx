@@ -1,5 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
+import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
@@ -21,7 +21,7 @@ export default async function ProfilePage() {
   return (
     <DashboardShell
       sidebar={<SidebarContainer />}
-      search={<GlobalSearchContainer />}
+      search={<GlobalSearchDialog />}
       upgradeButton={<UpgradeNavButton isPro={isPro} />}
       isPro={isPro}
     >

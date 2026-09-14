@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
+import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { AccountActions } from "@/components/profile/AccountActions";
@@ -28,7 +28,7 @@ export default async function SettingsPage() {
   return (
     <DashboardShell
       sidebar={<SidebarContainer />}
-      search={<GlobalSearchContainer />}
+      search={<GlobalSearchDialog />}
       upgradeButton={<UpgradeNavButton isPro={isPro} />}
       isPro={isPro}
     >

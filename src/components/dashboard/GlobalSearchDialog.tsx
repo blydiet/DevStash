@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { File, Folder } from "lucide-react";
+import useSWR from "swr";
+import { File, Folder, Loader2 } from "lucide-react";
 import {
   Command,
   CommandDialog,
@@ -12,27 +13,27 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { iconMap } from "@/lib/icon-map";
+import { fetchGlobalSearchData } from "@/lib/swr-fetcher";
 import { useGlobalSearch } from "./GlobalSearchContext";
 import { useItemDrawer } from "./ItemDrawerContext";
-import type { SearchableItem } from "@/lib/db/items-queries";
-import type { CollectionSummary } from "@/lib/db/collections";
 
-export function GlobalSearchDialog({
-  items,
-  itemsTruncated,
-  collections,
-  itemsError = false,
-  collectionsError = false,
-}: {
-  items: SearchableItem[];
-  itemsTruncated: boolean;
-  collections: CollectionSummary[];
-  itemsError?: boolean;
-  collectionsError?: boolean;
-}) {
+export function GlobalSearchDialog() {
   const { open, setOpen } = useGlobalSearch();
   const { openItem } = useItemDrawer();
   const router = useRouter();
+
+  // Fetched only once the dialog is actually opened (SWR's key is `null`
+  // while closed) rather than eagerly on every dashboard page load, since
+  // most sessions never open Cmd+K at all. SWR caches the result across
+  // opens/closes, so this only costs a real fetch on the first open.
+  const { data, error: fetchError } = useSWR(open ? "/api/search" : null, fetchGlobalSearchData);
+
+  const items = data?.items ?? [];
+  const itemsTruncated = data?.itemsTruncated ?? false;
+  const collections = data?.collections ?? [];
+  const itemsError = fetchError !== undefined || (data?.itemsError ?? false);
+  const collectionsError = fetchError !== undefined || (data?.collectionsError ?? false);
+  const isLoading = open && !data && !fetchError;
   const bothFailed = itemsError && collectionsError;
   const hasSearchableData = items.length > 0 || collections.length > 0;
 
@@ -67,11 +68,18 @@ export function GlobalSearchDialog({
         )}
         <CommandList>
           <CommandEmpty>
-            {bothFailed
-              ? "Failed to load search data."
-              : hasSearchableData
-                ? "No results found."
-                : "Nothing to search yet — create an item or collection first."}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Loading…
+              </span>
+            ) : bothFailed ? (
+              "Failed to load search data."
+            ) : hasSearchableData ? (
+              "No results found."
+            ) : (
+              "Nothing to search yet — create an item or collection first."
+            )}
           </CommandEmpty>
           {items.length > 0 && (
             <CommandGroup heading="Items">

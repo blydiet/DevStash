@@ -1,8 +1,16 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { getSearchableItems, type SearchableItem } from "@/lib/db/items-queries";
 import { getAllCollectionSummaries, type CollectionSummary } from "@/lib/db/collections";
-import { GlobalSearchDialog } from "./GlobalSearchDialog";
+import type { GlobalSearchData } from "@/types/search";
 
-export async function GlobalSearchContainer() {
+export async function GET() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
+  }
+
   const [itemsResult, collectionsResult] = await Promise.allSettled([
     getSearchableItems(),
     getAllCollectionSummaries(),
@@ -23,13 +31,13 @@ export async function GlobalSearchContainer() {
   const collections: CollectionSummary[] =
     collectionsResult.status === "fulfilled" ? collectionsResult.value : [];
 
-  return (
-    <GlobalSearchDialog
-      items={items}
-      itemsTruncated={itemsTruncated}
-      collections={collections}
-      itemsError={itemsError}
-      collectionsError={collectionsError}
-    />
-  );
+  const data: GlobalSearchData = {
+    items,
+    itemsTruncated,
+    itemsError,
+    collections,
+    collectionsError,
+  };
+
+  return NextResponse.json({ success: true, data });
 }

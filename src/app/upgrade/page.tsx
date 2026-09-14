@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
+import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradePricing } from "@/components/upgrade/UpgradePricing";
 import { createCheckoutSession } from "@/actions/billing";
@@ -50,7 +50,7 @@ export default async function UpgradePage({
   return (
     <DashboardShell
       sidebar={<SidebarContainer />}
-      search={<GlobalSearchContainer />}
+      search={<GlobalSearchDialog />}
       upgradeButton={null}
       isPro={isPro}
     >

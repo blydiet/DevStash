@@ -1,7 +1,7 @@
 import { CollectionDetailActions } from "@/components/dashboard/CollectionDetailActions";
 import { CollectionItemsGrid } from "@/components/dashboard/CollectionItemsGrid";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
+import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
 import { getCollectionById, type CollectionDetail } from "@/lib/db/collections";
@@ -32,7 +32,7 @@ export default async function CollectionDetailPage({
   return (
     <DashboardShell
       sidebar={<SidebarContainer />}
-      search={<GlobalSearchContainer />}
+      search={<GlobalSearchDialog />}
       upgradeButton={<UpgradeNavButton isPro={isPro} />}
       isPro={isPro}
     >

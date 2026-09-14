@@ -1,6 +1,6 @@
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
+import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { PaginationControls } from "@/components/dashboard/PaginationControls";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
@@ -36,7 +36,7 @@ export default async function CollectionsPage({
   return (
     <DashboardShell
       sidebar={<SidebarContainer />}
-      search={<GlobalSearchContainer />}
+      search={<GlobalSearchDialog />}
       upgradeButton={<UpgradeNavButton isPro={isPro} />}
       isPro={isPro}
     >

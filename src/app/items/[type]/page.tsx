@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AddTypeItemButton } from "@/components/dashboard/AddTypeItemButton";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { GlobalSearchContainer } from "@/components/dashboard/GlobalSearchContainer";
+import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { ItemsGrid } from "@/components/dashboard/ItemsGrid";
 import { SidebarContainer } from "@/components/dashboard/SidebarContainer";
 import { UpgradeNavButton } from "@/components/dashboard/UpgradeNavButton";
@@ -49,7 +49,7 @@ export default async function ItemsByTypePage({
   return (
     <DashboardShell
       sidebar={<SidebarContainer />}
-      search={<GlobalSearchContainer />}
+      search={<GlobalSearchDialog />}
       upgradeButton={<UpgradeNavButton isPro={isPro} />}
       isPro={isPro}
     >
