@@ -182,14 +182,25 @@ export async function createItem(data: CreateItemInput): Promise<ItemDetail> {
           },
         });
 
-        for (const name of data.tags) {
-          const tag = await tx.tag.upsert({
-            where: { userId_name: { userId, name } },
-            update: {},
-            create: { userId, name },
-          });
+        // Dedupe: duplicate names would otherwise upsert the same tag twice and then
+        // try to createMany two identical {itemId, tagId} join rows, violating
+        // ItemTag's composite primary key (see updateItem's identical handling above).
+        const uniqueTagNames = [...new Set(data.tags)];
 
-          await tx.itemTag.create({ data: { itemId: item.id, tagId: tag.id } });
+        const tags = await Promise.all(
+          uniqueTagNames.map((name) =>
+            tx.tag.upsert({
+              where: { userId_name: { userId, name } },
+              update: {},
+              create: { userId, name },
+            })
+          )
+        );
+
+        if (tags.length > 0) {
+          await tx.itemTag.createMany({
+            data: tags.map((tag) => ({ itemId: item.id, tagId: tag.id })),
+          });
         }
 
         const ownedCollectionIds = await getOwnedCollectionIds(tx, userId, data.collectionIds);

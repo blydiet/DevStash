@@ -21,7 +21,7 @@ const { getCurrentUserIdMock, prismaMock, txMock } = vi.hoisted(() => ({
   getCurrentUserIdMock: vi.fn(),
   txMock: {
     item: { create: vi.fn(), count: vi.fn() },
-    itemTag: { deleteMany: vi.fn(), create: vi.fn(), createMany: vi.fn() },
+    itemTag: { deleteMany: vi.fn(), createMany: vi.fn() },
     tag: { upsert: vi.fn() },
     itemCollection: { deleteMany: vi.fn(), createMany: vi.fn() },
     collection: { findMany: vi.fn() },
@@ -253,6 +253,40 @@ describe("updateItem", () => {
     expect(result?.droppedCollectionIds).toEqual(["col-2"]);
   });
 
+  it("never creates duplicate join rows for a duplicate collectionId — Collection.id is a primary key, so the ownership query can only return one row per id regardless of input duplicates", async () => {
+    prismaMock.item.findFirst
+      .mockResolvedValueOnce({ fileUrl: null })
+      .mockResolvedValueOnce({
+        id: "item-1",
+        title: "Updated title",
+        description: null,
+        contentType: "text",
+        content: null,
+        fileUrl: null,
+        fileName: null,
+        fileSize: null,
+        url: null,
+        language: null,
+        isFavorite: false,
+        isPinned: false,
+        createdAt: new Date("2026-01-01"),
+        updatedAt: new Date("2026-01-02"),
+        type: { id: "type-snippet", name: "snippet", icon: "Code", color: "#f97316" },
+        tags: [],
+        collections: [{ collection: { id: "col-1", name: "React Patterns" } }],
+      });
+    prismaMock.item.updateMany.mockResolvedValueOnce({ count: 1 });
+    // A single matching row, mirroring real Postgres/Prisma behavior: `id IN ("col-1", "col-1")`
+    // still only matches the one row that actually has id "col-1".
+    txMock.collection.findMany.mockResolvedValueOnce([{ id: "col-1" }]);
+
+    await updateItem("item-1", { ...input, tags: [], collectionIds: ["col-1", "col-1"] });
+
+    expect(txMock.itemCollection.createMany).toHaveBeenCalledWith({
+      data: [{ itemId: "item-1", collectionId: "col-1" }],
+    });
+  });
+
   it("deletes the previous R2 object when a file item's file is replaced", async () => {
     prismaMock.item.findFirst
       .mockResolvedValueOnce({ fileUrl: "https://public.example/user-1/old-photo.png" })
@@ -449,8 +483,11 @@ describe("createItem", () => {
       update: {},
       create: { userId: "user-1", name: "react" },
     });
-    expect(txMock.itemTag.create).toHaveBeenCalledWith({
-      data: { itemId: "item-1", tagId: "tag-react" },
+    expect(txMock.itemTag.createMany).toHaveBeenCalledWith({
+      data: [
+        { itemId: "item-1", tagId: "tag-react" },
+        { itemId: "item-1", tagId: "tag-hooks" },
+      ],
     });
     expect(result).toEqual({ ...createdRow, type, tags: ["react", "hooks"], collections: [] });
     expect(txMock.collection.findMany).not.toHaveBeenCalled();
@@ -463,8 +500,20 @@ describe("createItem", () => {
     const result = await createItem({ ...input, tags: [] });
 
     expect(txMock.tag.upsert).not.toHaveBeenCalled();
-    expect(txMock.itemTag.create).not.toHaveBeenCalled();
+    expect(txMock.itemTag.createMany).not.toHaveBeenCalled();
     expect(result.tags).toEqual([]);
+  });
+
+  it("dedupes duplicate tag names before upserting/joining, so createMany never sees a repeated tagId", async () => {
+    txMock.item.create.mockResolvedValue(createdRow);
+    txMock.tag.upsert.mockResolvedValueOnce({ id: "tag-react" });
+
+    await createItem({ ...input, tags: ["react", "react"] });
+
+    expect(txMock.tag.upsert).toHaveBeenCalledTimes(1);
+    expect(txMock.itemTag.createMany).toHaveBeenCalledWith({
+      data: [{ itemId: "item-1", tagId: "tag-react" }],
+    });
   });
 
   it("links the item to only the collections owned by the current user", async () => {
@@ -480,6 +529,22 @@ describe("createItem", () => {
       where: { id: { in: ["col-1", "col-2"] }, userId: "user-1" },
       select: { id: true },
     });
+    expect(txMock.itemCollection.createMany).toHaveBeenCalledWith({
+      data: [{ itemId: "item-1", collectionId: "col-1" }],
+    });
+    expect(result.collections).toEqual([{ id: "col-1", name: "React Patterns" }]);
+  });
+
+  it("never creates duplicate join rows for a duplicate collectionId — Collection.id is a primary key, so the ownership query can only return one row per id regardless of input duplicates", async () => {
+    txMock.item.create.mockResolvedValue(createdRow);
+    // A single matching row, mirroring real Postgres/Prisma behavior: `id IN ("col-1", "col-1")`
+    // still only matches the one row that actually has id "col-1".
+    txMock.collection.findMany
+      .mockResolvedValueOnce([{ id: "col-1" }])
+      .mockResolvedValueOnce([{ id: "col-1", name: "React Patterns" }]);
+
+    const result = await createItem({ ...input, tags: [], collectionIds: ["col-1", "col-1"] });
+
     expect(txMock.itemCollection.createMany).toHaveBeenCalledWith({
       data: [{ itemId: "item-1", collectionId: "col-1" }],
     });

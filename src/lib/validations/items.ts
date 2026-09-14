@@ -117,4 +117,8 @@ export const createItemSchema = z
   .refine((data) => data.fileUrl === null || data.fileName !== null, {
     message: "A file name is required",
     path: ["fileName"],
+  })
+  .refine((data) => data.fileName === null || data.fileUrl !== null, {
+    message: "fileUrl and fileName must be provided together",
+    path: ["fileUrl"],
   });

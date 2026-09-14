@@ -86,6 +86,16 @@ describe("createItemSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects a fileName with no fileUrl", () => {
+    const result = createItemSchema.safeParse({
+      ...base,
+      type: "snippet",
+      fileUrl: null,
+      fileName: "orphaned-name.png",
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("accepts a fileUrl on the same origin as R2_PUBLIC_URL", () => {
     const result = createItemSchema.safeParse({
       ...base,
