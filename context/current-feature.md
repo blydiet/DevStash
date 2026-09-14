@@ -2,23 +2,9 @@
 
 ## Status
 
-Complete. Verified live; ready to commit and merge.
-
 ## Goals
 
-Apply the findings from `docs/audit-results/refactor-scan-actions.md` (a manual scan of `src/actions/` for duplicate code, run 2026-09-14):
-
-1. Extract a shared `requireSession()` helper (new `src/lib/auth-guard.ts`) for the `auth()` → `!session?.user?.id` → `"Not authenticated"` block duplicated across `items.ts` (6x), `billing.ts` (2x), `profile.ts`, and `editor-preferences.ts`. Also apply it inside `ai.ts`'s existing `authorizeAiCall()`, which already solved this once for itself and is the template this pattern is based on.
-2. Extract a shared `mutateOwnedItem()` helper in `items.ts` for the identical try/catch → not-found → success skeleton in `toggleItemFavorite`/`updateItemContent`/`toggleItemPin` (deleteItem's boolean-vs-entity shape doesn't fit the same generic cleanly — left manual, still wired to `requireSession()`).
-3. Replace `createItem`/`updateItem`'s hand-duplicated inline parameter types in `items.ts` with schema-derived types from `src/lib/validations/items.ts`, removing the second, independently-maintained copy of the field list.
-4. Extract a shared `checkRateLimitOrFail()` helper (in `src/lib/rate-limit.ts`) for the rate-limit-check-then-early-return block duplicated 3x in `auth.ts` (`resendVerificationEmail`, `requestPasswordReset`, `resetPassword`) plus once in `ai.ts`'s `authorizeAiCall`.
-
-Pure refactor — no behavior change. Scope limited to `src/actions/`; the "Not Flagged" items in the scan report (the general try/catch convention, the two account-existence checks, `billing.ts`'s two DB-lookup blocks, and `ai.ts`'s four `generate*` functions) are intentionally left untouched.
-
 ## Notes
-
-- `profile.ts`'s `deleteAccount` currently returns `void` (not the `{success,error}` shape) and is called as a bare `<form action={...}>` — kept on that same contract while still routing its session check through `requireSession()`, rather than changing its return type and rippling into `AccountActions.tsx`'s prop typing for no visible behavior change.
-- Finding 3 used `z.infer<typeof createItemSchema>`/`z.infer<typeof updateItemSchema>` (the schema's *output* type) rather than `z.input` — `fileUrl`/`fileName`/`fileSize` carry `.default(null)`, so `z.input` would make them optional on the action's parameter type, loosening the existing contract where every field is always passed explicitly. `z.infer` keeps them required, matching the original hand-written type's strictness while still deriving from the schema instead of duplicating its field list.
 
 ## History
 
