@@ -7,14 +7,12 @@ import {
   optimizePrompt,
 } from "@/actions/ai";
 
-const { authMock, getItemDetailMock, checkRateLimitMock, rateLimitMessageMock, responsesCreateMock } =
-  vi.hoisted(() => ({
-    authMock: vi.fn(),
-    getItemDetailMock: vi.fn(),
-    checkRateLimitMock: vi.fn(),
-    rateLimitMessageMock: vi.fn(),
-    responsesCreateMock: vi.fn(),
-  }));
+const { authMock, getItemDetailMock, checkRateLimitOrFailMock, responsesCreateMock } = vi.hoisted(() => ({
+  authMock: vi.fn(),
+  getItemDetailMock: vi.fn(),
+  checkRateLimitOrFailMock: vi.fn(),
+  responsesCreateMock: vi.fn(),
+}));
 
 vi.mock("@/auth", () => ({ auth: authMock }));
 
@@ -23,8 +21,7 @@ vi.mock("@/lib/db/items-queries", () => ({
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
-  checkRateLimit: checkRateLimitMock,
-  rateLimitMessage: rateLimitMessageMock,
+  checkRateLimitOrFail: checkRateLimitOrFailMock,
 }));
 
 vi.mock("@/lib/openai", () => ({
@@ -62,8 +59,7 @@ function mockOpenAiOptimization(optimizedContent: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  checkRateLimitMock.mockResolvedValue({ success: true, remaining: 19, reset: 0 });
-  rateLimitMessageMock.mockReturnValue("Too many attempts. Please try again in 1 minute.");
+  checkRateLimitOrFailMock.mockResolvedValue(null);
   getItemDetailMock.mockResolvedValue(BASE_ITEM);
 });
 
@@ -87,18 +83,21 @@ describe("suggestTags", () => {
       error: "Upgrade to Pro for AI features.",
       upgradeRequired: true,
     });
-    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(checkRateLimitOrFailMock).not.toHaveBeenCalled();
     expect(getItemDetailMock).not.toHaveBeenCalled();
     expect(responsesCreateMock).not.toHaveBeenCalled();
   });
 
   it("rejects when the ai-tag rate limit is exceeded, before touching OpenAI", async () => {
     authMock.mockResolvedValue(PRO_SESSION);
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+    checkRateLimitOrFailMock.mockResolvedValue({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
 
     const result = await suggestTags("item-1");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(checkRateLimitOrFailMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",
@@ -258,17 +257,20 @@ describe("suggestTagsForDraft", () => {
       error: "Upgrade to Pro for AI features.",
       upgradeRequired: true,
     });
-    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(checkRateLimitOrFailMock).not.toHaveBeenCalled();
     expect(responsesCreateMock).not.toHaveBeenCalled();
   });
 
   it("rejects when the ai-tag rate limit is exceeded, before touching OpenAI", async () => {
     authMock.mockResolvedValue(PRO_SESSION);
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+    checkRateLimitOrFailMock.mockResolvedValue({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
 
     const result = await suggestTagsForDraft("some draft content", []);
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(checkRateLimitOrFailMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",
@@ -356,7 +358,7 @@ describe("summarizeDraft", () => {
       error: "Upgrade to Pro for AI features.",
       upgradeRequired: true,
     });
-    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(checkRateLimitOrFailMock).not.toHaveBeenCalled();
     expect(responsesCreateMock).not.toHaveBeenCalled();
   });
 
@@ -366,16 +368,19 @@ describe("summarizeDraft", () => {
 
     await summarizeDraft("Title", "content", "");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(checkRateLimitOrFailMock).toHaveBeenCalledWith("ai", "user-1");
   });
 
   it("rejects when the ai-tag rate limit is exceeded, before touching OpenAI", async () => {
     authMock.mockResolvedValue(PRO_SESSION);
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+    checkRateLimitOrFailMock.mockResolvedValue({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
 
     const result = await summarizeDraft("Title", "content", "");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(checkRateLimitOrFailMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",
@@ -527,18 +532,21 @@ describe("explainCode", () => {
       error: "Upgrade to Pro for AI features.",
       upgradeRequired: true,
     });
-    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(checkRateLimitOrFailMock).not.toHaveBeenCalled();
     expect(getItemDetailMock).not.toHaveBeenCalled();
     expect(responsesCreateMock).not.toHaveBeenCalled();
   });
 
   it("rejects when the shared ai rate limit is exceeded, before touching OpenAI", async () => {
     authMock.mockResolvedValue(PRO_SESSION);
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+    checkRateLimitOrFailMock.mockResolvedValue({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
 
     const result = await explainCode("item-1");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(checkRateLimitOrFailMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",
@@ -722,18 +730,21 @@ describe("optimizePrompt", () => {
       error: "Upgrade to Pro for AI features.",
       upgradeRequired: true,
     });
-    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(checkRateLimitOrFailMock).not.toHaveBeenCalled();
     expect(getItemDetailMock).not.toHaveBeenCalled();
     expect(responsesCreateMock).not.toHaveBeenCalled();
   });
 
   it("rejects when the shared ai rate limit is exceeded, before touching OpenAI", async () => {
     authMock.mockResolvedValue(PRO_SESSION);
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 123 });
+    checkRateLimitOrFailMock.mockResolvedValue({
+      success: false,
+      error: "Too many attempts. Please try again in 1 minute.",
+    });
 
     const result = await optimizePrompt("item-1");
 
-    expect(checkRateLimitMock).toHaveBeenCalledWith("ai", "user-1");
+    expect(checkRateLimitOrFailMock).toHaveBeenCalledWith("ai", "user-1");
     expect(result).toEqual({
       success: false,
       error: "Too many attempts. Please try again in 1 minute.",

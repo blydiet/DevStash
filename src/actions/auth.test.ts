@@ -19,7 +19,7 @@ const {
   sendPasswordResetEmailMock,
   consumeVerificationTokenMock,
   isEmailVerificationEnabledMock,
-  checkRateLimitMock,
+  checkRateLimitOrFailMock,
   getClientIpMock,
   rateLimitMessageMock,
   bcryptMock,
@@ -58,7 +58,7 @@ const {
     sendPasswordResetEmailMock: vi.fn(),
     consumeVerificationTokenMock: vi.fn(),
     isEmailVerificationEnabledMock: vi.fn(),
-    checkRateLimitMock: vi.fn(),
+    checkRateLimitOrFailMock: vi.fn(),
     getClientIpMock: vi.fn(),
     rateLimitMessageMock: vi.fn(),
     bcryptMock: { hash: vi.fn() },
@@ -99,7 +99,7 @@ vi.mock("@/lib/feature-flags", () => ({
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
-  checkRateLimit: checkRateLimitMock,
+  checkRateLimitOrFail: checkRateLimitOrFailMock,
   getClientIp: getClientIpMock,
   rateLimitMessage: rateLimitMessageMock,
 }));
@@ -120,7 +120,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env.APP_URL = "http://devstash.io";
   getClientIpMock.mockResolvedValue("1.2.3.4");
-  checkRateLimitMock.mockResolvedValue({ success: true, remaining: 5, reset: 0 });
+  checkRateLimitOrFailMock.mockResolvedValue(null);
   isEmailVerificationEnabledMock.mockReturnValue(true);
 });
 
@@ -221,12 +221,11 @@ describe("resendVerificationEmail", () => {
     const result = await resendVerificationEmail("a@b.com");
 
     expect(result).toEqual({ success: true });
-    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(checkRateLimitOrFailMock).not.toHaveBeenCalled();
   });
 
   it("returns a rate-limit error when over the limit", async () => {
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 999 });
-    rateLimitMessageMock.mockReturnValue("Slow down.");
+    checkRateLimitOrFailMock.mockResolvedValue({ success: false, error: "Slow down." });
 
     const result = await resendVerificationEmail("a@b.com");
 
@@ -314,12 +313,11 @@ describe("requestPasswordReset", () => {
     const result = await requestPasswordReset("not-an-email");
 
     expect(result.success).toBe(false);
-    expect(checkRateLimitMock).not.toHaveBeenCalled();
+    expect(checkRateLimitOrFailMock).not.toHaveBeenCalled();
   });
 
   it("returns a rate-limit error when over the limit", async () => {
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 999 });
-    rateLimitMessageMock.mockReturnValue("Slow down.");
+    checkRateLimitOrFailMock.mockResolvedValue({ success: false, error: "Slow down." });
 
     const result = await requestPasswordReset("a@b.com");
 
@@ -359,8 +357,7 @@ describe("resetPassword", () => {
   });
 
   it("returns a rate-limit error when over the limit", async () => {
-    checkRateLimitMock.mockResolvedValue({ success: false, remaining: 0, reset: 999 });
-    rateLimitMessageMock.mockReturnValue("Slow down.");
+    checkRateLimitOrFailMock.mockResolvedValue({ success: false, error: "Slow down." });
 
     const result = await resetPassword(
       "raw-token",

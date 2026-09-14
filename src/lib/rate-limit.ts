@@ -112,6 +112,23 @@ export async function getClientIp(): Promise<string> {
   return "unknown";
 }
 
+// Shared by every call site that just wants "check the limit, and if it's
+// exceeded, bail with the standard rate-limited result" — collapses the
+// checkRateLimit + rateLimitMessage pairing that was previously copy-pasted
+// at each call site into one shared shape.
+export async function checkRateLimitOrFail(
+  scope: RateLimitScope,
+  identifier: string
+): Promise<{ success: false; error: string } | null> {
+  const { success: withinLimit, reset } = await checkRateLimit(scope, identifier);
+
+  if (!withinLimit) {
+    return { success: false, error: rateLimitMessage(reset) };
+  }
+
+  return null;
+}
+
 export function rateLimitMessage(reset: number): string {
   const minutes = Math.max(1, Math.ceil((reset - Date.now()) / 60_000));
   return `Too many attempts. Please try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;

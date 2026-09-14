@@ -1,6 +1,7 @@
 "use server";
 
-import { auth } from "@/auth";
+import type { z } from "zod";
+import { requireSession } from "@/lib/auth-guard";
 import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
@@ -14,24 +15,43 @@ import { createItemSchema, updateItemSchema } from "@/lib/validations/items";
 import { isProOnlyItemType, ItemLimitExceededError } from "@/lib/subscription-limits";
 import type { CreateItemActionResult, DeleteItemActionResult, UpdateItemActionResult } from "@/types/items";
 
-export async function createItem(data: {
-  type: string;
-  title: string;
-  description: string | null;
-  content: string | null;
-  url: string | null;
-  language: string | null;
-  fileUrl: string | null;
-  fileName: string | null;
-  fileSize: number | null;
-  tags: string[];
-  collectionIds: string[];
-}): Promise<CreateItemActionResult> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
+// Shared by toggleItemFavorite/updateItemContent/toggleItemPin below — all
+// three are the same try/catch → not-found → success shape around a
+// single-field db/items-mutations.ts call, differing only in which db
+// function is called and the two message strings. deleteItem has the same
+// skeleton but returns a boolean instead of an entity and has no `data`
+// field, so it isn't forced into this generic — kept separate below.
+async function mutateOwnedItem<T>(
+  itemId: string,
+  mutate: () => Promise<T | null>,
+  actionLabel: string,
+  failureMessage: string
+): Promise<{ success: true; data: T } | { success: false; error: string }> {
+  let result: T | null;
+  try {
+    result = await mutate();
+  } catch (err) {
+    console.error(`Failed to ${actionLabel} for item ${itemId}:`, err);
+    return { success: false, error: failureMessage };
   }
+
+  if (!result) {
+    return { success: false, error: "Item not found" };
+  }
+
+  return { success: true, data: result };
+}
+
+// z.infer (the schema's *output* type) rather than z.input: fileUrl/fileName/
+// fileSize carry .default(null), so the input type would make them optional —
+// looser than this action's actual contract, where every field is always
+// passed explicitly (see CreateItemDialog.tsx). Output keeps them required,
+// matching the field list Zod already owns without loosening the signature.
+export async function createItem(
+  data: z.infer<typeof createItemSchema>
+): Promise<CreateItemActionResult> {
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
   const parsed = createItemSchema.safeParse(data);
 
@@ -39,7 +59,7 @@ export async function createItem(data: {
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  if (isProOnlyItemType(parsed.data.type) && !session.user.isPro) {
+  if (isProOnlyItemType(parsed.data.type) && !authed.user.isPro) {
     return { success: false, error: "Upgrade to Pro to create file and image items." };
   }
 
@@ -51,7 +71,7 @@ export async function createItem(data: {
 
   let item;
   try {
-    item = await createItemInDb({ ...parsed.data, type, isPro: session.user.isPro });
+    item = await createItemInDb({ ...parsed.data, type, isPro: authed.user.isPro });
   } catch (err) {
     if (err instanceof ItemLimitExceededError) {
       return {
@@ -66,26 +86,13 @@ export async function createItem(data: {
   return { success: true, data: item };
 }
 
+// See createItem's comment above on z.infer vs z.input.
 export async function updateItem(
   itemId: string,
-  data: {
-    title: string;
-    description: string | null;
-    content: string | null;
-    url: string | null;
-    language: string | null;
-    fileUrl: string | null;
-    fileName: string | null;
-    fileSize: number | null;
-    tags: string[];
-    collectionIds: string[];
-  }
+  data: z.infer<typeof updateItemSchema>
 ): Promise<UpdateItemActionResult> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
   const parsed = updateItemSchema.safeParse(data);
 
@@ -120,25 +127,15 @@ export async function toggleItemFavorite(
   itemId: string,
   isFavorite: boolean
 ): Promise<UpdateItemActionResult> {
-  const session = await auth();
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  let item;
-  try {
-    item = await setItemFavoriteInDb(itemId, isFavorite);
-  } catch (err) {
-    console.error("Failed to update item favorite:", err);
-    return { success: false, error: "Failed to update favorite" };
-  }
-
-  if (!item) {
-    return { success: false, error: "Item not found" };
-  }
-
-  return { success: true, data: item };
+  return mutateOwnedItem(
+    itemId,
+    () => setItemFavoriteInDb(itemId, isFavorite),
+    "update favorite",
+    "Failed to update favorite"
+  );
 }
 
 // Narrow, content-only counterpart to updateItem — see setItemContent's own
@@ -146,55 +143,32 @@ export async function toggleItemFavorite(
 // never has to reconstruct title/tags/collectionIds from a snapshot that
 // could be stale relative to a concurrent edit.
 export async function updateItemContent(itemId: string, content: string): Promise<UpdateItemActionResult> {
-  const session = await auth();
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  let item;
-  try {
-    item = await setItemContentInDb(itemId, content);
-  } catch (err) {
-    console.error(`Failed to update content for item ${itemId}:`, err);
-    return { success: false, error: "Failed to update item" };
-  }
-
-  if (!item) {
-    return { success: false, error: "Item not found" };
-  }
-
-  return { success: true, data: item };
+  return mutateOwnedItem(
+    itemId,
+    () => setItemContentInDb(itemId, content),
+    "update content",
+    "Failed to update item"
+  );
 }
 
 export async function toggleItemPin(itemId: string, isPinned: boolean): Promise<UpdateItemActionResult> {
-  const session = await auth();
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  let item;
-  try {
-    item = await setItemPinnedInDb(itemId, isPinned);
-  } catch (err) {
-    console.error(`Failed to update item pin for item ${itemId}:`, err);
-    return { success: false, error: "Failed to update pin" };
-  }
-
-  if (!item) {
-    return { success: false, error: "Item not found" };
-  }
-
-  return { success: true, data: item };
+  return mutateOwnedItem(
+    itemId,
+    () => setItemPinnedInDb(itemId, isPinned),
+    "update pin",
+    "Failed to update pin"
+  );
 }
 
 export async function deleteItem(itemId: string): Promise<DeleteItemActionResult> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
   let deleted;
   try {

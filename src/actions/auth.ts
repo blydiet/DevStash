@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { consumeVerificationToken } from "@/lib/db/verification-tokens";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
-import { checkRateLimit, getClientIp, rateLimitMessage } from "@/lib/rate-limit";
+import { checkRateLimitOrFail, getClientIp, rateLimitMessage } from "@/lib/rate-limit";
 import { getAppUrl } from "@/lib/app-url";
 import { credentialsSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth";
 import type { SignInActionResult, ResetPasswordActionResult } from "@/types/auth";
@@ -80,14 +80,8 @@ export async function resendVerificationEmail(
   }
 
   const ip = await getClientIp();
-  const { success: withinLimit, reset } = await checkRateLimit(
-    "resend-verification",
-    `${ip}:${email}`
-  );
-
-  if (!withinLimit) {
-    return { success: false, error: rateLimitMessage(reset) };
-  }
+  const limited = await checkRateLimitOrFail("resend-verification", `${ip}:${email}`);
+  if (limited) return limited;
 
   const user = await prisma.user.findUnique({ where: { email } });
 
@@ -130,11 +124,8 @@ export async function requestPasswordReset(
   }
 
   const ip = await getClientIp();
-  const { success: withinLimit, reset } = await checkRateLimit("forgot-password", ip);
-
-  if (!withinLimit) {
-    return { success: false, error: rateLimitMessage(reset) };
-  }
+  const limited = await checkRateLimitOrFail("forgot-password", ip);
+  if (limited) return limited;
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
 
@@ -168,11 +159,8 @@ export async function resetPassword(
   }
 
   const ip = await getClientIp();
-  const { success: withinLimit, reset } = await checkRateLimit("reset-password", ip);
-
-  if (!withinLimit) {
-    return { success: false, error: rateLimitMessage(reset) };
-  }
+  const limited = await checkRateLimitOrFail("reset-password", ip);
+  if (limited) return limited;
 
   const result = await consumeVerificationToken("password-reset", rawToken);
 

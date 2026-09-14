@@ -1,7 +1,8 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { auth, signOut } from "@/auth";
+import { signOut } from "@/auth";
+import { requireSession } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
 import { changePasswordSchema } from "@/lib/validations/auth";
 import type { ChangePasswordActionResult } from "@/types/auth";
@@ -11,11 +12,8 @@ export async function changePassword(
   newPassword: string,
   confirmPassword: string
 ): Promise<ChangePasswordActionResult> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
   const parsed = changePasswordSchema.safeParse({
     currentPassword,
@@ -27,7 +25,7 @@ export async function changePassword(
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: authed.user.userId } });
 
   if (!user.password) {
     return { success: false, error: "This account doesn't use a password" };
@@ -49,12 +47,9 @@ export async function changePassword(
 }
 
 export async function deleteAccount() {
-  const session = await auth();
+  const authed = await requireSession();
+  if (!authed.ok) return;
 
-  if (!session?.user?.id) {
-    return;
-  }
-
-  await prisma.user.delete({ where: { id: session.user.id } });
+  await prisma.user.delete({ where: { id: authed.user.userId } });
   await signOut({ redirectTo: "/sign-in" });
 }

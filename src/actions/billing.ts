@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireSession } from "@/lib/auth-guard";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { getAppUrl } from "@/lib/app-url";
@@ -21,11 +21,8 @@ function getPriceId(billingPeriod: "monthly" | "yearly"): string | undefined {
 export async function createCheckoutSession(
   billingPeriod: "monthly" | "yearly"
 ): Promise<CreateCheckoutSessionResult> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
   const parsed = billingPeriodSchema.safeParse(billingPeriod);
 
@@ -46,7 +43,7 @@ export async function createCheckoutSession(
   // creating a customer unreachable for receipts/dunning. User.email is a
   // required, unique DB column, so this is the trustworthy source.
   const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: authed.user.userId },
     select: { email: true },
   });
 
@@ -57,7 +54,7 @@ export async function createCheckoutSession(
   let checkoutUrl: string | null;
   try {
     const customerId = await getOrCreateStripeCustomerId(
-      session.user.id,
+      authed.user.userId,
       dbUser.email,
       async (email, userId) => {
         const customer = await stripe.customers.create({ email, metadata: { userId } });
@@ -72,8 +69,8 @@ export async function createCheckoutSession(
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl}/settings?checkout=success`,
       cancel_url: `${appUrl}/settings?checkout=cancelled`,
-      client_reference_id: session.user.id,
-      subscription_data: { metadata: { userId: session.user.id } },
+      client_reference_id: authed.user.userId,
+      subscription_data: { metadata: { userId: authed.user.userId } },
     });
 
     checkoutUrl = checkoutSession.url;
@@ -92,14 +89,11 @@ export async function createCheckoutSession(
 }
 
 export async function createBillingPortalSession(): Promise<CreatePortalSessionResult> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
-  }
+  const authed = await requireSession();
+  if (!authed.ok) return authed.result;
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: authed.user.userId },
     select: { stripeCustomerId: true },
   });
 

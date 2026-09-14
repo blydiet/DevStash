@@ -75,7 +75,7 @@ const validData = {
 };
 
 const validCreateData = {
-  type: "snippet",
+  type: "snippet" as const,
   title: "New Snippet",
   description: null,
   content: "console.log('hi')",
@@ -227,7 +227,7 @@ describe("createItem", () => {
 
     const data = {
       ...validCreateData,
-      type: "image",
+      type: "image" as const,
       content: null,
       fileUrl: "https://public.example/user-1/abc-photo.png",
       fileName: "photo.png",
@@ -375,7 +375,10 @@ describe("toggleItemFavorite", () => {
 
     expect(setItemFavoriteInDbMock).toHaveBeenCalledWith("item-1", true);
     expect(result).toEqual({ success: false, error: "Failed to update favorite" });
-    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to update item favorite:", expect.any(Error));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Failed to update favorite for item item-1:",
+      expect.any(Error)
+    );
 
     consoleErrorSpy.mockRestore();
   });
@@ -422,7 +425,7 @@ describe("toggleItemPin", () => {
     expect(setItemPinnedInDbMock).toHaveBeenCalledWith("item-1", true);
     expect(result).toEqual({ success: false, error: "Failed to update pin" });
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "Failed to update item pin for item item-1:",
+      "Failed to update pin for item item-1:",
       expect.any(Error)
     );
 

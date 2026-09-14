@@ -1,8 +1,8 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireSession } from "@/lib/auth-guard";
 import { getItemDetail } from "@/lib/db/items-queries";
-import { checkRateLimit, rateLimitMessage } from "@/lib/rate-limit";
+import { checkRateLimitOrFail } from "@/lib/rate-limit";
 import { AI_MODEL, getOpenAIClient } from "@/lib/openai";
 import { typeShowsCodeEditor } from "@/lib/item-type-capabilities";
 import { suggestTagsForDraftSchema, summarizeDraftSchema } from "@/lib/validations/ai";
@@ -101,23 +101,18 @@ interface AiAuthorizationFailure {
 // both actions below since the gate itself doesn't depend on whether the
 // item already exists.
 async function authorizeAiCall(): Promise<{ ok: true } | { ok: false; result: AiAuthorizationFailure }> {
-  const session = await auth();
+  const authed = await requireSession();
+  if (!authed.ok) return authed;
 
-  if (!session?.user?.id) {
-    return { ok: false, result: { success: false, error: "Not authenticated" } };
-  }
-
-  if (!session.user.isPro) {
+  if (!authed.user.isPro) {
     return {
       ok: false,
       result: { success: false, error: "Upgrade to Pro for AI features.", upgradeRequired: true },
     };
   }
 
-  const { success: withinLimit, reset } = await checkRateLimit("ai", session.user.id);
-  if (!withinLimit) {
-    return { ok: false, result: { success: false, error: rateLimitMessage(reset) } };
-  }
+  const limited = await checkRateLimitOrFail("ai", authed.user.userId);
+  if (limited) return { ok: false, result: limited };
 
   return { ok: true };
 }
