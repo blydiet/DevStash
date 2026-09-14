@@ -9,6 +9,7 @@ export type RateLimitScope =
   | "reset-password"
   | "resend-verification"
   | "upload"
+  | "upload-confirm"
   | "ai";
 
 const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m" | "h"}` }> = {
@@ -18,6 +19,11 @@ const LIMITS: Record<RateLimitScope, { requests: number; window: `${number} ${"m
   "reset-password": { requests: 5, window: "15 m" },
   "resend-verification": { requests: 3, window: "15 m" },
   upload: { requests: 20, window: "1 h" },
+  // Separate from "upload" (not shared) so a normal presign-then-confirm pair
+  // doesn't burn 2 units of the same 20/hour upload budget per real file.
+  // Higher ceiling since this is a cheap HEAD-based verify, not a real
+  // upload, but still bounded rather than left ungated.
+  "upload-confirm": { requests: 40, window: "1 h" },
   // Shared budget across every AI feature (tags, summaries, explanations) —
   // one pool per user rather than a scope per feature, since they're all the
   // same underlying cost concern (unbounded OpenAI spend). Originally named
