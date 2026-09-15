@@ -23,7 +23,10 @@ export function LanguageSelect({
       <SelectTrigger id={id} className="w-full rounded-[5px]">
         <SelectValue placeholder="Select a language" />
       </SelectTrigger>
-      <SelectContent alignItemWithTrigger={false}>
+      <SelectContent
+        alignItemWithTrigger={false}
+        className="max-h-[min(var(--available-height),12rem)]"
+      >
         {CODE_LANGUAGES.map((lang) => (
           <SelectItem key={lang.value} value={lang.value}>
             {lang.label}
