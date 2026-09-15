@@ -8,7 +8,12 @@ import { HomeButton } from "@/components/homepage/HomeButton";
 export function HomeNav({
   showSignIn = true,
   showGetStarted = true,
-}: { showSignIn?: boolean; showGetStarted?: boolean } = {}) {
+  showNavLinks = true,
+}: {
+  showSignIn?: boolean;
+  showGetStarted?: boolean;
+  showNavLinks?: boolean;
+} = {}) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -48,17 +53,19 @@ export function HomeNav({
             DevStash
           </Link>
 
-          <nav
-            aria-label="Primary"
-            className="hidden items-center gap-7 text-[0.9375rem] text-[var(--hp-text-secondary)] md:flex"
-          >
-            <a href="#features" className="transition-colors hover:text-[var(--hp-text-primary)]">
-              Features
-            </a>
-            <a href="#pricing" className="transition-colors hover:text-[var(--hp-text-primary)]">
-              Pricing
-            </a>
-          </nav>
+          {showNavLinks && (
+            <nav
+              aria-label="Primary"
+              className="hidden items-center gap-7 text-[0.9375rem] text-[var(--hp-text-secondary)] md:flex"
+            >
+              <a href="#features" className="transition-colors hover:text-[var(--hp-text-primary)]">
+                Features
+              </a>
+              <a href="#pricing" className="transition-colors hover:text-[var(--hp-text-primary)]">
+                Pricing
+              </a>
+            </nav>
+          )}
 
           <div className="flex shrink-0 items-center gap-2">
             {showSignIn && (

@@ -24,13 +24,13 @@ export default async function RegisterPage({
   return (
     <>
       <div className={`homepage ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-        <HomeNav />
+        <HomeNav showNavLinks={false} />
       </div>
       <div className="flex min-h-screen items-center justify-center p-6 pt-[calc(68px+1.5rem)]">
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle className="text-xl">Create your account</CardTitle>
-            <CardDescription>Store smarter. Build faster.</CardDescription>
+            <CardTitle className="text-xl text-center">Create your account</CardTitle>
+            <CardDescription className="text-center">Store smarter. Build faster.</CardDescription>
           </CardHeader>
           <CardContent>
             <RegisterForm
