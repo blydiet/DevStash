@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SignInForm } from "@/components/auth/SignInForm";
+import { AuthErrorToast } from "@/components/auth/AuthErrorToast";
 import { signInWithCredentials, signInWithGithub, resendVerificationEmail } from "@/actions/auth";
 import { auth } from "@/auth";
 import { HomeNav } from "@/components/homepage/HomeNav";
@@ -26,6 +28,9 @@ export default async function SignInPage({
       <div className={`homepage ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
         <HomeNav showSignIn={false} showNavLinks={false} />
       </div>
+      <Suspense fallback={null}>
+        <AuthErrorToast />
+      </Suspense>
       <div className="flex min-h-screen items-center justify-center p-6 pt-[calc(68px+1.5rem)]">
         <Card className="w-full max-w-sm rounded-[15px]">
           <CardHeader>
