@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PriceCard } from "@/components/homepage/PriceCard";
+import { Switch } from "@/components/ui/switch";
 import {
   FREE_PLAN_FEATURES,
   PRO_PLAN_FEATURES,
@@ -25,24 +26,13 @@ export function BillingToggle() {
         >
           Monthly
         </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isYearly}
+        <Switch
+          size="lg"
           aria-label="Toggle yearly billing"
-          onClick={() => setIsYearly((v) => !v)}
-          className={`relative h-6 w-11 rounded-full border transition-colors duration-200 ${
-            isYearly
-              ? "border-[var(--hp-accent)] bg-[var(--hp-accent)]"
-              : "border-[var(--hp-border-strong)] bg-[var(--hp-bg-card)]"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 size-[18px] rounded-full bg-white transition-transform duration-[350ms] ease-[var(--hp-ease-spring)] ${
-              isYearly ? "translate-x-5" : "translate-x-0"
-            }`}
-          />
-        </button>
+          checked={isYearly}
+          onCheckedChange={setIsYearly}
+          className="hp-switch transition-colors duration-200"
+        />
         <span
           className="flex items-center gap-2"
           style={{ color: isYearly ? "var(--hp-text-primary)" : "var(--hp-text-tertiary)" }}

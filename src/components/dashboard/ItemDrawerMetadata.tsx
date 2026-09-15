@@ -1,6 +1,6 @@
 import { Calendar, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/item-drawer-utils";
+import { formatLongDate } from "@/lib/format-date";
 import type { ItemDetail } from "@/lib/db/items-queries";
 
 interface ItemDrawerMetadataProps {
@@ -35,11 +35,11 @@ export function ItemDrawerMetadata({ item, showCollections }: ItemDrawerMetadata
         <div className="flex flex-col gap-1.5 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Created</span>
-            <span>{formatDate(item.createdAt as unknown as string)}</span>
+            <span>{formatLongDate(item.createdAt)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Updated</span>
-            <span>{formatDate(item.updatedAt as unknown as string)}</span>
+            <span>{formatLongDate(item.updatedAt)}</span>
           </div>
         </div>
       </div>

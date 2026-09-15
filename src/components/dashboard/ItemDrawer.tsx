@@ -24,6 +24,7 @@ import {
   typeShowsUrl,
 } from "@/lib/item-type-capabilities";
 import { toEditForm, type EditForm } from "@/lib/item-drawer-utils";
+import { IconBadge } from "@/components/shared/IconBadge";
 import { ItemDrawerSkeleton } from "@/components/dashboard/ItemDrawerSkeleton";
 import { ItemDrawerActionBar } from "@/components/dashboard/ItemDrawerActionBar";
 import { ItemDrawerViewContent } from "@/components/dashboard/ItemDrawerViewContent";
@@ -260,12 +261,7 @@ export function ItemDrawer({
           <>
             <SheetHeader className="gap-3 border-b border-border">
               <div className="flex items-center gap-3 pr-8">
-                <div
-                  className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: `${item.type.color}1a` }}
-                >
-                  <Icon className="size-5" style={{ color: item.type.color ?? undefined }} />
-                </div>
+                <IconBadge icon={Icon} color={item.type.color} size="md" />
                 {mode === "edit" && form ? (
                   <Input
                     value={form.title}

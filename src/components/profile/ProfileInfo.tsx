@@ -1,19 +1,14 @@
 import { CalendarDays, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserAvatar } from "@/components/shared/UserAvatar";
+import { formatLongDate } from "@/lib/format-date";
+import { SETTINGS_CARD_WIDTH } from "@/lib/settings-layout";
+import { cn } from "@/lib/utils";
 import type { ProfileUser } from "@/lib/db/user";
-
-function formatJoinDate(date: Date) {
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 export function ProfileInfo({ user }: { user: ProfileUser }) {
   return (
-    <Card className="flex rounded-[10px] lg:w-[790px]  md:w-[700px] w-[300px]">
+    <Card className={cn("flex rounded-[10px]", SETTINGS_CARD_WIDTH)}>
       <CardHeader>
         <CardTitle>Account Information</CardTitle>
       </CardHeader>
@@ -37,7 +32,7 @@ export function ProfileInfo({ user }: { user: ProfileUser }) {
           <div className="flex items-center gap-2">
             <CalendarDays className="size-4 text-muted-foreground" />
             <span className="text-muted-foreground">Member since:</span>
-            <span>{formatJoinDate(user.createdAt)}</span>
+            <span>{formatLongDate(user.createdAt)}</span>
           </div>
         </div>
       </CardContent>

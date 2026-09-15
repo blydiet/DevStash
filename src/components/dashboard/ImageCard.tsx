@@ -2,18 +2,12 @@
 
 import { ImageOff, Pin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { onActivationKeydown } from "@/lib/keyboard-activation";
+import { clickableRowProps } from "@/lib/clickable-row";
 import { useItemDrawer } from "./ItemDrawerContext";
 import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
 import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
+import { formatShortDate } from "@/lib/format-date";
 import type { ItemSummary } from "@/lib/db/items-queries";
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
 
 export function ImageCard({ item }: { item: ItemSummary }) {
   const { openItem } = useItemDrawer();
@@ -26,11 +20,7 @@ export function ImageCard({ item }: { item: ItemSummary }) {
   return (
     <Card
       className="cursor-pointer gap-3 overflow-hidden rounded py-0 transition-colors hover:bg-muted/50"
-      onClick={() => openItem(item.id)}
-      onKeyDown={onActivationKeydown(() => openItem(item.id))}
-      role="button"
-      tabIndex={0}
-      aria-label={`View ${item.title}`}
+      {...clickableRowProps(() => openItem(item.id), `View ${item.title}`)}
     >
       <div
         className="relative aspect-video overflow-hidden border-b-4"
@@ -60,7 +50,7 @@ export function ImageCard({ item }: { item: ItemSummary }) {
       </div>
       <CardContent className="flex flex-col gap-1 pb-4">
         <p className="truncate font-medium">{item.title}</p>
-        <p className="text-sm text-muted-foreground">{formatDate(item.createdAt)}</p>
+        <p className="text-sm text-muted-foreground">{formatShortDate(item.createdAt)}</p>
       </CardContent>
     </Card>
   );

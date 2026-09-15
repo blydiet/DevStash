@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { useEditorPreferences } from "@/components/dashboard/EditorPreferencesContext";
 import { EDITOR_THEME_OPTIONS, FONT_SIZE_OPTIONS, TAB_SIZE_OPTIONS } from "@/lib/editor-preferences";
+import { SETTINGS_CARD_WIDTH } from "@/lib/settings-layout";
+import { cn } from "@/lib/utils";
 
 const THEME_LABELS: Record<(typeof EDITOR_THEME_OPTIONS)[number], string> = {
   "vs-dark": "VS Dark",
@@ -23,7 +25,7 @@ export function EditorPreferencesSettings() {
   const { preferences, updatePreference } = useEditorPreferences();
 
   return (
-    <Card className="rounded-[10px] lg:w-[790px] md:w-[700px] w-[300px]">
+    <Card className={cn("rounded-[10px]", SETTINGS_CARD_WIDTH)}>
       <CardHeader>
         <CardTitle>Editor preferences</CardTitle>
       </CardHeader>

@@ -8,6 +8,8 @@ import { BillingSettings } from "@/components/settings/BillingSettings";
 import { EditorPreferencesSettings } from "@/components/settings/EditorPreferencesSettings";
 import { getDashboardIsPro, getProfileUser } from "@/lib/db/user";
 import { changePassword, deleteAccount } from "@/actions/profile";
+import { SETTINGS_CARD_WIDTH } from "@/lib/settings-layout";
+import { cn } from "@/lib/utils";
 
 export default async function SettingsPage() {
   const isPro = await getDashboardIsPro("/settings");
@@ -33,7 +35,7 @@ export default async function SettingsPage() {
       isPro={isPro}
     >
       <div className="flex flex-col items-center gap-6 text-center">
-        <div className="flex w-[300px] flex-col items-start gap-1 text-left md:w-[700px] lg:w-[790px]">
+        <div className={cn("flex flex-col items-start gap-1 text-left", SETTINGS_CARD_WIDTH)}>
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground">Manage your account settings</p>
         </div>

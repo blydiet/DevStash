@@ -39,6 +39,27 @@
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
+/* Recolors the shared shadcn Switch (src/components/ui/switch.tsx) to match
+   the homepage's own token system instead of the dashboard's theme colors —
+   the homepage forces its own dark look regardless of the visitor's system
+   theme, so the Switch's `dark:` variants need overriding too, not just its
+   light-mode defaults. */
+.homepage .hp-switch {
+  border-color: var(--hp-border-strong);
+  background-color: var(--hp-bg-card);
+}
+
+.homepage .hp-switch[data-checked] {
+  border-color: var(--hp-accent);
+  background-color: var(--hp-accent);
+}
+
+.homepage .hp-switch [data-slot="switch-thumb"] {
+  background-color: #fff;
+  transition-duration: 350ms;
+  transition-timing-function: var(--hp-ease-spring);
+}
+
 .homepage .hp-nav--scrolled {
   background: rgba(10, 10, 13, 0.82);
   backdrop-filter: blur(12px);

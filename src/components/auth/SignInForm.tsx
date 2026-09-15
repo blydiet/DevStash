@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GitHubIcon } from "@/components/shared/GitHubIcon";
+import { GitHubAuthButton } from "@/components/auth/GitHubAuthButton";
 import { withCallbackUrl } from "@/lib/safe-redirect";
 import type { SignInActionResult } from "@/types/auth";
 
@@ -65,18 +65,7 @@ export function SignInForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <form action={githubAction}>
-        <Button type="submit" variant="outline" className="w-full rounded-[10px]">
-          <GitHubIcon />
-          Sign in with GitHub
-        </Button>
-      </form>
-
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <div className="h-px flex-1 bg-border" />
-        or
-        <div className="h-px flex-1 bg-border" />
-      </div>
+      <GitHubAuthButton action={githubAction} label="Sign in with GitHub" />
 
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="callbackUrl" value={callbackUrl} />

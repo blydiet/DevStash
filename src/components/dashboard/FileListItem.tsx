@@ -3,19 +3,13 @@
 import { Download, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_FILE_ICON, EXTENSION_ICONS, formatFileSize, getExtension } from "@/lib/file-constraints";
-import { onActivationKeydown } from "@/lib/keyboard-activation";
+import { clickableRowProps } from "@/lib/clickable-row";
 import { useItemDrawer } from "./ItemDrawerContext";
 import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
 import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
+import { IconBadge } from "@/components/shared/IconBadge";
+import { formatDate } from "@/lib/format-date";
 import type { ItemSummary } from "@/lib/db/items-queries";
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 export function FileListItem({ item }: { item: ItemSummary }) {
   const { openItem } = useItemDrawer();
@@ -29,19 +23,10 @@ export function FileListItem({ item }: { item: ItemSummary }) {
   return (
     <div
       className="flex cursor-pointer flex-col gap-2 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/50 sm:flex-row sm:items-center sm:gap-4"
-      onClick={() => openItem(item.id)}
-      onKeyDown={onActivationKeydown(() => openItem(item.id))}
-      role="button"
-      tabIndex={0}
-      aria-label={`View ${item.fileName ?? item.title}`}
+      {...clickableRowProps(() => openItem(item.id), `View ${item.fileName ?? item.title}`)}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${item.type.color}1a` }}
-        >
-          <Icon className="size-4" style={{ color: item.type.color ?? undefined }} />
-        </div>
+        <IconBadge icon={Icon} color={item.type.color} />
         <div className="min-w-0">
           <p className="truncate font-medium">{item.fileName ?? item.title}</p>
         </div>

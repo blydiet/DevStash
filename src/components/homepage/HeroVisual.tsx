@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { ArrowRight, AppWindow, SquareTerminal, FileText, Bookmark } from "lucide-react";
 import { createChaosAnimation, type ChaosBody } from "@/lib/homepage/chaos-physics";
+import { typeColor } from "@/lib/homepage/type-color";
 import { ITEM_TYPES } from "@/lib/item-types";
 
 const LOGO_ICONS = [
@@ -18,11 +19,6 @@ const GLYPH_ICONS = [
   { alt: "Text file", Icon: FileText },
   { alt: "Bookmark", Icon: Bookmark },
 ];
-
-const FALLBACK_TYPE_COLOR = "#6a6a75";
-
-const typeColor = (value: (typeof ITEM_TYPES)[number]["value"]) =>
-  ITEM_TYPES.find((t) => t.value === value)?.color ?? FALLBACK_TYPE_COLOR;
 
 const SIDEBAR_TYPES: Array<{ value: (typeof ITEM_TYPES)[number]["value"]; label: string }> = [
   { value: "snippet", label: "Snippets" },

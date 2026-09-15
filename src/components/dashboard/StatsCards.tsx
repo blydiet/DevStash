@@ -1,5 +1,6 @@
 import { Boxes, FolderOpen, Heart, Star, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { IconBadge } from "@/components/shared/IconBadge";
 import { getCollectionStats, type CollectionStats } from "@/lib/db/collections";
 import { getItemStats, type ItemStats } from "@/lib/db/item-metadata";
 
@@ -49,12 +50,7 @@ export async function StatsCards() {
               across normally, regardless of screen size or text scale. */}
           <CardContent className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
-              <div
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                style={{ backgroundColor: `${color}1a` }}
-              >
-                <Icon className="size-4" style={{ color }} />
-              </div>
+              <IconBadge icon={Icon} color={color} />
               <p className="text-2xl font-bold leading-none">{value}</p>
             </div>
             <p className="text-sm text-muted-foreground">{label}</p>

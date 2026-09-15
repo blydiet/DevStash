@@ -1,9 +1,8 @@
 import { Code, Sparkles, Search, Terminal, FileText, LayoutGrid } from "lucide-react";
 import { Reveal } from "@/components/homepage/Reveal";
 import { FeatureCard } from "@/components/homepage/FeatureCard";
+import { typeColor as colorFor } from "@/lib/homepage/type-color";
 import { ITEM_TYPES } from "@/lib/item-types";
-
-const colorFor = (value: string) => ITEM_TYPES.find((t) => t.value === value)?.color ?? "#3b82f6";
 
 export function FeaturesSection() {
   return (

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GitHubIcon } from "@/components/shared/GitHubIcon";
+import { GitHubAuthButton } from "@/components/auth/GitHubAuthButton";
 import { registerSchema } from "@/lib/validations/auth";
 import { withCallbackUrl } from "@/lib/safe-redirect";
 
@@ -64,18 +64,7 @@ export function RegisterForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <form action={githubAction}>
-        <Button type="submit" variant="outline" className="w-full rounded-[10px]">
-          <GitHubIcon />
-          Sign up with GitHub
-        </Button>
-      </form>
-
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <div className="h-px flex-1 bg-border" />
-        or
-        <div className="h-px flex-1 bg-border" />
-      </div>
+      <GitHubAuthButton action={githubAction} label="Sign up with GitHub" />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">

@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { getBillingInfo } from "@/lib/db/subscription";
 import { createCheckoutSession, createBillingPortalSession } from "@/actions/billing";
 import { ManageSubscriptionButton, UpgradeButtons } from "@/components/settings/BillingActions";
+import { SETTINGS_CARD_WIDTH } from "@/lib/settings-layout";
+import { cn } from "@/lib/utils";
 
 export async function BillingSettings() {
   let billing;
@@ -20,7 +22,7 @@ export async function BillingSettings() {
       redirect("/sign-in?callbackUrl=/settings");
     }
     return (
-      <Card className="rounded-[10px] lg:w-[790px] md:w-[700px] w-[300px]">
+      <Card className={cn("rounded-[10px]", SETTINGS_CARD_WIDTH)}>
         <CardHeader className="flex justify-center">
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="size-4 text-muted-foreground" />
@@ -35,7 +37,7 @@ export async function BillingSettings() {
   }
 
   return (
-    <Card className="rounded-[10px] lg:w-[790px] md:w-[700px] w-[300px]">
+    <Card className={cn("rounded-[10px]", SETTINGS_CARD_WIDTH)}>
       <CardHeader className="flex justify-center">
         <CardTitle className="flex items-center gap-2">
           <CreditCard className="size-4 text-muted-foreground" />

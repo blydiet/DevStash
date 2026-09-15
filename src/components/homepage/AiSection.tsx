@@ -1,9 +1,7 @@
 import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { Reveal } from "@/components/homepage/Reveal";
-import { ITEM_TYPES } from "@/lib/item-types";
-
-const colorFor = (value: string) => ITEM_TYPES.find((t) => t.value === value)?.color ?? "#3b82f6";
+import { typeColor as colorFor } from "@/lib/homepage/type-color";
 
 const CHECKLIST = [
   "Auto-tagging on save",

@@ -7,19 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { iconMap } from "@/lib/icon-map";
-import { onActivationKeydown } from "@/lib/keyboard-activation";
+import { clickableRowProps } from "@/lib/clickable-row";
 import { fetchItemDetail } from "@/lib/swr-fetcher";
 import { useItemDrawer } from "./ItemDrawerContext";
 import { useToggleItemFavorite } from "@/hooks/use-toggle-item-favorite";
 import { FavoriteToggleButton } from "@/components/dashboard/FavoriteToggleButton";
+import { IconBadge } from "@/components/shared/IconBadge";
+import { formatShortDate } from "@/lib/format-date";
 import type { ItemSummary } from "@/lib/db/items-queries";
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
 
 export function ItemCard({ item }: { item: ItemSummary }) {
   const { openItem } = useItemDrawer();
@@ -57,20 +52,11 @@ export function ItemCard({ item }: { item: ItemSummary }) {
     <Card
       className="cursor-pointer rounded-l-none border-l-4 border-y-0 border-r-0 transition-colors hover:bg-muted/50"
       style={{ borderLeftColor: item.type.color ?? undefined }}
-      onClick={() => openItem(item.id)}
-      onKeyDown={onActivationKeydown(() => openItem(item.id))}
-      role="button"
-      tabIndex={0}
-      aria-label={`View ${item.title}`}
+      {...clickableRowProps(() => openItem(item.id), `View ${item.title}`)}
     >
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <div
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-            style={{ backgroundColor: `${item.type.color}1a` }}
-          >
-            <Icon className="size-4" style={{ color: item.type.color ?? undefined }} />
-          </div>
+          <IconBadge icon={Icon} color={item.type.color} />
           <div className="flex shrink-0 items-center gap-1.5">
             {item.isPinned && <Pin className="size-3.5 text-muted-foreground" />}
             <FavoriteToggleButton
@@ -96,7 +82,7 @@ export function ItemCard({ item }: { item: ItemSummary }) {
           </div>
         )}
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">{formatDate(item.createdAt)}</p>
+          <p className="text-sm text-muted-foreground">{formatShortDate(item.createdAt)}</p>
           <Button
             variant="ghost"
             size="icon"

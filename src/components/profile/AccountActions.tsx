@@ -26,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { SETTINGS_CARD_WIDTH } from "@/lib/settings-layout";
+import { cn } from "@/lib/utils";
 import type { ChangePasswordActionResult } from "@/types/auth";
 
 export function AccountActions({
@@ -69,7 +71,7 @@ export function AccountActions({
   }
 
   return (
-    <Card className="rounded-[10px] lg:w-[790px] md:w-[700px] w-[300px]">
+    <Card className={cn("rounded-[10px]", SETTINGS_CARD_WIDTH)}>
       <CardHeader>
         <CardTitle>Account actions</CardTitle>
       </CardHeader>

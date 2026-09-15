@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getItemStats, getItemTypes, type ItemStats, type ItemTypeWithCount } from "@/lib/db/item-metadata";
 import { getCollectionStats, type CollectionStats } from "@/lib/db/collections";
 import { iconMap } from "@/lib/icon-map";
+import { IconBadge } from "@/components/shared/IconBadge";
+import { SETTINGS_CARD_WIDTH } from "@/lib/settings-layout";
+import { cn } from "@/lib/utils";
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -29,31 +32,21 @@ export async function ProfileStats() {
   }
 
   return (
-    <Card className="rounded-[10px] lg:w-[790px]  md:w-[700px] w-[300px]">
+    <Card className={cn("rounded-[10px]", SETTINGS_CARD_WIDTH)}>
       <CardHeader>
         <CardTitle>Usage Statistics</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3 rounded-lg border p-4">
-            <div
-              className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: "#3b82f61a" }}
-            >
-              <Boxes className="size-5" style={{ color: "#3b82f6" }} />
-            </div>
+            <IconBadge icon={Boxes} color="#3b82f6" size="md" />
             <div>
               <p className="text-2xl font-bold leading-none">{itemStats.total}</p>
               <p className="text-sm text-muted-foreground">Total Items</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-lg border p-4">
-            <div
-              className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: "#f973161a" }}
-            >
-              <FolderOpen className="size-5" style={{ color: "#f97316" }} />
-            </div>
+            <IconBadge icon={FolderOpen} color="#f97316" size="md" />
             <div>
               <p className="text-2xl font-bold leading-none">{collectionStats.total}</p>
               <p className="text-sm text-muted-foreground">Collections</p>
