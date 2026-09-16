@@ -8,7 +8,7 @@ import {
   signOut,
   EmailNotVerifiedError,
   RateLimitedError,
-  GitHubOnlyAccountError,
+  OAuthOnlyAccountError,
 } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
@@ -49,10 +49,12 @@ export async function signInWithCredentials(
         email: parsed.data.email,
       };
     }
-    if (error instanceof GitHubOnlyAccountError) {
+    if (error instanceof OAuthOnlyAccountError) {
       return {
         success: false,
-        error: "This account uses GitHub — sign in with GitHub instead.",
+        error: error.provider
+          ? `This account uses ${error.provider} — sign in with ${error.provider} instead.`
+          : "This account has no password set. Sign in with the provider you used to create it.",
       };
     }
     if (error instanceof AuthError) {
@@ -66,6 +68,10 @@ export async function signInWithCredentials(
 
 export async function signInWithGithub(callbackUrl: string) {
   await signIn("github", { redirectTo: callbackUrl || "/dashboard" });
+}
+
+export async function signInWithGoogle(callbackUrl: string) {
+  await signIn("google", { redirectTo: callbackUrl || "/dashboard" });
 }
 
 export async function signOutAction() {
@@ -85,7 +91,7 @@ export async function resendVerificationEmail(
 
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // Don't reveal whether the account exists or is GitHub-only.
+  // Don't reveal whether the account exists or is OAuth-only.
   if (!user?.password || user.emailVerified) {
     return { success: true };
   }
@@ -129,7 +135,7 @@ export async function requestPasswordReset(
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
 
-  // Don't reveal whether the account exists or is GitHub-only.
+  // Don't reveal whether the account exists or is OAuth-only.
   if (!user?.password) {
     return { success: true };
   }

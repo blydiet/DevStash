@@ -78,7 +78,7 @@ export interface ProfileUser {
   image: string | null;
   createdAt: Date;
   hasPassword: boolean;
-  authProvider: "github" | "credentials";
+  authProvider: "github" | "google" | "credentials";
 }
 
 export async function getProfileUser(): Promise<ProfileUser> {
@@ -110,6 +110,8 @@ export async function getProfileUser(): Promise<ProfileUser> {
     hasPassword: user.password !== null,
     authProvider: user.accounts.some((account) => account.provider === "github")
       ? "github"
-      : "credentials",
+      : user.accounts.some((account) => account.provider === "google")
+        ? "google"
+        : "credentials",
   };
 }

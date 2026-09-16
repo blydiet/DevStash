@@ -6,16 +6,18 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GitHubAuthButton } from "@/components/auth/GitHubAuthButton";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { registerSchema } from "@/lib/validations/auth";
 import { withCallbackUrl } from "@/lib/safe-redirect";
 
 export function RegisterForm({
   callbackUrl,
   githubAction,
+  googleAction,
 }: {
   callbackUrl: string;
   githubAction: () => Promise<void>;
+  googleAction: () => Promise<void>;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +66,12 @@ export function RegisterForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <GitHubAuthButton action={githubAction} label="Sign up with GitHub" />
+      <OAuthButtons
+        githubAction={githubAction}
+        googleAction={googleAction}
+        githubLabel="Sign up with GitHub"
+        googleLabel="Sign up with Google"
+      />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">

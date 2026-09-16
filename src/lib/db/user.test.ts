@@ -104,4 +104,39 @@ describe("getProfileUser", () => {
     expect(result.hasPassword).toBe(false);
     expect(result.name).toBe("ada@example.com");
   });
+
+  it("reports authProvider 'google' when a Google account is linked", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      name: "Ada",
+      email: "ada@example.com",
+      image: null,
+      createdAt: new Date("2026-01-01"),
+      password: null,
+      accounts: [{ provider: "google" }],
+    });
+
+    const result = await getProfileUser();
+
+    expect(result.authProvider).toBe("google");
+    expect(result.hasPassword).toBe(false);
+  });
+
+  it("prefers 'github' over 'google' when both accounts are linked", async () => {
+    authMock.mockResolvedValue({ user: { id: "user-1" } });
+    prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      name: "Ada",
+      email: "ada@example.com",
+      image: null,
+      createdAt: new Date("2026-01-01"),
+      password: null,
+      accounts: [{ provider: "google" }, { provider: "github" }],
+    });
+
+    const result = await getProfileUser();
+
+    expect(result.authProvider).toBe("github");
+  });
 });

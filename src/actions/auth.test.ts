@@ -12,7 +12,7 @@ const {
   AuthError,
   EmailNotVerifiedError,
   RateLimitedError,
-  GitHubOnlyAccountError,
+  OAuthOnlyAccountError,
   redirectMock,
   prismaMock,
   sendVerificationEmailMock,
@@ -35,8 +35,13 @@ const {
       this.reset = reset;
     }
   }
-  class GitHubOnlyAccountError extends Error {
-    code = "github-only-account";
+  class OAuthOnlyAccountError extends Error {
+    code = "oauth-only-account";
+    provider: string | null;
+    constructor(provider: string | null) {
+      super();
+      this.provider = provider;
+    }
   }
   class AuthError extends Error {}
   return {
@@ -44,7 +49,7 @@ const {
     AuthError,
     EmailNotVerifiedError,
     RateLimitedError,
-    GitHubOnlyAccountError,
+    OAuthOnlyAccountError,
     redirectMock: vi.fn((url: string) => {
       throw new Error(`REDIRECT:${url}`);
     }),
@@ -70,7 +75,7 @@ vi.mock("@/auth", () => ({
   signOut: vi.fn(),
   EmailNotVerifiedError,
   RateLimitedError,
-  GitHubOnlyAccountError,
+  OAuthOnlyAccountError,
 }));
 
 vi.mock("next-auth", () => ({
@@ -180,8 +185,8 @@ describe("signInWithCredentials", () => {
     });
   });
 
-  it("maps GitHubOnlyAccountError to a distinct message", async () => {
-    signInMock.mockRejectedValue(new GitHubOnlyAccountError());
+  it("maps OAuthOnlyAccountError to a distinct message naming the linked provider", async () => {
+    signInMock.mockRejectedValue(new OAuthOnlyAccountError("GitHub"));
 
     const result = await signInWithCredentials(
       { success: false },
@@ -191,6 +196,34 @@ describe("signInWithCredentials", () => {
     expect(result).toEqual({
       success: false,
       error: "This account uses GitHub — sign in with GitHub instead.",
+    });
+  });
+
+  it("maps OAuthOnlyAccountError for a Google-only account", async () => {
+    signInMock.mockRejectedValue(new OAuthOnlyAccountError("Google"));
+
+    const result = await signInWithCredentials(
+      { success: false },
+      formData({ email: "a@b.com", password: "secret" })
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "This account uses Google — sign in with Google instead.",
+    });
+  });
+
+  it("maps OAuthOnlyAccountError with no resolvable provider to a generic message", async () => {
+    signInMock.mockRejectedValue(new OAuthOnlyAccountError(null));
+
+    const result = await signInWithCredentials(
+      { success: false },
+      formData({ email: "a@b.com", password: "secret" })
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "This account has no password set. Sign in with the provider you used to create it.",
     });
   });
 

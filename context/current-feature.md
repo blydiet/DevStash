@@ -2,7 +2,16 @@
 
 ## Status
 
+In progress on branch `feature/google-oauth`.
+
 ## Goals
+
+Add Google OAuth as a sign-in/sign-up option on `/sign-in` and `/register`, alongside the existing GitHub OAuth and credentials providers.
+
+- Add a `Google` provider (`next-auth/providers/google`) to `src/auth.ts`, using the standard `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` env var convention (same as GitHub's `AUTH_GITHUB_ID`/`AUTH_GITHUB_SECRET`).
+- "Sign in with Google" / "Sign up with Google" buttons on `/sign-in` and `/register`, next to the existing GitHub buttons.
+- Generalize the existing `GitHubOnlyAccountError` (fired when a credentials sign-in attempt hits an OAuth-only account with no password) so a Google-only account gets a correct "sign in with Google instead" message instead of an incorrect GitHub one.
+- Generalize the Profile page's `authProvider` ("github" | "credentials") to also report "google".
 
 ## Notes
 

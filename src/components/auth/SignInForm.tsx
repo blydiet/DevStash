@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GitHubAuthButton } from "@/components/auth/GitHubAuthButton";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { withCallbackUrl } from "@/lib/safe-redirect";
 import type { SignInActionResult } from "@/types/auth";
 
@@ -51,6 +51,7 @@ export function SignInForm({
   callbackUrl,
   signInAction,
   githubAction,
+  googleAction,
   resendAction,
 }: {
   callbackUrl: string;
@@ -59,13 +60,19 @@ export function SignInForm({
     formData: FormData
   ) => Promise<SignInActionResult>;
   githubAction: () => Promise<void>;
+  googleAction: () => Promise<void>;
   resendAction: (email: string) => Promise<{ success: boolean; error?: string }>;
 }) {
   const [state, formAction, isPending] = useActionState(signInAction, initialState);
 
   return (
     <div className="flex flex-col gap-6">
-      <GitHubAuthButton action={githubAction} label="Sign in with GitHub" />
+      <OAuthButtons
+        githubAction={githubAction}
+        googleAction={googleAction}
+        githubLabel="Sign in with GitHub"
+        googleLabel="Sign in with Google"
+      />
 
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="callbackUrl" value={callbackUrl} />

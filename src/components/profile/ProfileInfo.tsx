@@ -18,7 +18,12 @@ export function ProfileInfo({ user }: { user: ProfileUser }) {
           <div className="min-w-0">
             <p className="truncate text-lg font-medium">{user.name}</p>
             <p className="text-sm text-muted-foreground">
-              Signed in with {user.authProvider === "github" ? "GitHub" : "Email"}
+              Signed in with{" "}
+              {user.authProvider === "github"
+                ? "GitHub"
+                : user.authProvider === "google"
+                  ? "Google"
+                  : "Email"}
             </p>
           </div>
         </div>

@@ -2,18 +2,26 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { credentialsSchema } from "@/lib/validations/auth";
 import { isEmailVerificationEnabled } from "@/lib/feature-flags";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { resolveOAuthProviderLabel } from "@/lib/oauth-provider-label";
 
 export class EmailNotVerifiedError extends CredentialsSignin {
   code = "email-not-verified";
 }
 
-export class GitHubOnlyAccountError extends CredentialsSignin {
-  code = "github-only-account";
+export class OAuthOnlyAccountError extends CredentialsSignin {
+  code = "oauth-only-account";
+  provider: string | null;
+
+  constructor(provider: string | null) {
+    super();
+    this.provider = provider;
+  }
 }
 
 export class RateLimitedError extends CredentialsSignin {
@@ -34,6 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   providers: [
     GitHub,
+    Google,
     Credentials({
       credentials: {
         email: {},
@@ -58,14 +67,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new RateLimitedError(reset);
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: { accounts: { select: { provider: true } } },
+        });
 
         if (!user) {
           return null;
         }
 
         if (!user.password) {
-          throw new GitHubOnlyAccountError();
+          throw new OAuthOnlyAccountError(resolveOAuthProviderLabel(user.accounts));
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);

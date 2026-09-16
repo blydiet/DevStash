@@ -91,6 +91,7 @@ Full-text search across:
 
 - Email + Password
 - GitHub OAuth
+- Google OAuth
 
 ### E) Additional Features
 

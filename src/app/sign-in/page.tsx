@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { AuthErrorToast } from "@/components/auth/AuthErrorToast";
-import { signInWithCredentials, signInWithGithub, resendVerificationEmail } from "@/actions/auth";
+import {
+  signInWithCredentials,
+  signInWithGithub,
+  signInWithGoogle,
+  resendVerificationEmail,
+} from "@/actions/auth";
 import { auth } from "@/auth";
 import { HomeNav } from "@/components/homepage/HomeNav";
 import { spaceGrotesk, jetbrainsMono } from "@/app/fonts/homepage-fonts";
@@ -44,6 +49,7 @@ export default async function SignInPage({
               callbackUrl={resolvedCallbackUrl}
               signInAction={signInWithCredentials}
               githubAction={signInWithGithub.bind(null, resolvedCallbackUrl)}
+              googleAction={signInWithGoogle.bind(null, resolvedCallbackUrl)}
               resendAction={resendVerificationEmail}
             />
           </CardContent>

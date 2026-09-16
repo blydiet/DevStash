@@ -8,10 +8,10 @@ import { getAuthErrorMessage } from "@/lib/auth-error-messages";
 const AUTH_ERROR_TOAST_ID = "auth-error";
 
 // Auth.js redirects here with ?error=<code> on an OAuth failure (e.g.
-// GitHub returning an email already registered via credentials) rather than
-// through a Server Action, so there's no other seam to surface the message
-// from. Must be rendered inside a <Suspense> boundary — useSearchParams()
-// requires one.
+// GitHub or Google returning an email already registered via credentials)
+// rather than through a Server Action, so there's no other seam to surface
+// the message from. Must be rendered inside a <Suspense> boundary —
+// useSearchParams() requires one.
 export function AuthErrorToast() {
   const router = useRouter();
   const pathname = usePathname();

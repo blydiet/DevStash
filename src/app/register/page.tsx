@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RegisterForm } from "@/components/auth/RegisterForm";
-import { signInWithGithub } from "@/actions/auth";
+import { signInWithGithub, signInWithGoogle } from "@/actions/auth";
 import { auth } from "@/auth";
 import { HomeNav } from "@/components/homepage/HomeNav";
 import { spaceGrotesk, jetbrainsMono } from "@/app/fonts/homepage-fonts";
@@ -36,6 +36,7 @@ export default async function RegisterPage({
             <RegisterForm
               callbackUrl={resolvedCallbackUrl}
               githubAction={signInWithGithub.bind(null, resolvedCallbackUrl)}
+              googleAction={signInWithGoogle.bind(null, resolvedCallbackUrl)}
             />
           </CardContent>
         </Card>
