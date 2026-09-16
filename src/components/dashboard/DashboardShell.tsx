@@ -7,6 +7,7 @@ import { ItemDrawerProvider } from "./ItemDrawerContext";
 import { GlobalSearchProvider } from "./GlobalSearchContext";
 import { EditorPreferencesProvider } from "./EditorPreferencesContext";
 import { TopBar } from "./TopBar";
+import { OnboardingTour } from "./OnboardingTour";
 
 export function DashboardShell({
   sidebar,
@@ -53,6 +54,7 @@ export function DashboardShell({
     <EditorPreferencesProvider>
       <GlobalSearchProvider>
         <div className="flex h-full flex-col">
+          <OnboardingTour />
           <TopBar onToggleSidebar={toggleSidebar} upgradeButton={upgradeButton} />
           <div className="flex flex-1 overflow-hidden">
             <aside

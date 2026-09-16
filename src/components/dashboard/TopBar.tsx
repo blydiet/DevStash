@@ -44,11 +44,15 @@ export function TopBar({
         className="shrink-0"
         nativeButton={false}
         render={<Link href="/favorites" />}
+        data-tour="favorites-button"
       >
         <Star className="size-4" />
       </Button>
 
-      <div className="relative min-w-0 flex-1 lg:mx-auto lg:max-w-md lg:flex-initial">
+      <div
+        className="relative min-w-0 flex-1 lg:mx-auto lg:max-w-md lg:flex-initial"
+        data-tour="search-bar"
+      >
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           aria-label="Search items"
@@ -75,11 +79,18 @@ export function TopBar({
           aria-label="New Collection"
           className="sm:w-auto sm:gap-[4px] sm:px-4"
           onClick={() => setCreateCollectionOpen(true)}
+          data-tour="new-collection-button"
         >
           <FolderPlus className="size-4" />
           <span className="hidden sm:inline">New Collection</span>
         </Button>
-        <Button size="icon" aria-label="New Item" className="sm:w-auto sm:px-4" onClick={() => setCreateItemOpen(true)}>
+        <Button
+          size="icon"
+          aria-label="New Item"
+          className="sm:w-auto sm:px-4"
+          onClick={() => setCreateItemOpen(true)}
+          data-tour="new-item-button"
+        >
           <Plus className="size-4" />
           <span className="hidden sm:inline">New Item</span>
         </Button>
