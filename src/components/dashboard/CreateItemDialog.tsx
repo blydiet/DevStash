@@ -184,7 +184,10 @@ export function CreateItemDialog({
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
               <div className="flex flex-col gap-4">
-                <ItemTypeSelect value={form.type} onChange={(type) => setForm({ ...form, type })} />
+                <ItemTypeSelect
+                  value={form.type}
+                  onChange={(type) => setForm({ ...form, type, file: null })}
+                />
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="item-title">Title</Label>

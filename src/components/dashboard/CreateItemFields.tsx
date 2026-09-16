@@ -103,6 +103,7 @@ export function CreateItemFields({ form, setForm }: CreateItemFieldsProps) {
         <div className="flex flex-col gap-1.5">
           <Label>{form.type === "image" ? "Image" : "File"}</Label>
           <FileUpload
+            key={form.type}
             kind={form.type as "file" | "image"}
             value={form.file}
             onChange={(file) => setForm({ ...form, file })}
