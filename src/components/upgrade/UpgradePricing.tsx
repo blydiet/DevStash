@@ -49,17 +49,20 @@ export function UpgradePricing({
         <Badge variant="secondary">Save {PRO_YEARLY_SAVINGS_PERCENT}%</Badge>
       </div>
 
-      <div className="grid w-full max-w-[700px] grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-4">
-        <Card className="rounded-[10px]">
+      {/* Card widths/padding/type sizes matched to the homepage's PriceCard
+          (BillingToggle.tsx) so the same Free/Pro boxes don't look smaller or
+          differently proportioned here than on the marketing page. */}
+      <div className="mx-auto grid w-full max-w-[380px] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-[repeat(2,minmax(0,380px))] sm:justify-center">
+        <Card className="rounded-[10px] [--card-spacing:2rem]">
           <CardHeader>
-            <CardTitle>Free</CardTitle>
-            <p className="mt-2 text-3xl font-bold">$0</p>
+            <CardTitle className="text-[1.0625rem]">Free</CardTitle>
+            <p className="mt-2 text-[2.75rem] leading-none font-bold">$0</p>
             <p className="text-sm text-muted-foreground">forever</p>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col justify-between gap-5">
-            <ul className="flex flex-col gap-2.5 text-sm">
+            <ul className="flex flex-col gap-3 text-sm">
               {FREE_PLAN_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2">
+                <li key={feature} className="flex items-center gap-2.5">
                   <Check className="size-4 shrink-0 text-muted-foreground" />
                   {feature}
                 </li>
@@ -71,19 +74,19 @@ export function UpgradePricing({
           </CardContent>
         </Card>
 
-        <Card className="relative rounded-[10px] ring-2 ring-primary">
+        <Card className="relative rounded-[10px] ring-2 ring-primary [--card-spacing:2rem]">
           <CardHeader>
-            <CardTitle>Pro</CardTitle>
+            <CardTitle className="text-[1.0625rem]">Pro</CardTitle>
             <p className="mt-2 flex items-baseline justify-center gap-1">
-              <span className="text-3xl font-bold">{proPrice}</span>
+              <span className="text-[2.75rem] leading-none font-bold">{proPrice}</span>
               <span className="text-sm text-muted-foreground">/mo</span>
             </p>
             <p className="text-sm text-muted-foreground">{proNote}</p>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col justify-between gap-5">
-            <ul className="flex flex-col gap-2.5 text-sm">
+            <ul className="flex flex-col gap-3 text-sm">
               {PRO_PLAN_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2">
+                <li key={feature} className="flex items-center gap-2.5">
                   <Check className="size-4 shrink-0 text-primary" />
                   {feature}
                 </li>

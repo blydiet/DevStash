@@ -37,12 +37,14 @@ export function PriceCard({
           : "border-[var(--hp-border)] bg-[var(--hp-bg-card)]"
       }`}
     >
-      <h3 className="mb-4 text-[1.0625rem] font-semibold text-[var(--hp-text-secondary)]">{name}</h3>
-      <p className="mb-1 flex items-baseline gap-1">
+      <h3 className="mb-4 text-center text-[1.0625rem] font-semibold text-[var(--hp-text-secondary)]">
+        {name}
+      </h3>
+      <p className="mb-1 flex items-baseline justify-center gap-1">
         <span className="text-[2.75rem] leading-none font-bold tracking-tight">{price}</span>
         {period && <span className="text-[0.9375rem] text-[var(--hp-text-tertiary)]">{period}</span>}
       </p>
-      <p className="mb-6 text-sm text-[var(--hp-text-tertiary)]">{note}</p>
+      <p className="mb-6 text-center text-sm text-[var(--hp-text-tertiary)]">{note}</p>
       {/* flex-1 absorbs the grid's stretched height (Free's shorter list vs
           Pro's longer one), so the CTA below always lands at the same
           bottom position on both cards instead of trailing right after a
