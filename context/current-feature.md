@@ -2,9 +2,45 @@
 
 ## Status
 
+In progress.
+
 ## Goals
 
+Add a light/dark mode toggle button.
+
+Scope decisions made up front (via AskUserQuestion, since the app is currently
+dark-mode-only with no light palette at all):
+
+- **Full app scope**: dashboard app, marketing homepage, and the editor
+  components (CodeEditor/MarkdownEditor) are all in scope — not just the
+  dashboard.
+- **Toggle placement**: TopBar, always visible (sun/moon icon button, next to
+  Favorites).
+- **Homepage**: gets a real light-mode redesign of its `--hp-*` tokens, not
+  left dark-only, despite `src/app/homepage.css`'s existing comment stating
+  the homepage was deliberately built to always look dark. This is a
+  conscious reversal of that prior decision, confirmed explicitly.
+- **CodeEditor / MarkdownEditor**: their "window" chrome (dark terminal-style
+  box, macOS traffic-light dots, tabs) stays dark always, regardless of the
+  toggle. Reasoning: Monaco has zero light syntax themes today (all 3
+  Editor Preferences options — vs-dark/monokai/github-dark — are dark), so a
+  light frame around a dark code pane would look broken. Adding a real light
+  Monaco theme was explicitly declined as out of scope. No changes needed to
+  these two components.
+
 ## Notes
+
+- No theme library installed yet (no `next-themes`). No light palette exists
+  in `src/app/globals.css` — `:root` hardcodes the dark shadcn palette
+  directly with `color-scheme: dark`.
+- Tailwind v4's default `dark:` variant is media-query based
+  (`prefers-color-scheme`); need `@custom-variant dark (&:where(.dark, .dark *));`
+  for class-based toggling via `next-themes`.
+- `.markdown-preview` (globals.css) and the CodeEditor/MarkdownEditor dark
+  chrome are excluded from this work per the decision above — they only ever
+  render inside the always-dark editor box.
+- Chart tokens (`--chart-1..5`) are defined but unused anywhere in the app —
+  low-stakes to pick reasonable light values.
 
 ## History
 
