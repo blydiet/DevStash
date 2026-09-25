@@ -139,7 +139,13 @@ export function MarkdownEditor({
   const editorPanel = (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-border bg-[#1e1e1e]",
+        // always-dark: this window chrome stays dark in both themes, so the
+        // subtree takes the dark token values regardless of the app theme —
+        // without it the Write/Preview Tabs triggers render dark-on-dark in
+        // light mode. Defined in globals.css. border-white/10 rather than
+        // border-border is belt-and-braces: it's what --border already
+        // resolves to in dark, and it matches the dividers below.
+        "always-dark overflow-hidden rounded-lg border border-white/10 bg-[#1e1e1e]",
         fill && "sm:flex sm:h-full sm:flex-col"
       )}
     >

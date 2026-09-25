@@ -69,7 +69,7 @@ export function FeaturesSection() {
                   <span
                     key={t.value}
                     className="size-2.5 rounded-full"
-                    style={{ backgroundColor: t.color }}
+                    style={{ backgroundColor: colorFor(t.value) }}
                   />
                 ))}
               </div>

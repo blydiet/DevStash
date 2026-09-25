@@ -13,7 +13,7 @@ export function HeroSection() {
         <Reveal className="max-w-[640px] text-center">
           <h1 className="text-[clamp(2.25rem,5vw,3.5rem)] leading-[1.1] font-bold tracking-tight">
             Stop losing your{" "}
-            <em className="inline-block bg-gradient-to-r from-[var(--hp-accent)] to-[#8fb8ff] bg-clip-text pb-[0.15em] leading-[1.15] font-bold text-transparent not-italic">
+            <em className="inline-block bg-gradient-to-r from-[var(--hp-gradient-start)] to-[var(--hp-gradient-end)] bg-clip-text pb-[0.15em] leading-[1.15] font-bold text-transparent not-italic">
               developer knowledge
             </em>
           </h1>

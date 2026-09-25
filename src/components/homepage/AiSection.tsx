@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { Reveal } from "@/components/homepage/Reveal";
-import { typeColor as colorFor } from "@/lib/homepage/type-color";
+import { typeColor as colorFor, typeColorTint } from "@/lib/homepage/type-color";
 
 const CHECKLIST = [
   "Auto-tagging on save",
@@ -46,7 +46,12 @@ export function AiSection() {
         </Reveal>
 
         <Reveal className="min-w-0">
-          <div className="overflow-hidden rounded-[14px] border border-[var(--hp-border)] bg-[#0d0d11] shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+          {/* hp-always-dark: this frame keeps its near-black background in
+              both themes (see below), so it re-declares the dark --hp-*
+              tokens for its subtree — otherwise the tag chips, the divider
+              and the label would inherit light-mode values and vanish
+              against it. */}
+          <div className="hp-always-dark overflow-hidden rounded-[14px] border border-[var(--hp-border)] bg-[#0d0d11] shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
             {/* A real screenshot of this app's own CodeEditor component
                 (Monaco, real syntax highlighting) rendering the actual
                 seeded "useDebounce Hook" snippet — not a hand-built fake
@@ -74,8 +79,8 @@ export function AiSection() {
                   className="hp-tag-chip font-mono-hp rounded-full border px-2.5 py-1 text-xs"
                   style={{
                     color: tag.color,
-                    backgroundColor: `${tag.color}29`,
-                    borderColor: `${tag.color}59`,
+                    backgroundColor: typeColorTint(tag.color, 16),
+                    borderColor: typeColorTint(tag.color, 35),
                     animationDelay: tag.delay,
                   }}
                 >

@@ -2,6 +2,18 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Deliberately matches only `.dark`, NOT the `.always-dark` scope defined
+   below. Adding `.always-dark` here would redefine what the `dark:` prefix
+   means for the entire app — every `dark:` utility in every component would
+   also fire inside any `.always-dark` subtree — and it isn't needed: the
+   token override on `.always-dark` is enough on its own, because the shadcn
+   primitives used in that subtree all set the same properties in their
+   unprefixed branch too (`tabs.tsx`, for instance, has both
+   `data-active:text-foreground` and `dark:data-active:text-foreground`).
+   Token inheritance is naturally scoped to descendants; a variant
+   redefinition is not. Keep the blast radius small. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 
 
 @theme inline {
@@ -48,8 +60,55 @@
 }
 
 :root {
-      color-scheme: dark;
+    color-scheme: light;
     --radius: 0.625rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.65 0 0);
+    --chart-2: oklch(0.55 0 0);
+    --chart-3: oklch(0.45 0 0);
+    --chart-4: oklch(0.35 0 0);
+    --chart-5: oklch(0.25 0 0);
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* `.always-dark` marks a subtree that stays dark in both themes — currently
+   the CodeEditor / MarkdownEditor window chrome, which wraps an editor that
+   has no light syntax theme. Giving it the dark token values means a themed
+   descendant (a shadcn primitive, a bare `text-muted-foreground`) renders
+   against the dark ground it actually sits on rather than the page theme;
+   without it the Tabs triggers come out near-black on #2d2d2d in light mode.
+   Note this is DOM-scoped, so portalled children (tooltips, dropdown and
+   select popups, dialogs) render outside it and follow the page theme — which
+   is usually what you want for an overlay, but it does mean the scope is not
+   airtight. See the @custom-variant note at the top for why the `dark:`
+   variant is deliberately NOT extended to match this class. */
+.dark,
+.always-dark {
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -83,6 +142,20 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Swapping the token values above only fixes descendants that actually
+   reference a token (`text-foreground`, `text-muted-foreground`, …). An
+   element with no text color of its own inherits `color` from an ancestor
+   OUTSIDE this scope, where it was already computed against the light
+   palette — inheritance passes down a resolved color, so redefining
+   --foreground here cannot retroactively change it, and such an element
+   renders near-black on the dark chrome. Re-assert `color` on the scope so
+   anything relying on inheritance lands on the dark-mode foreground.
+   Elements that do set their own color still win, so this only fills the
+   gap. */
+.always-dark {
+  color: var(--foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -100,7 +173,7 @@
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: oklch(1 0 0 / 20%) transparent;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 20%, transparent) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -112,12 +185,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: oklch(1 0 0 / 20%);
+  background-color: color-mix(in oklch, var(--foreground) 20%, transparent);
   border-radius: 999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: oklch(1 0 0 / 35%);
+  background-color: color-mix(in oklch, var(--foreground) 35%, transparent);
 }
 
 .markdown-preview {

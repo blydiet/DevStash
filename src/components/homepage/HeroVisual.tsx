@@ -118,7 +118,7 @@ export function HeroVisual() {
                 iconRefs.current[i] = el;
               }}
             >
-              <img src={logo.src} alt="" width={28} height={28} />
+              <img src={logo.src} alt="" width={28} height={28} className="hp-logo-icon" />
             </ChaosIconTile>
           ))}
           {GLYPH_ICONS.map(({ alt, Icon }, i) => (

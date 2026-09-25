@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { CollectionFormDialog } from "./CollectionFormDialog";
 import { useGlobalSearch } from "./GlobalSearchContext";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export function TopBar({
   onToggleSidebar,
@@ -48,6 +49,8 @@ export function TopBar({
       >
         <Star className="size-4" />
       </Button>
+
+      <ThemeToggle />
 
       <div
         className="relative min-w-0 flex-1 lg:mx-auto lg:max-w-md lg:flex-initial"

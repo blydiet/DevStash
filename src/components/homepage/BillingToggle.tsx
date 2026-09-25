@@ -38,7 +38,7 @@ export function BillingToggle() {
           style={{ color: isYearly ? "var(--hp-text-primary)" : "var(--hp-text-tertiary)" }}
         >
           Yearly
-          <span className="font-mono-hp rounded-full bg-[rgba(34,197,94,0.12)] px-2 py-0.5 text-[0.6875rem] text-[#22c55e]">
+          <span className="font-mono-hp rounded-full bg-[var(--hp-success-bg)] px-2 py-0.5 text-[0.6875rem] text-[var(--hp-success-text)]">
             save {PRO_YEARLY_SAVINGS_PERCENT}%
           </span>
         </span>

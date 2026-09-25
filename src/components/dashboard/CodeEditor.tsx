@@ -244,7 +244,14 @@ export function CodeEditor({
   );
 
   const editorPanel = (
-    <div className="overflow-hidden rounded-lg border border-border bg-[#1e1e1e]">
+    // always-dark: this window chrome stays dark in both themes (Monaco has
+    // no light syntax theme today), so the subtree takes the dark token
+    // values regardless of the app theme — without it, themed descendants
+    // like the Tabs triggers render dark-on-dark in light mode. Defined in
+    // globals.css. border-white/10 rather than border-border is belt-and-
+    // braces: it's what --border already resolves to in dark, and it matches
+    // the header/footer dividers below.
+    <div className="always-dark overflow-hidden rounded-lg border border-white/10 bg-[#1e1e1e]">
       <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
         <div className="flex gap-1.5" aria-hidden="true">
           <span className="size-2.5 rounded-full bg-[#ff5f57]" />

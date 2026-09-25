@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Package } from "lucide-react";
 import { HomeButton } from "@/components/homepage/HomeButton";
+import { HomeThemeToggle } from "@/components/homepage/HomeThemeToggle";
 
 export function HomeNav({
   showSignIn = true,
@@ -68,6 +69,7 @@ export function HomeNav({
           )}
 
           <div className="flex shrink-0 items-center gap-2">
+            <HomeThemeToggle />
             {showSignIn && (
               <HomeButton href="/sign-in" variant="ghost" className="hidden md:inline-flex">
                 Sign in

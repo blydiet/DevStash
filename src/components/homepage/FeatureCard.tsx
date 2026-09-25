@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useSpringInteraction } from "@/hooks/use-spring-interaction";
 import { FEATURE_CARD_SPRING } from "@/lib/homepage/spring";
+import { typeColorTint } from "@/lib/homepage/type-color";
 
 const SPAN_CLASSES = {
   default: "",
@@ -45,7 +46,7 @@ export function FeatureCard({
       <div>
         <div
           className="mb-[18px] inline-flex size-10 items-center justify-center rounded-[8px]"
-          style={{ backgroundColor: `${color}29`, color }}
+          style={{ backgroundColor: typeColorTint(color, 16), color }}
         >
           {icon}
         </div>
