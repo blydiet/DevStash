@@ -2,48 +2,9 @@
 
 ## Status
 
-Implemented and verified in-browser (dashboard, homepage, sign-in/register,
-/upgrade) in both themes at desktop and mobile widths. `npm run test`
-(639/639), `npm run lint` (only the 2 pre-existing, unrelated warnings),
-`npx tsc --noEmit`, and `npm run build` all pass. Ready to commit and merge.
-
 ## Goals
 
-Add a light/dark mode toggle button.
-
-Scope decisions made up front (via AskUserQuestion, since the app is currently
-dark-mode-only with no light palette at all):
-
-- **Full app scope**: dashboard app, marketing homepage, and the editor
-  components (CodeEditor/MarkdownEditor) are all in scope — not just the
-  dashboard.
-- **Toggle placement**: TopBar, always visible (sun/moon icon button, next to
-  Favorites).
-- **Homepage**: gets a real light-mode redesign of its `--hp-*` tokens, not
-  left dark-only, despite `src/app/homepage.css`'s existing comment stating
-  the homepage was deliberately built to always look dark. This is a
-  conscious reversal of that prior decision, confirmed explicitly.
-- **CodeEditor / MarkdownEditor**: their "window" chrome (dark terminal-style
-  box, macOS traffic-light dots, tabs) stays dark always, regardless of the
-  toggle. Reasoning: Monaco has zero light syntax themes today (all 3
-  Editor Preferences options — vs-dark/monokai/github-dark — are dark), so a
-  light frame around a dark code pane would look broken. Adding a real light
-  Monaco theme was explicitly declined as out of scope. No changes needed to
-  these two components.
-
 ## Notes
-
-- No theme library installed yet (no `next-themes`). No light palette exists
-  in `src/app/globals.css` — `:root` hardcodes the dark shadcn palette
-  directly with `color-scheme: dark`.
-- Tailwind v4's default `dark:` variant is media-query based
-  (`prefers-color-scheme`); need `@custom-variant dark (&:where(.dark, .dark *));`
-  for class-based toggling via `next-themes`.
-- `.markdown-preview` (globals.css) and the CodeEditor/MarkdownEditor dark
-  chrome are excluded from this work per the decision above — they only ever
-  render inside the always-dark editor box.
-- Chart tokens (`--chart-1..5`) are defined but unused anywhere in the app —
-  low-stakes to pick reasonable light values.
 
 ## History
 
@@ -191,4 +152,14 @@ dark-mode-only with no light palette at all):
 
   Live browser review caught two real, pre-existing bugs along the way, neither introduced by this feature but only surfaced once contrast made them visible: (1) the homepage's `hp-switch`-recolored shadcn `Switch` (the pricing Monthly/Yearly toggle) set its unchecked track to `var(--hp-bg-card)`, which is white in the new light mode, same as the thumb; the toggle was already broken (invisible) in a sense the dark-only version never exposed, since dark mode's card was near-black against a white thumb. Fixed by using a fixed `rgba(128, 128, 128, 0.35)` track tint instead, distinct from a white thumb in both themes. (2) Fixing that in turn exposed a second, unrelated bug in the shared `src/components/ui/switch.tsx`: the `lg` size variant's checked-state translate distance (`calc(100%-2px)`, copied from the `default`/`sm` sizes) is mathematically wrong for `lg`'s specific thumb-to-track ratio — `default`/`sm` compute correctly by coincidence (their `-2px` constant happens to equal `track_inner_width - 2*thumb_width` for those sizes), but `lg` needs `calc(100%+6px)`, confirmed via direct arithmetic (`44px track, 1px border each side, 18px thumb → needs +6, not -2`). Only `BillingToggle.tsx` uses `size="lg"`; the dashboard's `EditorPreferencesSettings`/`UpgradePricing` Switches use `size="default"` and were unaffected by either bug or the fix. Both were caught via the user's own live-reload browser testing during the session, not automated checks.
 
-  Verified live via Playwright throughout at desktop and mobile widths, in both themes: dashboard (stats cards, collections, item drawer with the intentionally-still-dark CodeEditor box sitting cleanly inside a light drawer), `/items/command`, the homepage (hero, features bento, AI section, pricing with both switch states, footer), `/sign-in` and `/register` (confirming the homepage-nav-in-a-dashboard-card mix theme correctly together), and `/upgrade` (confirming the `default`-size Switch fix has no regression). Theme persists correctly across full page navigations (cookie-backed, not localStorage) and survives a sign-out/sign-in cycle. `npm run test` (639/639), `npm run lint` (only the 2 pre-existing, unrelated warnings), `npx tsc --noEmit`, and `npm run build` all pass throughout. Ready to commit and merge.
+  Verified live via Playwright throughout at desktop and mobile widths, in both themes: dashboard (stats cards, collections, item drawer with the intentionally-still-dark CodeEditor box sitting cleanly inside a light drawer), `/items/command`, the homepage (hero, features bento, AI section, pricing with both switch states, footer), `/sign-in` and `/register` (confirming the homepage-nav-in-a-dashboard-card mix theme correctly together), and `/upgrade` (confirming the `default`-size Switch fix has no regression). Theme persists correctly across full page navigations (cookie-backed, not localStorage) and survives a sign-out/sign-in cycle.
+
+  A follow-up gap review (requested before merge) then found and fixed three real light-mode bugs the first pass had missed, all in the same class — colors tuned for a near-black ground being used as foreground on a light one. (1) `ITEM_TYPES`' own hex values (`src/lib/item-types.ts`) are consumed directly by the homepage as icon glyphs and accent bars; note yellow `#fde047` measured **1.26:1** on `#fafafa` (confirmed live in an unauthenticated browser: `rgb(253,224,71)` on `rgb(250,250,250)`), and every FeatureCard icon badge fell below the 3:1 non-text threshold in light while all had cleared it in dark. Fixed with a `--hp-type-*` token per item type (dark block keeps the ITEM_TYPES values; light block steps each to the same hue family until it clears 4.7:1 on the page), consumed through a rewritten `typeColor()`. (2) `--hp-accent` `#3b82f6` is used as small text (nav/footer logo, the "Pro feature" badge, price-card checks) and only reached 3.52:1 on the light background — stepped down to `#1d4ed8` (6.42:1) for light only, with a new `--hp-gradient-start` pinned at `#3b82f6` so the hero headline keeps the lighter blue (it's 36–56px bold display text, so the 3:1 large-text threshold applies and it still clears). (3) `FALLBACK_TYPE_COLOR` had been changed to a `var()` expression while two call sites still appended hex alpha to it (`` `${color}29` ``), which would have silently produced invalid CSS — replaced with a `typeColorTint()` helper using `color-mix()`, and `typeColor()` rebuilt on a `Record<ItemType, string>` so adding an item type without its token pair fails to compile. A fourth site (`FeaturesSection`'s 7-dot strip) was found reading raw `t.color` and bypassing the helper entirely.
+
+  The same review's "editor chrome stays dark" decision turned out to be only partly true in code, and closing it properly took three passes. `border-border` on the `bg-[#1e1e1e]` box resolved to a near-white hairline in light mode (fixed to `border-white/10`, which is exactly what `--border` already resolves to in dark, so a no-op there). Then a user-reported bug — the Write/Preview tab labels unreadable inside a prompt item — traced to the same root cause arriving via a *nested shared primitive*: `tabs.tsx`'s themed classes, invisible to a grep of the editor files. Selected tab measured **1.44:1** in light. Fixed with a new `.always-dark` scope in `globals.css` (token override), applied to both editor panel roots. A first version of that fix also extended `@custom-variant dark` to match `.always-dark`; that was **reverted** after testing showed the token override alone was sufficient (tabs.tsx sets the same properties in its unprefixed branch), and the variant change would have redefined what `dark:` means app-wide — 106 compiled selectors — for no benefit. Worth noting for future debugging: the dev server does **not** hot-reload `@custom-variant` changes, and an initial "token-only works" measurement was invalid because it was reading stale CSS; every subsequent measurement asserted which variant was live by fetching the served stylesheet first.
+
+  A final deliberate audit of the nine shadcn primitives that use `dark:` utilities but had never been nested inside the editor chrome (only `Button` and `Tabs` ever had) found a genuine structural gap: `.always-dark` swaps token *values*, but an element with no `text-*` class of its own inherits a `color` that was already **computed** on `<body>` against the light palette — inheritance passes down a resolved color, so redefining `--foreground` can't retroactively change it. `Button` (ghost variant, used by `CopyButton`/`AiActionButton`) measured **1.44:1** and `DropdownMenu` 1.44 vs 5.33 because of this. Fixed with `.always-dark { color: var(--foreground); }`. After the fix all ten components (avatar, badge, button, input, textarea, label, select-trigger, dropdown-menu-trigger, switch, plus a synthetic inherited-color control) measure identically to real dark mode. Also noted, not changed: the Pro-locked AI button's crown icon is `text-neutral-500` at 2.90:1 on the `#2d2d2d` bar — it's the disabled state, which WCAG 1.4.11 exempts from the non-text contrast requirement, and it's identical in both themes.
+
+  Contrast figures throughout were computed with a from-scratch WCAG implementation that was itself validated against eight known anchors (black/white = 21.00, `#767676`/white = 4.54 just above AA, `#777777` = 4.48 just below, plus non-gray colors and argument-order symmetry). One code comment claiming the type tokens clear "the ~4:1 mark on its own 16% tint" was corrected in place — the true worst case is note at 3.99, and the threshold that actually governs icon glyphs is 3:1, not 4.5:1. Separately, the claim that reading cookies in the root layout costs only `/_not-found` was re-verified properly by diffing the **full** 27-route `next build` table with and without the change (26 ƒ + 1 ○ → 27 ƒ); the original check had grepped only five route names, so most of the baseline had never actually been observed.
+
+  `npm run test` (639/639), `npm run lint` (only the 2 pre-existing, unrelated warnings), `npx tsc --noEmit`, and `npm run build` all pass throughout. Committed as a single commit and merged into `main`; branch deleted (never pushed to origin, so no remote cleanup needed).
